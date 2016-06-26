@@ -24,7 +24,8 @@
 
 
 /mob/new_player/proc/new_player_panel_proc()
-	var/output = "<center><p><a href='byond://?src=\ref[src];show_preferences=1'>Setup Character</A></p>"
+	var/real_name = client.prefs.real_name
+	var/output = "<center><p><a href='byond://?src=\ref[src];show_preferences=1'>Setup Character</A><br /><i>[real_name]</i></p>"
 
 	if(!ticker || ticker.current_state <= GAME_STATE_PREGAME)
 		if(!ready)	output += "<p><a href='byond://?src=\ref[src];ready=1'>Declare Ready</A></p>"
@@ -122,7 +123,7 @@
 			var/mob/dead/observer/observer = new()
 			src << browse(null, "window=playersetup")
 			spawning = 1
-			to_chat(src, sound(null, repeat = 0, wait = 0, volume = 85, channel = 1))// MAD JAMS cant last forever yo
+			src << sound(null, repeat = 0, wait = 0, volume = 85, channel = 1)// MAD JAMS cant last forever yo
 
 
 			observer.started_as_observer = 1
@@ -420,7 +421,7 @@
 		client.prefs.real_name = random_name(client.prefs.gender)
 	client.prefs.copy_to(new_character)
 
-	to_chat(src, sound(null, repeat = 0, wait = 0, volume = 85, channel = 1))// MAD JAMS cant last forever yo
+	src << sound(null, repeat = 0, wait = 0, volume = 85, channel = 1)// MAD JAMS cant last forever yo
 
 
 	if(mind)
