@@ -40,14 +40,14 @@
 	explosion_block = 3
 	canSmoothWith = list(/turf/simulated/wall/mineral/diamond, /obj/structure/falsewall/diamond)
 
-/turf/simulated/wall/mineral/clown
+/turf/simulated/wall/mineral/bananium
 	name = "bananium wall"
 	desc = "A wall with bananium plating. Honk!"
 	icon = 'icons/turf/walls/bananium_wall.dmi'
 	icon_state = "bananium"
 	walltype = "bananium"
-	mineral = "clown"
-	canSmoothWith = list(/turf/simulated/wall/mineral/clown, /obj/structure/falsewall/clown)
+	mineral = "bananium"
+	canSmoothWith = list(/turf/simulated/wall/mineral/bananium, /obj/structure/falsewall/bananium)
 
 /turf/simulated/wall/mineral/sandstone
 	name = "sandstone wall"
@@ -134,7 +134,7 @@
 
 /*
 /turf/simulated/wall/mineral/proc/shock()
-	if (electrocute_mob(user, C, src))
+	if(electrocute_mob(user, C, src))
 		var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
 		s.set_up(5, 1, src)
 		s.start()

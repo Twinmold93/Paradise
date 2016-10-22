@@ -15,7 +15,7 @@
 	desc = "A pair of scissors used by the barber."
 	icon_state = "bscissor"
 	item_state = "scissor"
-	attack_verb = list("beautifully slices", "artistically cuts", "smoothly stabs", "quickly jabs")
+	attack_verb = list("beautifully sliced", "artistically cut", "smoothly stabbed", "quickly jabbed")
 
 /obj/item/weapon/scissors/attack(mob/living/carbon/M as mob, mob/user as mob)
 	if(user.a_intent != "help")
@@ -118,7 +118,7 @@
 				H.losebreath += 10 //30 Oxy damage over time
 				H.apply_damage(18, BRUTE, "head", sharp =1, edge =1, used_weapon = "scissors")
 				var/turf/location = get_turf(H)
-				if (istype(location, /turf/simulated))
+				if(istype(location, /turf/simulated))
 					location.add_blood(H)
 				H.bloody_hands(H)
 				H.bloody_body(H)

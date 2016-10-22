@@ -100,7 +100,7 @@
 
 
 /obj/machinery/power/generator_type2/interact(mob/user)
-	if ( (get_dist(src, user) > 1 ) && (!istype(user, /mob/living/silicon/ai)))
+	if( (get_dist(src, user) > 1 ) && (!istype(user, /mob/living/silicon/ai)))
 		user.unset_machine()
 		user << browse(null, "window=teg")
 		return
@@ -119,7 +119,7 @@
 	t += "Temperature: [round(input2.air_contents.temperature, 0.1)] K<BR>"
 	t += "Pressure: [round(input2.air_contents.return_pressure(), 0.1)] kPa<BR>"
 
-	t += "<BR><HR><A href='?src=\ref[src];close=1'>Close</A>"
+	t += "<BR><HR><A href='?src=[UID()];close=1'>Close</A>"
 
 	t += "</PRE>"
 	user << browse(t, "window=teg;size=460x300")

@@ -51,9 +51,9 @@
 	wait = 1
 	update_icon()
 	spawn(waittime)
-		src.wait = null
+		wait = null
 		update_icon()
-		playsound(src.loc, 'sound/machines/ping.ogg', 30, 1)
+		playsound(loc, 'sound/machines/ping.ogg', 30, 1)
 
 /obj/machinery/computer/pandemic/update_icon()
 	if(stat & BROKEN)
@@ -74,9 +74,9 @@
 	usr.set_machine(src)
 	if(!beaker) return
 
-	if (href_list["create_vaccine"])
-		if(!src.wait)
-			var/obj/item/weapon/reagent_containers/glass/bottle/B = new/obj/item/weapon/reagent_containers/glass/bottle(src.loc)
+	if(href_list["create_vaccine"])
+		if(!wait)
+			var/obj/item/weapon/reagent_containers/glass/bottle/B = new/obj/item/weapon/reagent_containers/glass/bottle(loc)
 			if(B)
 				B.pixel_x = rand(-3, 3)
 				B.pixel_y = rand(-3, 3)
@@ -101,10 +101,10 @@
 					B.reagents.add_reagent("vaccine", 15, list(vaccine_type))
 					replicator_cooldown(200)
 		else
-			src.temp_html = "The replicator is not ready yet."
-		src.updateUsrDialog()
+			temp_html = "The replicator is not ready yet."
+		updateUsrDialog()
 		return
-	else if (href_list["create_virus_culture"])
+	else if(href_list["create_virus_culture"])
 		if(!wait)
 			var/type = GetVirusTypeByIndex(text2num(href_list["create_virus_culture"]))//the path is received as string - converting
 			var/datum/disease/D = null
@@ -121,8 +121,8 @@
 			var/name = stripped_input(usr,"Name:","Name the culture",D.name,MAX_NAME_LEN)
 			if(name == null || wait)
 				return
-			var/obj/item/weapon/reagent_containers/glass/bottle/B = new/obj/item/weapon/reagent_containers/glass/bottle(src.loc)
-			B.icon_state = "bottle3"
+			var/obj/item/weapon/reagent_containers/glass/bottle/B = new/obj/item/weapon/reagent_containers/glass/bottle(loc)
+			B.icon_state = "round_bottle"
 			B.pixel_x = rand(-3, 3)
 			B.pixel_y = rand(-3, 3)
 			replicator_cooldown(50)
@@ -130,24 +130,24 @@
 			B.name = "[name] culture bottle"
 			B.desc = "A small bottle. Contains [D.agent] culture in synthblood medium."
 			B.reagents.add_reagent("blood",20,data)
-			src.updateUsrDialog()
+			updateUsrDialog()
 		else
-			src.temp_html = "The replicator is not ready yet."
-		src.updateUsrDialog()
+			temp_html = "The replicator is not ready yet."
+		updateUsrDialog()
 		return
-	else if (href_list["empty_beaker"])
+	else if(href_list["empty_beaker"])
 		beaker.reagents.clear_reagents()
-		src.updateUsrDialog()
+		updateUsrDialog()
 		return
-	else if (href_list["eject"])
-		beaker:loc = src.loc
+	else if(href_list["eject"])
+		beaker:loc = loc
 		beaker = null
 		icon_state = "mixer0"
-		src.updateUsrDialog()
+		updateUsrDialog()
 		return
 	else if(href_list["clear"])
-		src.temp_html = ""
-		src.updateUsrDialog()
+		temp_html = ""
+		updateUsrDialog()
 		return
 	else if(href_list["name_disease"])
 		var/new_name = stripped_input(usr, "Name the Disease", "New Name", "", MAX_NAME_LEN)
@@ -161,15 +161,15 @@
 			A.AssignName(new_name)
 			for(var/datum/disease/advance/AD in disease_master.processing)
 				AD.Refresh()
-		src.updateUsrDialog()
+		updateUsrDialog()
 
 
 	else
 		usr << browse(null, "window=pandemic")
-		src.updateUsrDialog()
+		updateUsrDialog()
 		return
 
-	src.add_fingerprint(usr)
+	add_fingerprint(usr)
 	return
 
 /obj/machinery/computer/pandemic/attack_hand(mob/user)
@@ -177,11 +177,11 @@
 		return
 	user.set_machine(src)
 	var/dat = ""
-	if(src.temp_html)
-		dat = "[src.temp_html]<BR><BR><A href='?src=\ref[src];clear=1'>Main Menu</A>"
+	if(temp_html)
+		dat = "[temp_html]<BR><BR><A href='?src=[UID()];clear=1'>Main Menu</A>"
 	else if(!beaker)
 		dat += "Please insert beaker.<BR>"
-		dat += "<A href='?src=\ref[user];mach_close=pandemic'>Close</A>"
+		dat += "<A href='?src=[user.UID()];mach_close=pandemic'>Close</A>"
 	else
 		var/datum/reagents/R = beaker.reagents
 		var/datum/reagent/blood/Blood = null
@@ -214,12 +214,12 @@
 								var/datum/disease/advance/A = D
 								D = archive_diseases[A.GetDiseaseID()]
 								if(D && D.name == "Unknown")
-									dat += "<b><a href='?src=\ref[src];name_disease=[i]'>Name Disease</a></b><BR>"
+									dat += "<b><a href='?src=[UID()];name_disease=[i]'>Name Disease</a></b><BR>"
 
 							if(!D)
 								CRASH("We weren't able to get the advance disease from the archive.")
 
-							dat += "<b>Disease Agent:</b> [D?"[D.agent] - <A href='?src=\ref[src];create_virus_culture=[i]'>Create virus culture bottle</A>":"none"]<BR>"
+							dat += "<b>Disease Agent:</b> [D?"[D.agent] - <A href='?src=[UID()];create_virus_culture=[i]'>Create virus culture bottle</A>":"none"]<BR>"
 							dat += "<b>Common name:</b> [(D.name||"none")]<BR>"
 							dat += "<b>Description: </b> [(D.desc||"none")]<BR>"
 							dat += "<b>Spread:</b> [(D.spread_text||"none")]<BR>"
@@ -256,16 +256,18 @@
 							var/datum/disease/D = new type(0, null)
 							disease_name = D.name
 
-						dat += "<li>[disease_name] - <A href='?src=\ref[src];create_vaccine=[i]'>Create vaccine bottle</A></li>"
+						dat += "<li>[disease_name] - <A href='?src=[UID()];create_vaccine=[i]'>Create vaccine bottle</A></li>"
 					dat += "</ul><BR>"
 				else
 					dat += "nothing<BR>"
 			else
 				dat += "nothing<BR>"
-		dat += "<BR><A href='?src=\ref[src];eject=1'>Eject beaker</A>[((R.total_volume&&R.reagent_list.len) ? "-- <A href='?src=\ref[src];empty_beaker=1'>Empty beaker</A>":"")]<BR>"
-		dat += "<A href='?src=\ref[user];mach_close=pandemic'>Close</A>"
+		dat += "<BR><A href='?src=[UID()];eject=1'>Eject beaker</A>[((R.total_volume&&R.reagent_list.len) ? "-- <A href='?src=[UID()];empty_beaker=1'>Empty beaker</A>":"")]<BR>"
+		dat += "<A href='?src=[user.UID()];mach_close=pandemic'>Close</A>"
 
-	user << browse("<TITLE>[src.name]</TITLE><BR>[dat]", "window=pandemic;size=575x400")
+	var/datum/browser/popup = new(user, "pandemic", name, 575, 400)
+	popup.set_content(dat)
+	popup.open(0)
 	onclose(user, "pandemic")
 	return
 
@@ -282,11 +284,11 @@
 		beaker =  I
 		beaker.loc = src
 		to_chat(user, "<span class='notice'>You add the beaker to the machine.</span>")
-		src.updateUsrDialog()
+		updateUsrDialog()
 		icon_state = "mixer1"
 
 	else if(istype(I, /obj/item/weapon/screwdriver))
-		if(src.beaker)
+		if(beaker)
 			beaker.loc = get_turf(src)
 		..()
 		return

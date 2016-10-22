@@ -1,3 +1,7 @@
+/obj/structure/flora
+	burn_state = FLAMMABLE
+	burntime = 30
+
 //trees
 /obj/structure/flora/tree
 	name = "tree"
@@ -230,6 +234,7 @@
 	desc = "a rock"
 	icon_state = "rock1"
 	icon = 'icons/obj/flora/rocks.dmi'
+	burn_state = FIRE_PROOF
 	anchored = 1
 
 /obj/structure/flora/rock/New()
@@ -288,10 +293,10 @@
 
 /*
 /obj/structure/bush/Bumped(M as mob)
-	if (istype(M, /mob/living/simple_animal))
+	if(istype(M, /mob/living/simple_animal))
 		var/mob/living/simple_animal/A = M
 		A.loc = get_turf(src)
-	else if (istype(M, /mob/living/carbon/monkey))
+	else if(istype(M, /mob/living/carbon/monkey))
 		var/mob/living/carbon/monkey/A = M
 		A.loc = get_turf(src)
 */
@@ -303,7 +308,7 @@
 			//this bush marks the edge of the map, you can't destroy it
 			to_chat(user, "\red You flail away at the undergrowth, but it's too thick here.")
 		else
-			user.visible_message("\red <b>[user] begins clearing away [src].</b>","\red <b>You begin clearing away [src].</b>")
+			user.visible_message("<span class='danger'>[user] begins clearing away [src].</b>","\red <b>You begin clearing away [src].</span>")
 			spawn(rand(15,30))
 				if(get_dist(user,src) < 2)
 					to_chat(user, "\blue You clear away [src].")

@@ -8,6 +8,8 @@
 #define UPLOAD_LIMIT		10485760	//Restricts client uploads to the server to 10MB //Boosted this thing. What's the worst that can happen?
 #define MIN_CLIENT_VERSION	0		//Just an ambiguously low version for now, I don't want to suddenly stop people playing.
 									//I would just like the code ready should it ever need to be used.
+#define SUGGESTED_CLIENT_VERSION	510		// only integers (e.g: 510, 511) useful here. Does not properly handle minor versions (e.g: 510.58, 511.848)
+
 	/*
 	When somebody clicks a link in game, this Topic is called first.
 	It does the stuff in this proc and  then is redirected to the Topic() proc for the src=[0xWhatever]
@@ -26,6 +28,16 @@
 /client/Topic(href, href_list, hsrc)
 	if(!usr || usr != mob)	//stops us calling Topic for somebody else's client. Also helps prevent usr=null
 		return
+
+	// src should always be a UID; if it isn't, warn instead of failing entirely
+	if(href_list["src"])
+		hsrc = locateUID(href_list["src"])
+		// If there's a ]_ in the src, it's a UID, so don't try to locate it
+		if(!hsrc && !findtext(href_list["src"], "]_"))
+			hsrc = locate(href_list["src"])
+			if(hsrc)
+				var/hsrc_info = datum_info_line(hsrc) || "[hsrc]"
+				log_runtime(EXCEPTION("Got \\ref-based src in topic from [src] for [hsrc_info], should be UID: [href]"))
 
 	#if defined(TOPIC_DEBUGGING)
 	to_chat(world, "[src]'s Topic: [href] destined for [hsrc].")
@@ -54,8 +66,8 @@
 	//search the href for script injection
 	if( findtext(href,"<script",1,0) )
 		log_to_dd("Attempted use of scripts within a topic call, by [src]")
+		log_runtime(EXCEPTION("Attempted use of scripts within a topic call, by [src]"), src)
 		message_admins("Attempted use of scripts within a topic call, by [src]")
-		//del(usr)
 		return
 
 	//Admin PM
@@ -64,7 +76,9 @@
 		if(ismob(C)) 		//Old stuff can feed-in mobs instead of clients
 			var/mob/M = C
 			C = M.client
-		cmd_admin_pm(C,null, href_list["type"])
+		if(!C) // Might be a stealthmin ID, so pass it in straight
+			C = href_list["priv_msg"]
+		cmd_admin_pm(C, null, href_list["type"])
 		return
 
 	if(href_list["irc_msg"])
@@ -208,7 +222,7 @@
 
 
 	switch(href_list["action"])
-		if ("openLink")
+		if("openLink")
 			src << link(href_list["link"])
 
 	..()	//redirect to hsrc.Topic()
@@ -258,8 +272,10 @@
 
 	if(connection != "seeker")					//Invalid connection type.
 		return null
-	if(byond_version < MIN_CLIENT_VERSION)		//Out of date client.
+	if(byond_version < MIN_CLIENT_VERSION) // Too out of date to play at all. Unfortunately, we can't send them a message here.
 		return null
+	if(byond_version < SUGGESTED_CLIENT_VERSION) // Update is suggested, but not required.
+		to_chat(src,"<span class='userdanger'>Your BYOND client (v: [byond_version]) is out of date. This can cause glitches. We highly suggest you download the latest client from http://www.byond.com/ before playing. </span>")
 
 	if(IsGuestKey(key))
 		alert(src,"This server doesn't allow guest accounts to play. Please go to http://www.byond.com/ and register for a key.","Guest","OK")
@@ -292,7 +308,8 @@
 	prefs.last_id = computer_id			//these are gonna be used for banning
 
 	. = ..()	//calls mob.Login()
-	chatOutput.start()
+	spawn() // Goonchat does some non-instant checks in start()
+		chatOutput.start()
 
 	if(custom_event_msg && custom_event_msg != "")
 		to_chat(src, "<h1 class='alert'>Custom Event</h1>")
@@ -317,8 +334,8 @@
 
 	log_client_to_db()
 
-	if (ckey in clientmessages)
-		for (var/message in clientmessages[ckey])
+	if(ckey in clientmessages)
+		for(var/message in clientmessages[ckey])
 			to_chat(src, message)
 		clientmessages.Remove(ckey)
 
@@ -358,16 +375,14 @@
 
 /client/proc/log_client_to_db()
 
-	if ( IsGuestKey(src.key) )
+	if( IsGuestKey(src.key) )
 		return
 
 	establish_db_connection()
 	if(!dbcon.IsConnected())
 		return
 
-	var/sql_ckey = sql_sanitize_text(src.ckey)
-
-	var/DBQuery/query = dbcon.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM [format_table_name("player")] WHERE ckey = '[sql_ckey]'")
+	var/DBQuery/query = dbcon.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM [format_table_name("player")] WHERE ckey = '[ckey]'")
 	query.Execute()
 	var/sql_id = 0
 	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
@@ -394,7 +409,7 @@
 	if(related_accounts_cid.len)
 		log_access("Alts: [key_name(src)]:[jointext(related_accounts_cid, " - ")]")
 
-	var/watchreason = check_watchlist(sql_ckey)
+	var/watchreason = check_watchlist(ckey)
 	if(watchreason)
 		message_admins("<font color='red'><B>Notice: </B></font><font color='blue'>[key_name_admin(src)] is on the watchlist and has just connected - Reason: [watchreason]</font>")
 		send2adminirc("Watchlist - [key_name(src)] is on the watchlist and has just connected - Reason: [watchreason]")
@@ -410,9 +425,9 @@
 	if(src.holder)
 		admin_rank = src.holder.rank
 
-	var/sql_ip = sql_sanitize_text(src.address)
-	var/sql_computerid = sql_sanitize_text(src.computer_id)
-	var/sql_admin_rank = sql_sanitize_text(admin_rank)
+	var/sql_ip = sanitizeSQL(address)
+	var/sql_computerid = sanitizeSQL(computer_id)
+	var/sql_admin_rank = sanitizeSQL(admin_rank)
 
 
 	if(sql_id)
@@ -421,12 +436,12 @@
 		query_update.Execute()
 	else
 		//New player!! Need to insert all the stuff
-		var/DBQuery/query_insert = dbcon.NewQuery("INSERT INTO [format_table_name("player")] (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, '[sql_ckey]', Now(), Now(), '[sql_ip]', '[sql_computerid]', '[sql_admin_rank]')")
+		var/DBQuery/query_insert = dbcon.NewQuery("INSERT INTO [format_table_name("player")] (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, '[ckey]', Now(), Now(), '[sql_ip]', '[sql_computerid]', '[sql_admin_rank]')")
 		query_insert.Execute()
 
 	//Logging player access
 	var/serverip = "[world.internet_address]:[world.port]"
-	var/DBQuery/query_accesslog = dbcon.NewQuery("INSERT INTO `[format_table_name("connection_log")]`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),'[serverip]','[sql_ckey]','[sql_ip]','[sql_computerid]');")
+	var/DBQuery/query_accesslog = dbcon.NewQuery("INSERT INTO `[format_table_name("connection_log")]`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),'[serverip]','[ckey]','[sql_ip]','[sql_computerid]');")
 	query_accesslog.Execute()
 
 

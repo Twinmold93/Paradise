@@ -63,7 +63,8 @@ var/global/admin_ooc_colour = "#b82e00"
 			var/display_name = src.key
 			if(prefs.unlock_content)
 				if(prefs.toggles & MEMBER_PUBLIC)
-					display_name = "<img style='width:9px;height:9px;' class=icon src=\ref['icons/member_content.dmi'] iconstate=blag>[display_name]"
+					var/icon/byond = icon('icons/member_content.dmi', "blag")
+					display_name = "[bicon(byond)][display_name]"
 			if(holder)
 				if(holder.fakekey)
 					if(C.holder)
@@ -74,7 +75,7 @@ var/global/admin_ooc_colour = "#b82e00"
 
 /proc/toggle_ooc()
 	config.ooc_allowed = ( !config.ooc_allowed )
-	if (config.ooc_allowed)
+	if(config.ooc_allowed)
 		to_chat(world, "<B>The OOC channel has been globally enabled!</B>")
 	else
 		to_chat(world, "<B>The OOC channel has been globally disabled!</B>")
@@ -196,7 +197,7 @@ var/global/admin_ooc_colour = "#b82e00"
 				if(check_rights(R_ADMIN|R_MOD,0,target.mob))
 					admin_stuff += "/([key])"
 					if(target != src)
-						admin_stuff += " ([admin_jump_link(mob, target.holder)])"
+						admin_stuff += " ([admin_jump_link(mob)])"
 
 			if(target.mob in heard)
 				send = 1

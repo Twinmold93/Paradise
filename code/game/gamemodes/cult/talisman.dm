@@ -55,32 +55,32 @@
 
 
 	proc/supply(var/key)
-		if (!src.uses)
+		if(!src.uses)
 			qdel(src)
 			return
 
 		var/dat = "<B>There are [src.uses] bloody runes on the parchment.</B><BR>"
 		dat += "Please choose the chant to be imbued into the fabric of reality.<BR>"
 		dat += "<HR>"
-		dat += "<A href='?src=\ref[src];rune=newtome'>N'ath reth sh'yro eth d'raggathnor!</A> - Allows you to summon a new arcane tome.<BR>"
-		dat += "<A href='?src=\ref[src];rune=teleport'>Sas'so c'arta forbici!</A> - Allows you to move to a rune with the same last word.<BR>"
-		dat += "<A href='?src=\ref[src];rune=emp'>Ta'gh fara'qha fel d'amar det!</A> - Allows you to destroy technology in a short range.<BR>"
-		dat += "<A href='?src=\ref[src];rune=conceal'>Kla'atu barada nikt'o!</A> - Allows you to conceal the runes you placed on the floor.<BR>"
-		dat += "<A href='?src=\ref[src];rune=communicate'>O bidai nabora se'sma!</A> - Allows you to coordinate with others of your cult.<BR>"
-		dat += "<A href='?src=\ref[src];rune=runestun'>Fuu ma'jin</A> - Allows you to stun a person by attacking them with the talisman.<BR>"
-		dat += "<A href='?src=\ref[src];rune=armor'>Sa tatha najin</A> - Allows you to summon armoured robes and an unholy blade<BR>"
-		dat += "<A href='?src=\ref[src];rune=soulstone'>Kal om neth</A> - Summons a soul stone<BR>"
-		dat += "<A href='?src=\ref[src];rune=construct'>Da A'ig Osk</A> - Summons a construct shell for use with captured souls. It is too large to carry on your person.<BR>"
+		dat += "<A href='?src=[UID()];rune=newtome'>N'ath reth sh'yro eth d'raggathnor!</A> - Allows you to summon a new arcane tome.<BR>"
+		dat += "<A href='?src=[UID()];rune=teleport'>Sas'so c'arta forbici!</A> - Allows you to move to a rune with the same last word.<BR>"
+		dat += "<A href='?src=[UID()];rune=emp'>Ta'gh fara'qha fel d'amar det!</A> - Allows you to destroy technology in a short range.<BR>"
+		dat += "<A href='?src=[UID()];rune=conceal'>Kla'atu barada nikt'o!</A> - Allows you to conceal the runes you placed on the floor.<BR>"
+		dat += "<A href='?src=[UID()];rune=communicate'>O bidai nabora se'sma!</A> - Allows you to coordinate with others of your cult.<BR>"
+		dat += "<A href='?src=[UID()];rune=runestun'>Fuu ma'jin</A> - Allows you to stun a person by attacking them with the talisman.<BR>"
+		dat += "<A href='?src=[UID()];rune=armor'>Sa tatha najin</A> - Allows you to summon armoured robes and an unholy blade<BR>"
+		dat += "<A href='?src=[UID()];rune=soulstone'>Kal om neth</A> - Summons a soul stone<BR>"
+		dat += "<A href='?src=[UID()];rune=construct'>Da A'ig Osk</A> - Summons a construct shell for use with captured souls. It is too large to carry on your person.<BR>"
 		usr << browse(dat, "window=id_com;size=350x200")
 		return
 
 
 	Topic(href, href_list)
 		if(!src)	return
-		if (usr.stat || usr.restrained() || !in_range(src, usr))	return
+		if(usr.stat || usr.restrained() || !in_range(src, usr))	return
 
-		if (href_list["rune"])
-			if (istype(usr, /mob/living/carbon/human))
+		if(href_list["rune"])
+			if(istype(usr, /mob/living/carbon/human))
 				var/mob/living/carbon/human/M = usr
 
 				switch(href_list["rune"])
@@ -98,7 +98,7 @@
 						)
 
 						var/where = M.equip_in_one_of_slots(T, slots)
-						if (!where)
+						if(!where)
 							to_chat(M, "You need a space in your backpack, pocket or hand for the new paper.")
 						else
 							to_chat(M, "The [href_list["rune"]] talisman in your [where]")
@@ -121,7 +121,7 @@
 						)
 
 						var/where = M.equip_in_one_of_slots(T, slots)
-						if (!where)
+						if(!where)
 							to_chat(M, "You need a space in your backpack, pocket or hand for the new paper.")
 						else
 							to_chat(M, "The [href_list["rune"]] talisman in your [where]")
@@ -142,7 +142,7 @@
 						)
 
 						var/where = M.equip_in_one_of_slots(T, slots)
-						if (!where)
+						if(!where)
 							to_chat(M, "You need a space in your backpack, pocket or hand for the new paper.")
 						else
 							to_chat(M, "The [href_list["rune"]] talisman in your [where]")
@@ -163,7 +163,7 @@
 						)
 
 						var/where = M.equip_in_one_of_slots(T, slots)
-						if (!where)
+						if(!where)
 							to_chat(M, "You need a space in your backpack, pocket or hand for the new paper.")
 						else
 							to_chat(M, "The [href_list["rune"]] talisman in your [where]")
@@ -184,7 +184,7 @@
 						)
 
 						var/where = M.equip_in_one_of_slots(T, slots)
-						if (!where)
+						if(!where)
 							to_chat(M, "You need a space in your backpack, pocket or hand for the new paper.")
 						else
 							to_chat(M, "The [href_list["rune"]] talisman in your [where]")
@@ -205,7 +205,7 @@
 						)
 
 						var/where = M.equip_in_one_of_slots(T, slots)
-						if (!where)
+						if(!where)
 							to_chat(M, "You need a space in your backpack, pocket or hand for the new paper.")
 						else
 							to_chat(M, "The [href_list["rune"]] talisman in your [where]")
@@ -226,7 +226,7 @@
 						)
 
 						var/where = M.equip_in_one_of_slots(T, slots)
-						if (!where)
+						if(!where)
 							to_chat(M, "You need a space in your backpack, pocket or hand for the new paper.")
 						else
 							to_chat(M, "The [href_list["rune"]] talisman in your [where]")

@@ -307,10 +307,10 @@
 	dir = angle2dir(rotation+dir2angle(dir))
 
 	//rotate the pixel offsets too.
-	if (pixel_x || pixel_y)
-		if (rotation < 0)
+	if(pixel_x || pixel_y)
+		if(rotation < 0)
 			rotation += 360
-		for (var/turntimes=rotation/90;turntimes>0;turntimes--)
+		for(var/turntimes=rotation/90;turntimes>0;turntimes--)
 			var/oldPX = pixel_x
 			var/oldPY = pixel_y
 			pixel_x = oldPY
@@ -352,7 +352,7 @@
 	var/list/L1 = return_ordered_turfs(S1.x, S1.y, S1.z, S1.dir)
 
 	var/rotation = dir2angle(S1.dir)-dir2angle(dir)
-	if ((rotation % 90) != 0)
+	if((rotation % 90) != 0)
 		rotation += (rotation % 90) //diagonal rotations not allowed, round up
 	rotation = SimplifyDegrees(rotation)
 
@@ -392,10 +392,10 @@
 
 
 		for(var/atom/movable/AM in T0)
-			if (rotation)
+			if(rotation)
 				AM.shuttleRotate(rotation)
 
-			if (istype(AM,/obj))
+			if(istype(AM,/obj))
 				var/obj/O = AM
 				if(istype(O, /obj/docking_port/stationary))
 					continue
@@ -414,7 +414,7 @@
 									door_unlock_list += A
 							else
 								Door.close()
-			else if (istype(AM,/mob))
+			else if(istype(AM,/mob))
 				var/mob/M = AM
 				if(!M.move_on_shuttle)
 					continue
@@ -432,7 +432,7 @@
 						M.Weaken(3)
 
 
-		if (rotation)
+		if(rotation)
 			T1.shuttleRotate(rotation)
 
 		//lighting stuff
@@ -633,6 +633,8 @@
 	var/obj/docking_port/mobile/M
 	if(!shuttleId)
 		// find close shuttle that is ok to mess with
+		if(!shuttle_master) //intentionally mapping shuttle consoles without actual shuttles IS POSSIBLE OH MY GOD WHO KNEW *glare*
+			return
 		for(var/obj/docking_port/mobile/D in shuttle_master.mobile)
 			if(get_dist(src, D) <= max_connect_range && D.rebuildable)
 				M = D
@@ -651,6 +653,8 @@
 /obj/machinery/computer/shuttle/attack_hand(mob/user)
 	if(..(user))
 		return
+	if(!shuttleId)
+		return
 	src.add_fingerprint(usr)
 
 	connect()
@@ -666,15 +670,15 @@
 			if(M.canDock(S))
 				continue
 			destination_found = 1
-			dat += "<A href='?src=\ref[src];move=[S.id]'>Send to [S.name]</A><br>"
+			dat += "<A href='?src=[UID()];move=[S.id]'>Send to [S.name]</A><br>"
 		if(!destination_found)
 			dat += "<B>Shuttle Locked</B><br>"
 			if(admin_controlled)
 				dat += "Authorized personnel only<br>"
-				dat += "<A href='?src=\ref[src];request=1]'>Request Authorization</A><br>"
+				dat += "<A href='?src=[UID()];request=1]'>Request Authorization</A><br>"
 		if(docking_request)
-			dat += "<A href='?src=\ref[src];request=1]'>Request docking at NSS Cyberiad</A><br>"
-	dat += "<a href='?src=\ref[user];mach_close=computer'>Close</a>"
+			dat += "<A href='?src=[UID()];request=1]'>Request docking at NSS Cyberiad</A><br>"
+	dat += "<a href='?src=[user.UID()];mach_close=computer'>Close</a>"
 
 	var/datum/browser/popup = new(user, "computer", M ? M.name : "shuttle", 300, 200)
 	popup.set_content("<center>[dat]</center>")
@@ -683,7 +687,7 @@
 
 /obj/machinery/computer/shuttle/Topic(href, href_list)
 	if(..())
-		return
+		return 1
 	usr.set_machine(src)
 	src.add_fingerprint(usr)
 	if(!allowed(usr))
@@ -726,13 +730,15 @@
 	admin_controlled = 1
 
 /obj/machinery/computer/shuttle/ferry/request/Topic(href, href_list)
-	..()
+	if(..())
+		return 1
 	if(href_list["request"])
 		if(cooldown)
 			return
 		cooldown = 1
 		to_chat(usr, "<span class='notice'>Your request has been recieved by Centcom.</span>")
-		to_chat(admins, "<b>FERRY: <font color='blue'>[key_name_admin(usr)] (<A HREF='?_src_=holder;adminmoreinfo=\ref[usr]'>?</A>) (<A HREF='?_src_=holder;adminplayerobservefollow=\ref[usr]'>FLW</A>) (<A HREF='?_src_=holder;secretsfun=moveferry'>Move Ferry</a>)</b> is requesting to move the transport ferry to Centcom.</font>")
+		log_admin("[key_name(usr)] requested to move the transport ferry to Centcom.")
+		message_admins("<b>FERRY: <font color='blue'>[key_name_admin(usr)] (<A HREF='?_src_=holder;secretsfun=moveferry'>Move Ferry</a>)</b> is requesting to move the transport ferry to Centcom.</font>")
 		spawn(600) //One minute cooldown
 			cooldown = 0
 
@@ -781,6 +787,14 @@
 	shuttleId = "sst"
 	possible_destinations = "sst_home;sst_away"
 
+/obj/machinery/computer/shuttle/sit
+	req_access = list(access_syndicate)
+	name = "Syndicate Infiltration Team Shuttle Console"
+	desc = "Used to call and send the SIT shuttle."
+	shuttleId = "sit"
+	possible_destinations = "sit_arrivals;sit_scimaint;sit_engshuttle;sit_away"
+
+
 var/global/trade_dock_timelimit = 0
 var/global/trade_dockrequest_timelimit = 0
 
@@ -801,7 +815,8 @@ var/global/trade_dockrequest_timelimit = 0
 	..(user)
 
 /obj/machinery/computer/shuttle/trade/Topic(href, href_list)
-	..()
+	if(..())
+		return 1
 	if(href_list["request"])
 		if(world.time < trade_dockrequest_timelimit || world.time < trade_dock_timelimit)
 			return
