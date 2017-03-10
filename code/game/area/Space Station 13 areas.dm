@@ -1029,6 +1029,18 @@ var/list/ghostteleportlocs = list()
 /area/hallway/secondary/entry/louge
 	name = "\improper Arrivals Lounge"
 
+/area/hallway/secondary/entry/D1
+	name = "\improper Shuttle Dock Hallway - Dock One"
+
+/area/hallway/secondary/entry/D2
+	name = "\improper Shuttle Dock Hallway - Dock Two"
+
+/area/hallway/secondary/entry/D3
+	name = "\improper Shuttle Dock Hallway - Dock Three"
+
+/area/hallway/secondary/entry/D4
+	name = "\improper Shuttle Dock Hallway - Dock Four"
+
 
 //Command
 
@@ -1131,6 +1143,38 @@ var/list/ghostteleportlocs = list()
 /area/crew_quarters/sleep
 	name = "\improper Dormitories"
 	icon_state = "Sleep"
+
+/area/crew_quarters/sleep/vistor_room_1
+	name = "\improper Visitor Room 1"
+	icon_state = "Sleep"
+
+/area/crew_quarters/sleep/vistor_room_2
+	name = "\improper Visitor Room 2"
+	icon_state = "Sleep"
+
+/area/crew_quarters/sleep/vistor_room_3
+	name = "\improper Visitor Room 3"
+	icon_state = "Sleep"
+
+/area/crew_quarters/sleep/vistor_room_4
+	name = "\improper Visitor Room 4"
+	icon_state = "Sleep"
+
+/area/crew_quarters/sleep/vistor_room_5
+	name = "\improper Visitor Room 5"
+	icon_state = "Sleep"
+
+/area/crew_quarters/visitor_lodging
+ 	name = "\improper Visitor Lodging"
+ 	icon_state = "visitor_lodging"
+
+/area/crew_quarters/visitor_dinning
+ 	name = "\improper Visitor Dinning"
+ 	icon_state = "visitor_dinning"
+
+/area/crew_quarters/visitor_laundry
+ 	name = "\improper Visitor Laundry"
+ 	icon_state = "visitor_laundry"
 
 /area/crew_quarters/sleep_male
 	name = "\improper Male Dorm"
@@ -1359,6 +1403,26 @@ var/list/ghostteleportlocs = list()
 
 /area/engine/mechanic_workshop
 	name = "\improper Mechanic Workshop"
+	icon_state = "engine"
+
+/area/engine/hallway
+	name = "\improper Engineering Hallway"
+	icon_state = "engineering_aft_hallway"
+
+/area/engine/locker
+	name = "\improper Locker Room"
+	icon_state = "engineering_locker"
+
+/area/engine/engi_wash
+	name = "\improper Engineering Washroom"
+	icon_state = "toilet"
+
+/area/engine/powermonitor
+	name = "\improper Engineering Power Monitoring"
+	icon_state = "engine_smes"
+
+/area/engine/star_podbay
+	name = "\improper Starboard Podbay"
 	icon_state = "engine"
 
 //Solars
@@ -1821,6 +1885,10 @@ area/security/podbay
 	name = "\improper Mining Storage"
 	icon_state = "green"
 
+/area/quartermaster/washroom
+	name = "\improper Cargo Washroom"
+	icon_state = "toilet"
+
 /area/quartermaster/mechbay
 	name = "\improper Mech Bay"
 	icon_state = "yellow"
@@ -2147,6 +2215,10 @@ area/security/podbay
 
 /area/construction
 	name = "\improper Construction Area"
+	icon_state = "yellow"
+
+/area/construction/arrivals
+	name = "\improper Arrivals Construction Area"
 	icon_state = "yellow"
 
 /area/construction/supplyshuttle
