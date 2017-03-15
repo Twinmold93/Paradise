@@ -1421,6 +1421,10 @@ var/list/ghostteleportlocs = list()
 	name = "\improper Engineering Power Monitoring"
 	icon_state = "engine_smes"
 
+/area/engine/port_podbay
+	name = "\improper Port Podbay"
+	icon_state = "engine"
+
 /area/engine/star_podbay
 	name = "\improper Starboard Podbay"
 	icon_state = "engine"
