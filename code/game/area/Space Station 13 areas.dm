@@ -1208,6 +1208,10 @@ var/list/ghostteleportlocs = list()
 	name = "\improper Cafeteria"
 	icon_state = "cafeteria"
 
+/area/crew_quarters/coffee_shop
+	name = "\improper Coffee Shop"
+	icon_state = "cafeteria"
+
 /area/crew_quarters/kitchen
 	name = "\improper Kitchen"
 	icon_state = "kitchen"
@@ -1660,6 +1664,10 @@ var/list/ghostteleportlocs = list()
 /area/medical/paramedic
 	name = "\improper Paramedic"
 	icon_state = "medbay"
+
+/area/medical/washroom
+	name = "\improper Medical Washroom"
+	icon_state = "toilet"
 
 //Security
 
