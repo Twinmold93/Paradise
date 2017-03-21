@@ -186,6 +186,16 @@ var/list/ghostteleportlocs = list()
 	music = "music/escape.ogg"
 	icon_state = "shuttle"
 
+/area/shuttle/large_pod_1
+	name = "\improper Large Escape Pod One"
+	music = "music/escape.ogg"
+	icon_state = "shuttle"
+
+/area/shuttle/large_pod_2
+	name = "\improper Large Escape Pod Two"
+	music = "music/escape.ogg"
+	icon_state = "shuttle"
+
 
 /area/shuttle/escape_pod1
 	name = "\improper Escape Pod One"
@@ -1639,6 +1649,10 @@ var/list/ghostteleportlocs = list()
 
 /area/medical/surgeryobs
 	name = "\improper Surgery Observation"
+	icon_state = "surgery"
+
+/area/medical/surgeryprep
+	name = "\improper Pre-Op Prep Room"
 	icon_state = "surgery"
 
 /area/medical/cryo
