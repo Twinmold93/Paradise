@@ -1535,6 +1535,10 @@ var/list/ghostteleportlocs = list()
 	name = "\improper E.X.P.E.R.I-MENTOR Chamber"
 	icon_state = "toxmisc"
 
+/area/toxins/washroom
+	name = "\improper Science Washroom"
+	icon_state = "toilet"
+
 //MedBay
 
 /area/medical/medbay
