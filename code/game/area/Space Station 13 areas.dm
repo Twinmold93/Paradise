@@ -985,6 +985,10 @@ var/list/ghostteleportlocs = list()
 	name = "\improper Fore Primary Hallway"
 	icon_state = "hallF"
 
+/area/hallway/primary/forestarboard
+	name = "\improper Fore Starboard Hallway"
+	icon_state = "hallS"
+
 /area/hallway/primary/starboard
 	name = "\improper Starboard Primary Hallway"
 	icon_state = "hallS"

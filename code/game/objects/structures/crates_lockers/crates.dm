@@ -422,6 +422,17 @@
 			newgas.temperature = target_temp
 		return newgas
 
+/obj/structure/closet/crate/freezer/rations //Fpr use in the escape shuttle
+	name = "emergency rations"
+	desc = "A crate of emergency rations."
+
+
+/obj/structure/closet/crate/freezer/rations/New()
+	..()
+	new /obj/item/weapon/reagent_containers/food/snacks/liquidfood(src)
+	new /obj/item/weapon/reagent_containers/food/snacks/liquidfood(src)
+	new /obj/item/weapon/reagent_containers/food/snacks/liquidfood(src)
+	new /obj/item/weapon/reagent_containers/food/snacks/liquidfood(src)
 
 /obj/structure/closet/crate/bin
 	desc = "A large bin."
