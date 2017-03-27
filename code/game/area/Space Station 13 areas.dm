@@ -1065,7 +1065,7 @@ var/list/ghostteleportlocs = list()
 
 /area/bridge/meeting_room
 	name = "\improper Heads of Staff Meeting Room"
-	icon_state = "bridge"
+	icon_state = "meeting"
 	music = null
 
 /area/crew_quarters/captain
@@ -2575,11 +2575,6 @@ area/security/podbay
 
 /area/awaymission/spacebattle/secret
 	name = "\improper Hidden Chamber"
-
-/area/awaymission/listeningpost
-	name = "\improper Listening Post"
-	icon_state = "away"
-	requires_power = 0
 
 /area/awaymission/beach
 	name = "Beach"
