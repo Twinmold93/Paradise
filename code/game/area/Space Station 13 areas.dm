@@ -1891,6 +1891,10 @@ area/security/podbay
 	name = "\improper Vacant Office"
 	icon_state = "security"
 
+/area/security/sec_wash
+	name = "\improper Security Washroom"
+	icon_state = "toilet"
+
 /area/quartermaster
 	name = "\improper Quartermasters"
 	icon_state = "quart"
