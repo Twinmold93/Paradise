@@ -978,6 +978,10 @@ var/list/ghostteleportlocs = list()
 	name = "Alternate Construction Area"
 	icon_state = "yellow"
 
+/area/maintenance/security
+	name = "Security Maintenance"
+	icon_state = "fsmaint"
+
 
 //Hallway
 
