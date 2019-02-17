@@ -9,7 +9,7 @@
 	var/list/Lines = list()
 
 	if(check_rights(R_ADMIN,0))
-		for(var/client/C in clients)
+		for(var/client/C in GLOB.clients)
 			if(C.holder && C.holder.big_brother && !check_rights(R_PERMISSIONS, 0)) // need PERMISSIONS to see BB
 				continue
 
@@ -27,7 +27,7 @@
 							entry += " - <font color='gray'>Observing</font>"
 						else
 							entry += " - <font color='black'><b>DEAD</b></font>"
-					else if (istype(C.mob, /mob/new_player))
+					else if(istype(C.mob, /mob/new_player))
 						entry += " - <font color='green'>New Player</font>"
 					else
 						entry += " - <font color='black'><b>DEAD</b></font>"
@@ -47,10 +47,10 @@
 
 			if(is_special_character(C.mob))
 				entry += " - <b><font color='red'>Antagonist</font></b>"
-			entry += " (<A HREF='?_src_=holder;adminmoreinfo=\ref[C.mob]'>?</A>)"
+			entry += " ([ADMIN_QUE(C.mob,"?")])"
 			Lines += entry
 	else
-		for(var/client/C in clients)
+		for(var/client/C in GLOB.clients)
 			if(C.holder && C.holder.big_brother) // BB doesn't show up at all
 				continue
 
@@ -74,12 +74,12 @@
 	var/num_mods_online = 0
 	var/num_admins_online = 0
 	if(holder)
-		for(var/client/C in admins)
+		for(var/client/C in GLOB.admins)
 			if(check_rights(R_ADMIN, 0, C.mob))
 
-				if(C.holder.fakekey && !check_rights(R_ADMIN, 0))		//Mentors/Mods can't see stealthmins
+				if(C.holder.fakekey && !check_rights(R_ADMIN, 0))		//Mentors can't see stealthmins
 					continue
-				
+
 				if(C.holder.big_brother && !check_rights(R_PERMISSIONS, 0))		// normal admins can't see BB
 					continue
 
@@ -116,15 +116,15 @@
 				modmsg += "\n"
 				num_mods_online++
 	else
-		for(var/client/C in admins)
+		for(var/client/C in GLOB.admins)
 
 			if(check_rights(R_ADMIN, 0, C.mob))
 				if(!C.holder.fakekey)
 					msg += "\t[C] is a [C.holder.rank]\n"
 					num_admins_online++
-			else if (check_rights(R_MOD|R_MENTOR, 0, C.mob) && !check_rights(R_ADMIN, 0, C.mob))
+			else if(check_rights(R_MOD|R_MENTOR, 0, C.mob) && !check_rights(R_ADMIN, 0, C.mob))
 				modmsg += "\t[C] is a [C.holder.rank]\n"
 				num_mods_online++
 
-	msg = "<b>Current Admins ([num_admins_online]):</b>\n" + msg + "\n<b>Current Mods/Mentors ([num_mods_online]):</b>\n" + modmsg
+	msg = "<b>Current Admins ([num_admins_online]):</b>\n" + msg + "\n<b>Current Mentors ([num_mods_online]):</b>\n" + modmsg
 	to_chat(src, msg)

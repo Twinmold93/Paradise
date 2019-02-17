@@ -1,4 +1,4 @@
-/obj/item/weapon/extinguisher
+/obj/item/extinguisher
 	name = "fire extinguisher"
 	desc = "A traditional red fire extinguisher."
 	icon = 'icons/obj/items.dmi'
@@ -7,10 +7,11 @@
 	hitsound = 'sound/weapons/smash.ogg'
 	flags = CONDUCT
 	throwforce = 10
-	w_class = 3.0
+	w_class = WEIGHT_CLASS_NORMAL
 	throw_speed = 2
 	throw_range = 7
 	force = 10
+	container_type = AMOUNT_VISIBLE
 	materials = list(MAT_METAL=90)
 	attack_verb = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")
 	var/max_water = 50
@@ -21,7 +22,7 @@
 	var/precision = 0 //By default, turfs picked from a spray are random, set to 1 to make it always have at least one water effect per row
 	var/cooling_power = 2 //Sets the cooling_temperature of the water reagent datum inside of the extinguisher when it is refilled
 
-/obj/item/weapon/extinguisher/mini
+/obj/item/extinguisher/mini
 	name = "pocket fire extinguisher"
 	desc = "A light and compact fibreglass-framed model fire extinguisher."
 	icon_state = "miniFE0"
@@ -29,32 +30,29 @@
 	hitsound = null	//it is much lighter, after all.
 	flags = null //doesn't CONDUCT
 	throwforce = 2
-	w_class = 2.0
+	w_class = WEIGHT_CLASS_SMALL
 	force = 3.0
 	materials = list()
 	max_water = 30
 	sprite_name = "miniFE"
 
-/obj/item/weapon/extinguisher/examine(mob/user)
-	if(..(user, 0))
-		to_chat(usr, "\icon[src] [src.name] contains:")
-		if(reagents && reagents.reagent_list.len)
-			for(var/datum/reagent/R in reagents.reagent_list)
-				to_chat(user, "\blue [R.volume] units of [R.name]")
+/obj/item/extinguisher/examine(mob/user)
+	. = ..()
+	to_chat(user, "<span class='notice'>The safety is [safety ? "on" : "off"].</span>")
 
 
-/obj/item/weapon/extinguisher/New()
+/obj/item/extinguisher/New()
 	create_reagents(max_water)
 	reagents.add_reagent("water", max_water)
 
-/obj/item/weapon/extinguisher/attack_self(mob/user as mob)
+/obj/item/extinguisher/attack_self(mob/user as mob)
 	safety = !safety
 	src.icon_state = "[sprite_name][!safety]"
 	src.desc = "The safety is [safety ? "on" : "off"]."
 	to_chat(user, "The safety is [safety ? "on" : "off"].")
 	return
 
-/obj/item/weapon/extinguisher/proc/AttemptRefill(atom/target, mob/user)
+/obj/item/extinguisher/proc/AttemptRefill(atom/target, mob/user)
 	if(istype(target, /obj/structure/reagent_dispensers/watertank) && target.Adjacent(user))
 		var/safety_save = safety
 		safety = 1
@@ -76,19 +74,18 @@
 	else
 		return 0
 
-/obj/item/weapon/extinguisher/afterattack(atom/target, mob/user , flag)
+/obj/item/extinguisher/afterattack(atom/target, mob/user , flag)
 	//TODO; Add support for reagents in water.
 	if(target.loc == user)//No more spraying yourself when putting your extinguisher away
 		return
-	var/Refill = AttemptRefill(target, user)
-	if(Refill)
+	if(AttemptRefill(target, user))
 		return
-	if (!safety)
-		if (src.reagents.total_volume < 1)
+	if(!safety)
+		if(src.reagents.total_volume < 1)
 			to_chat(usr, "<span class='danger'>\The [src] is empty.</span>")
 			return
 
-		if (world.time < src.last_use + 20)
+		if(world.time < src.last_use + 20)
 			return
 
 		src.last_use = world.time
@@ -99,8 +96,8 @@
 
 		if(usr.buckled && isobj(usr.buckled) && !usr.buckled.anchored )
 			spawn(0)
-				var/obj/structure/stool/bed/chair/C = null
-				if(istype(usr.buckled, /obj/structure/stool/bed/chair))
+				var/obj/structure/chair/C = null
+				if(istype(usr.buckled, /obj/structure/chair))
 					C = usr.buckled
 				var/obj/B = usr.buckled
 				var/movementdirection = turn(direction,180)
@@ -140,7 +137,7 @@
 
 		for(var/a=0, a<5, a++)
 			spawn(0)
-				var/obj/effect/effect/water/W = new /obj/effect/effect/water( get_turf(src) )
+				var/obj/effect/particle_effect/water/W = new /obj/effect/particle_effect/water( get_turf(src) )
 				var/turf/my_target = pick(the_targets)
 				if(precision)
 					the_targets -= my_target

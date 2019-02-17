@@ -3,6 +3,7 @@
 	desc = "A sturdy metal ladder."
 	icon = 'icons/obj/structures.dmi'
 	icon_state = "ladder11"
+	anchored = 1
 	var/id = null
 	var/height = 0							//the 'height' of the ladder. higher numbers are considered physically higher
 	var/obj/structure/ladder/down = null	//the ladder below this one
@@ -71,11 +72,11 @@
 
 	add_fingerprint(user)
 
-/obj/structure/ladder/attackby(obj/item/weapon/W, mob/user as mob, params)
+/obj/structure/ladder/attackby(obj/item/W, mob/user as mob, params)
 	return attack_hand(user)
 
 /obj/structure/ladder/dive_point/buoy
-	name = "diving point bouy"
+	name = "diving point buoy"
 	desc = "A buoy marking the location of an underwater dive area."
 	icon = 'icons/misc/beach.dmi'
 	icon_state = "buoy"

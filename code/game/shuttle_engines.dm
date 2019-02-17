@@ -1,6 +1,7 @@
 /obj/structure/shuttle
 	name = "shuttle"
 	icon = 'icons/turf/shuttle.dmi'
+	armor = list(melee = 100, bullet = 10, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0) //default + ignores melee
 
 /obj/structure/shuttle/shuttleRotate(rotation)
 	..()
@@ -16,8 +17,8 @@
 	opacity = 0
 	anchored = 1
 
-	CanPass(atom/movable/mover, turf/target, height, air_group)
-		if(!height || air_group) return 0
+	CanPass(atom/movable/mover, turf/target, height)
+		if(!height) return 0
 		else return ..()
 
 	CanAtmosPass(turf/T)

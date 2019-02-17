@@ -11,7 +11,7 @@
 	icon_living = "morph"
 	icon_dead = "morph_dead"
 	speed = 2
-	a_intent = "harm"
+	a_intent = INTENT_HARM
 	stop_automated_movement = 1
 	status_flags = CANPUSH
 	pass_flags = PASSTABLE
@@ -23,6 +23,7 @@
 	maxHealth = 150
 	health = 150
 	environment_smash = 1
+	obj_damage = 50
 	melee_damage_lower = 20
 	melee_damage_upper = 20
 	see_in_dark = 8
@@ -31,7 +32,7 @@
 	wander = 0
 	attacktext = "glomps"
 	attack_sound = 'sound/effects/blobattack.ogg'
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat/slab = 2)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat/slab = 2)
 
 	var/morphed = 0
 	var/atom/movable/form = null
@@ -108,8 +109,6 @@
 	morphed = 0
 	form = null
 
-	//anim(loc,src,'icons/mob/mob.dmi',,"morph",,src.dir)
-
 	visible_message("<span class='warning'>[src] suddenly collapses in on itself, dissolving into a pile of green flesh!</span>", \
 					"<span class='notice'>You reform to your normal body.</span>")
 	name = initial(name)
@@ -124,20 +123,20 @@
 
 	morph_time = world.time + MORPH_COOLDOWN
 
-/mob/living/simple_animal/hostile/morph/handle_state_icons()
-	return
-
 /mob/living/simple_animal/hostile/morph/death(gibbed)
-	if(morphed)
-		visible_message("<span class='warning'>[src] twists and dissolves into a pile of green flesh!</span>", \
-						"<span class='userdanger'>Your skin ruptures! Your flesh breaks apart! No disguise can ward off de--</span>")
-		restore()
-	if(gibbed)
+	. = ..()
+	if(stat == DEAD && gibbed)
 		for(var/atom/movable/AM in src)
 			AM.forceMove(loc)
 			if(prob(90))
 				step(AM, pick(alldirs))
-	..(gibbed)
+	// Only execute the below if we successfully died
+	if(!.)
+		return FALSE
+	if(morphed)
+		visible_message("<span class='warning'>[src] twists and dissolves into a pile of green flesh!</span>", \
+						"<span class='userdanger'>Your skin ruptures! Your flesh breaks apart! No disguise can ward off de--</span>")
+		restore()
 
 /mob/living/simple_animal/hostile/morph/Aggro() // automated only
 	..()
@@ -167,10 +166,7 @@
 	else if(istype(target,/obj/item)) // Eat items just to be annoying
 		var/obj/item/I = target
 		if(!I.anchored)
-			if(do_after(src,20, target = I))
+			if(do_after(src, 20, target = I))
 				eat(I)
 			return
 	target.attack_animal(src)
-
-/mob/living/simple_animal/hostile/morph/update_action_buttons() //So all eaten objects are not counted every life
-	return

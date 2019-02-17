@@ -6,8 +6,9 @@
 	flags = CONDUCT
 	slot_flags = SLOT_BELT
 	throwforce = 1
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	var/fire_sound = null						//What sound should play when this ammo is fired
+	var/drop_sound = "casingdrop"               //What sound should play when this ammo hits the ground
 	var/caliber = null							//Which kind of guns it can be loaded into
 	var/projectile_type = null					//The bullet type to create when New() is called
 	var/obj/item/projectile/BB = null 			//The loaded bullet
@@ -29,11 +30,11 @@
 /obj/item/ammo_casing/update_icon()
 	..()
 	icon_state = "[initial(icon_state)][BB ? "-live" : ""]"
-	desc = "[initial(desc)][BB ? "" : " This one is spent"]"
+	desc = "[initial(desc)][BB ? "" : " This one is spent."]"
 
-/obj/item/ammo_casing/proc/newshot() //For energy weapons, shotgun shells and wands (!).
-	if (!BB)
-		BB = new projectile_type(src)
+/obj/item/ammo_casing/proc/newshot(params) //For energy weapons, shotgun shells and wands (!).
+	if(!BB)
+		BB = new projectile_type(src, params)
 	return
 
 /obj/item/ammo_casing/attackby(obj/item/I as obj, mob/user as mob, params)
@@ -42,20 +43,21 @@
 		if(isturf(loc))
 			var/boolets = 0
 			for(var/obj/item/ammo_casing/bullet in loc)
-				if (box.stored_ammo.len >= box.max_ammo)
+				if(box.stored_ammo.len >= box.max_ammo)
 					break
-				if (bullet.BB)
-					if (box.give_round(bullet, 0))
+				if(bullet.BB)
+					if(box.give_round(bullet, 0))
 						boolets++
 				else
 					continue
-			if (boolets > 0)
+			if(boolets > 0)
 				box.update_icon()
 				to_chat(user, "<span class='notice'>You collect [boolets] shell\s. [box] now contains [box.stored_ammo.len] shell\s.</span>")
+				playsound(src, 'sound/weapons/gun_interactions/bulletinsert.ogg', 50, 1)
 			else
 				to_chat(user, "<span class='warning'>You fail to collect anything!</span>")
 	else
-		if(istype(I, /obj/item/weapon/screwdriver))
+		if(istype(I, /obj/item/screwdriver))
 			if(BB)
 				if(initial(BB.name) == "bullet")
 					var/tmp_label = ""
@@ -85,9 +87,9 @@
 	flags = CONDUCT
 	slot_flags = SLOT_BELT
 	item_state = "syringe_kit"
-	materials = list(MAT_METAL=30000)
+	materials = list(MAT_METAL = 30000)
 	throwforce = 2
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	throw_speed = 4
 	throw_range = 10
 	var/list/stored_ammo = list()
@@ -96,26 +98,29 @@
 	var/multiple_sprites = 0
 	var/caliber
 	var/multiload = 1
+	var/list/initial_mats //For calculating refund values.
 
 /obj/item/ammo_box/New()
 	for(var/i in 1 to max_ammo)
 		stored_ammo += new ammo_type(src)
 	update_icon()
+	initial_mats = materials.Copy()
+	update_mat_value()
 
 /obj/item/ammo_box/Destroy()
-	for(var/atom/A in stored_ammo)
-		qdel(A)
+	QDEL_LIST(stored_ammo)
 	stored_ammo = null
 	return ..()
 
 /obj/item/ammo_box/proc/get_round(keep = 0)
-	if (!stored_ammo.len)
+	if(!stored_ammo.len)
 		return null
 	else
 		var/b = stored_ammo[stored_ammo.len]
 		stored_ammo -= b
-		if (keep)
+		if(keep)
 			stored_ammo.Insert(1,b)
+		update_mat_value()
 		return b
 
 /obj/item/ammo_box/proc/give_round(obj/item/ammo_casing/R, replace_spent = 0)
@@ -123,9 +128,11 @@
 	if(!R || (caliber && R.caliber != caliber) || (!caliber && R.type != ammo_type))
 		return 0
 
-	if (stored_ammo.len < max_ammo)
+	if(stored_ammo.len < max_ammo)
 		stored_ammo += R
 		R.loc = src
+		playsound(src, 'sound/weapons/gun_interactions/bulletinsert.ogg', 50, 1)
+		update_mat_value()
 		return 1
 	//for accessibles magazines (e.g internal ones) when full, start replacing spent ammo
 	else if(replace_spent)
@@ -136,6 +143,8 @@
 
 				stored_ammo += R
 				R.loc = src
+				playsound(src, 'sound/weapons/gun_interactions/shotguninsert.ogg', 50, 1)
+				update_mat_value()
 				return 1
 
 	return 0
@@ -165,6 +174,7 @@
 	if(num_loaded)
 		if(!silent)
 			to_chat(user, "<span class='notice'>You load [num_loaded] shell\s into \the [src]!</span>")
+		playsound(src, 'sound/weapons/gun_interactions/shotguninsert.ogg', 50, 1)
 		A.update_icon()
 		update_icon()
 
@@ -174,6 +184,7 @@
 	var/obj/item/ammo_casing/A = get_round()
 	if(A)
 		user.put_in_hands(A)
+		playsound(src, 'sound/weapons/gun_interactions/remove_bullet.ogg', 50, 1)
 		to_chat(user, "<span class='notice'>You remove a round from \the [src]!</span>")
 		update_icon()
 
@@ -185,6 +196,25 @@
 			icon_state = "[initial(icon_state)]-[stored_ammo.len ? "[max_ammo]" : "0"]"
 	desc = "[initial(desc)] There are [stored_ammo.len] shell\s left!"
 
+/obj/item/ammo_box/proc/update_mat_value()
+	var/num_ammo = 0
+	for(var/B in stored_ammo)
+		var/obj/item/ammo_casing/AC = B
+		if(!AC.BB) //Skip any casing which are empty
+			continue
+		num_ammo++
+	for(var/M in initial_mats) //In case we have multiple types of materials
+		var/materials_per = initial_mats[M] / max_ammo
+
+		var/value = max(materials_per * num_ammo, 500) //Enforce a minimum of 500 units even if empty.
+		materials[M] = value
+
 //Behavior for magazines
 /obj/item/ammo_box/magazine/proc/ammo_count()
 	return stored_ammo.len
+
+/obj/item/ammo_box/magazine/proc/empty_magazine()
+	var/turf_mag = get_turf(src)
+	for(var/obj/item/ammo in stored_ammo)
+		ammo.forceMove(turf_mag)
+		stored_ammo -= ammo

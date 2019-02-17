@@ -15,6 +15,7 @@
 	var/req_stat = CONSCIOUS // CONSCIOUS, UNCONSCIOUS or DEAD
 	var/genetic_damage = 0 // genetic damage caused by using the sting. Nothing to do with cloneloss.
 	var/max_genetic_damage = 100 // hard counter for spamming abilities. Not used/balanced much yet.
+	var/always_keep = 0 // important for abilities like regenerate that screw you if you lose them.
 
 /obj/effect/proc_holder/changeling/proc/on_purchase(var/mob/user)
 	return
@@ -73,12 +74,6 @@
 		return 0
 	return 1
 
-/obj/effect/proc_holder/changeling/proc/transfer_changeling_powers(var/mob/living/carbon/user, var/mob/living/carbon/target)
-	if(istype(target, /mob/living/carbon)) // so we don't runtime, I don't even know why it's necessary as it needs a grab
-		var/datum/changeling/c = user.mind.changeling
-		var/datum/changeling/t = target.mind.changeling
-		c.purchasedpowers = t.purchasedpowers
-
 //used in /mob/Stat()
 /obj/effect/proc_holder/changeling/proc/can_be_used_by(var/mob/user)
 	if(!ishuman(user))
@@ -86,3 +81,18 @@
 	if(req_human && !ishuman(user))
 		return 0
 	return 1
+
+// Transform the target to the chosen dna. Used in transform.dm and tiny_prick.dm (handy for changes since it's the same thing done twice)
+/obj/effect/proc_holder/changeling/proc/transform_dna(var/mob/living/carbon/human/H, var/datum/dna/D)
+	if(!D)
+		return
+	
+	H.set_species(D.species.type, retain_damage = TRUE)
+	H.dna = D.Clone()
+	H.real_name = D.real_name
+	domutcheck(H, null, MUTCHK_FORCED) //Ensures species that get powers by the species proc handle_dna keep them
+	H.flavor_text = ""
+	H.dna.UpdateSE()
+	H.dna.UpdateUI()
+	H.sync_organ_dna(1)
+	H.UpdateAppearance()

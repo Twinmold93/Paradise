@@ -3,7 +3,6 @@
 // M: Mob to mess with
 // connected: Machine we're in, type unchecked so I doubt it's used beyond monkeying
 // flags: See below, bitfield.
-#define MUTCHK_FORCED        1
 /proc/domutcheck(var/mob/living/M, var/connected=null, var/flags=0)
 	for(var/datum/dna/gene/gene in dna_genes)
 		if(!M || !M.dna)
@@ -17,7 +16,7 @@
 /proc/genemutcheck(var/mob/living/M, var/block, var/connected=null, var/flags=0)
 	if(ishuman(M)) // Would've done this via species instead of type, but the basic mob doesn't have a species, go figure.
 		var/mob/living/carbon/human/H = M
-		if(H.species.flags & NO_DNA)
+		if(NO_DNA in H.dna.species.species_traits)
 			return
 	if(!M)
 		return
@@ -32,32 +31,30 @@
 	if(!gene || !istype(gene))
 		return 0
 
+	// Current state
+	var/gene_active = M.dna.GetSEState(gene.block)
+
 	// Sanity checks, don't skip.
-	if(!gene.can_activate(M,flags))
+	if(!gene.can_activate(M,flags) && gene_active)
 		//testing("[M] - Failed to activate [gene.name] (can_activate fail).")
 		return 0
-
-	// Current state
-	var/gene_active = (gene.flags & GENE_ALWAYS_ACTIVATE)
-	if(!gene_active)
-		gene_active = M.dna.GetSEState(gene.block)
 
 	var/defaultgenes // Do not mutate inherent species abilities
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		defaultgenes = H.species.default_genes
+		defaultgenes = H.dna.species.default_genes
 
 		if((gene in defaultgenes) && gene_active)
 			return
 
 	// Prior state
 	var/gene_prior_status = (gene.type in M.active_genes)
-	var/changed = gene_active != gene_prior_status || (gene.flags & GENE_ALWAYS_ACTIVATE)
+	var/changed = gene_active != gene_prior_status
 
 	// If gene state has changed:
 	if(changed)
 		// Gene active (or ALWAYS ACTIVATE)
-		if(gene_active || (gene.flags & GENE_ALWAYS_ACTIVATE))
+		if(gene_active)
 			//testing("[gene.name] activated!")
 			gene.activate(M,connected,flags)
 			if(M)

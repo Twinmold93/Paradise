@@ -4,34 +4,38 @@
 	icon = 'icons/obj/meter.dmi'
 	icon_state = "meterX"
 	var/obj/machinery/atmospherics/pipe/target = null
-	anchored = 1
+	anchored = TRUE
+	armor = list(melee = 0, bullet = 0, laser = 0, energy = 100, bomb = 0, bio = 100, rad = 100)
 	power_channel = ENVIRON
-	var/frequency = 0
+	var/frequency = ATMOS_DISTRO_FREQ
 	var/id
 	var/id_tag
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 2
 	active_power_usage = 5
 	req_one_access_txt = "24;10"
-	Mtoollink = 1
+	Mtoollink = TRUE
 	settagwhitelist = list("id_tag")
 
 /obj/machinery/meter/New()
 	..()
+	SSair.atmos_machinery += src
 	target = locate(/obj/machinery/atmospherics/pipe) in loc
 	if(id && !id_tag)//i'm not dealing with further merge conflicts, fuck it
 		id_tag = id
 	return 1
 
 /obj/machinery/meter/Destroy()
+	SSair.atmos_machinery -= src
 	target = null
 	return ..()
 
-/obj/machinery/meter/initialize()
-	if (!target)
+/obj/machinery/meter/Initialize()
+	..()
+	if(!target)
 		target = locate(/obj/machinery/atmospherics/pipe) in loc
 
-/obj/machinery/meter/process()
+/obj/machinery/meter/process_atmos()
 	if(!target)
 		icon_state = "meterX"
 		return 0
@@ -78,7 +82,7 @@
 
 /obj/machinery/meter/proc/status()
 	var/t = ""
-	if (target)
+	if(target)
 		var/datum/gas_mixture/environment = target.return_air()
 		if(environment)
 			t += "The pressure gauge reads [round(environment.return_pressure(), 0.01)] kPa; [round(environment.temperature,0.01)]&deg;K ([round(environment.temperature-T0C,0.01)]&deg;C)"
@@ -92,10 +96,10 @@
 	var/t = "A gas flow meter. "
 
 	if(get_dist(user, src) > 3 && !(istype(user, /mob/living/silicon/ai) || istype(user, /mob/dead)))
-		t += "\blue <B>You are too far away to read it.</B>"
+		t += "<span class='boldnotice'>You are too far away to read it.</span>"
 
 	else if(stat & (NOPOWER|BROKEN))
-		t += "\red <B>The display is off.</B>"
+		t += "<span class='danger'>The display is off.</span>"
 
 	else if(target)
 		var/datum/gas_mixture/environment = target.return_air()
@@ -115,19 +119,19 @@
 
 	return ..()
 
-/obj/machinery/meter/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob, params)
-	if(istype(W, /obj/item/device/multitool))
+/obj/machinery/meter/attackby(var/obj/item/W as obj, var/mob/user as mob, params)
+	if(istype(W, /obj/item/multitool))
 		update_multitool_menu(user)
 		return 1
 
-	if (!istype(W, /obj/item/weapon/wrench))
+	if(!istype(W, /obj/item/wrench))
 		return ..()
-	playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
-	to_chat(user, "\blue You begin to unfasten \the [src]...")
-	if (do_after(user, 40, target = src))
+	playsound(loc, W.usesound, 50, 1)
+	to_chat(user, "<span class='notice'>You begin to unfasten \the [src]...</span>")
+	if(do_after(user, 40 * W.toolspeed, target = src))
 		user.visible_message( \
 			"[user] unfastens \the [src].", \
-			"\blue You have unfastened \the [src].", \
+			"<span class='notice'>You have unfastened \the [src].</span>", \
 			"You hear ratchet.")
 		new /obj/item/pipe_meter(src.loc)
 		qdel(src)
@@ -140,17 +144,18 @@
 	return 1
 
 
-/obj/machinery/meter/turf/initialize()
-	if (!target)
+/obj/machinery/meter/turf/Initialize()
+	if(!target)
 		target = loc
+	..()
 
-/obj/machinery/meter/turf/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob, params)
+/obj/machinery/meter/turf/attackby(var/obj/item/W as obj, var/mob/user as mob, params)
 	return
 
-/obj/machinery/meter/multitool_menu(var/mob/user, var/obj/item/device/multitool/P)
+/obj/machinery/meter/multitool_menu(var/mob/user, var/obj/item/multitool/P)
 	return {"
 	<b>Main</b>
 	<ul>
-		<li><b>Frequency:</b> <a href="?src=\ref[src];set_freq=-1">[format_frequency(frequency)] GHz</a> (<a href="?src=\ref[src];set_freq=[initial(frequency)]">Reset</a>)</li>
+		<li><b>Frequency:</b> <a href="?src=[UID()];set_freq=-1">[format_frequency(frequency)] GHz</a> (<a href="?src=[UID()];set_freq=[initial(frequency)]">Reset</a>)</li>
 		<li>[format_tag("ID Tag","id_tag")]</li>
 	</ul>"}

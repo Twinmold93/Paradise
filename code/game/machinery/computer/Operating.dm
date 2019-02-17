@@ -1,4 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 #define OP_COMPUTER_COOLDOWN 60
 
 /obj/machinery/computer/operating
@@ -7,7 +6,7 @@
 	anchored = 1.0
 	icon_keyboard = "med_key"
 	icon_screen = "crew"
-	circuit = /obj/item/weapon/circuitboard/operating
+	circuit = /obj/item/circuitboard/operating
 	var/obj/machinery/optable/table = null
 	var/mob/living/carbon/human/victim = null
 	light_color = LIGHT_COLOR_PURE_BLUE
@@ -25,9 +24,17 @@
 	..()
 	for(dir in list(NORTH,EAST,SOUTH,WEST))
 		table = locate(/obj/machinery/optable, get_step(src, dir))
-		if (table)
+		if(table)
 			table.computer = src
 			break
+
+/obj/machinery/computer/operating/Destroy()
+	if(table)
+		table.computer = null
+		table = null
+	if(victim)
+		victim = null
+	return ..()
 
 /obj/machinery/computer/operating/attack_ai(mob/user)
 	add_fingerprint(user)
@@ -49,15 +56,15 @@
 
 
 ///obj/machinery/computer/operating/interact(mob/user)
-//	if ( ((get_dist(src, user) > 1) && !isobserver(user)) || (stat & (BROKEN|NOPOWER)) )
-//		if (!istype(user, /mob/living/silicon))
+//	if( ((get_dist(src, user) > 1) && !isobserver(user)) || (stat & (BROKEN|NOPOWER)) )
+//		if(!istype(user, /mob/living/silicon))
 //			user.unset_machine()
 //			user << browse(null, "window=op")
 //			return
 //
 //	user.set_machine(src)
 //	var/dat = "<HEAD><TITLE>Operating Computer</TITLE><META HTTP-EQUIV='Refresh' CONTENT='10'></HEAD><BODY>\n"
-//	dat += "<A HREF='?src=\ref[user];mach_close=op'>Close</A><br><br>" //| <A HREF='?src=\ref[user];update=1'>Update</A>"
+//	dat += "<A HREF='?src=[user.UID()];mach_close=op'>Close</A><br><br>" //| <A HREF='?src=[user.UID()];update=1'>Update</A>"
 //	if(src.table && (src.table.check_victim()))
 //		src.victim = src.table.victim
 //		dat += {"
@@ -86,12 +93,21 @@
 //	onclose(user, "op")
 
 /obj/machinery/computer/operating/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)//ui is mostly copy pasta from the sleeper ui
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
+	if(!ui)
+		ui = new(user, src, ui_key, "op_computer.tmpl", "Patient Monitor", 650, 455)
+		ui.open()
+		ui.set_auto_update(1)
+
+/obj/machinery/computer/operating/ui_data(mob/user, ui_key = "main", datum/topic_state/state = default_state)
 	var/data[0]
-	var/mob/living/carbon/human/occupant = src.table.victim
+	var/mob/living/carbon/human/occupant
+	if(table)
+		occupant = table.victim
 	data["hasOccupant"] = occupant ? 1 : 0
 	var/occupantData[0]
 
-	if (occupant)
+	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
 		occupantData["health"] = occupant.health
@@ -107,36 +123,36 @@
 		occupantData["maxTemp"] = 1000 // If you get a burning vox armalis into the sleeper, congratulations
 		// Because we can put simple_animals in here, we need to do something tricky to get things working nice
 		occupantData["temperatureSuitability"] = 0 // 0 is the baseline
-		if (ishuman(occupant) && occupant.species)
-			var/datum/species/sp = occupant.species
-			if (occupant.bodytemperature < sp.cold_level_3)
+		if(ishuman(occupant) && occupant.dna.species)
+			var/datum/species/sp = occupant.dna.species
+			if(occupant.bodytemperature < sp.cold_level_3)
 				occupantData["temperatureSuitability"] = -3
-			else if (occupant.bodytemperature < sp.cold_level_2)
+			else if(occupant.bodytemperature < sp.cold_level_2)
 				occupantData["temperatureSuitability"] = -2
-			else if (occupant.bodytemperature < sp.cold_level_1)
+			else if(occupant.bodytemperature < sp.cold_level_1)
 				occupantData["temperatureSuitability"] = -1
-			else if (occupant.bodytemperature > sp.heat_level_3)
+			else if(occupant.bodytemperature > sp.heat_level_3)
 				occupantData["temperatureSuitability"] = 3
-			else if (occupant.bodytemperature > sp.heat_level_2)
+			else if(occupant.bodytemperature > sp.heat_level_2)
 				occupantData["temperatureSuitability"] = 2
-			else if (occupant.bodytemperature > sp.heat_level_1)
+			else if(occupant.bodytemperature > sp.heat_level_1)
 				occupantData["temperatureSuitability"] = 1
-		else if (istype(occupant, /mob/living/simple_animal))
+		else if(istype(occupant, /mob/living/simple_animal))
 			var/mob/living/simple_animal/silly = occupant
-			if (silly.bodytemperature < silly.minbodytemp)
+			if(silly.bodytemperature < silly.minbodytemp)
 				occupantData["temperatureSuitability"] = -3
-			else if (silly.bodytemperature > silly.maxbodytemp)
+			else if(silly.bodytemperature > silly.maxbodytemp)
 				occupantData["temperatureSuitability"] = 3
 		// Blast you, imperial measurement system
 		occupantData["btCelsius"] = occupant.bodytemperature - T0C
 		occupantData["btFaren"] = ((occupant.bodytemperature - T0C) * (9.0/5.0))+ 32
 
-		if (ishuman(occupant) && occupant.vessel && !(occupant.species && occupant.species.flags & NO_BLOOD))
+		if(ishuman(occupant) && !(NO_BLOOD in occupant.dna.species.species_traits))
 			occupantData["pulse"] = occupant.get_pulse(GETPULSE_TOOL)
 			occupantData["hasBlood"] = 1
-			occupantData["bloodLevel"] = round(occupant.vessel.get_reagent_amount("blood"))
+			occupantData["bloodLevel"] = round(occupant.blood_volume)
 			occupantData["bloodMax"] = occupant.max_blood
-			occupantData["bloodPercent"] = round(100*(occupant.vessel.get_reagent_amount("blood")/occupant.max_blood), 0.01) //copy pasta ends here
+			occupantData["bloodPercent"] = round(100*(occupant.blood_volume/occupant.max_blood), 0.01) //copy pasta ends here
 
 			occupantData["bloodType"]=occupant.b_type
 		if(occupant.surgeries.len)
@@ -155,21 +171,13 @@
 	data["healthAlarm"]=healthAlarm
 	data["oxy"]=oxy
 
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
-	if (!ui)
-		ui = new(user, src, ui_key, "op_computer.tmpl", "Patient Monitor", 650, 455)
-		ui.set_initial_data(data)
-		ui.open()
-		ui.set_auto_update(1)
-
-
-
+	return data
 
 
 /obj/machinery/computer/operating/Topic(href, href_list)
 	if(..())
 		return 1
-	if ((usr.contents.Find(src) || (in_range(src, usr) && istype(src.loc, /turf))) || (istype(usr, /mob/living/silicon)))
+	if((usr.contents.Find(src) || (in_range(src, usr) && istype(src.loc, /turf))) || (istype(usr, /mob/living/silicon)))
 		usr.set_machine(src)
 
 	if(href_list["verboseOn"])
@@ -213,6 +221,6 @@
 				if(crit && victim.health <= -50 )
 					playsound(src.loc, 'sound/machines/defib_success.ogg', 50, 0)
 				if(oxy && victim.getOxyLoss()>oxyAlarm)
-					playsound(src.loc, 'sound/machines/defib_saftyOff.ogg', 50, 0)
+					playsound(src.loc, 'sound/machines/defib_saftyoff.ogg', 50, 0)
 				if(healthAnnounce && victim.health <= healthAlarm)
 					atom_say("[round(victim.health)]")

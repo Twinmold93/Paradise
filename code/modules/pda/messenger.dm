@@ -40,10 +40,10 @@
 		var/convopdas[0]
 		var/pdas[0]
 		for(var/A in PDAs)
-			var/obj/item/device/pda/P = A
+			var/obj/item/pda/P = A
 			var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 
-			if (!P.owner || PM.toff || P == pda || PM.m_hidden)
+			if(!P.owner || PM.toff || P == pda || PM.m_hidden)
 				continue
 			if(conversations.Find("\ref[P]"))
 				convopdas.Add(list(list("Name" = "[P]", "Reference" = "\ref[P]", "Detonate" = "[P.detonate]", "inconvo" = "1")))
@@ -88,7 +88,7 @@
 			active_conversation = null
 			latest_post = 0
 		if("Message")
-			var/obj/item/device/pda/P = locate(href_list["target"])
+			var/obj/item/pda/P = locate(href_list["target"])
 			create_message(usr, P)
 			if(href_list["target"] in conversations)            // Need to make sure the message went through, if not welp.
 				active_conversation = href_list["target"]
@@ -103,7 +103,7 @@
 			if(!href_list["target"] || !href_list["plugin"])
 				return
 
-			var/obj/item/device/pda/P = locate(href_list["target"])
+			var/obj/item/pda/P = locate(href_list["target"])
 			if(!P)
 				to_chat(usr, "PDA not found.")
 
@@ -117,23 +117,23 @@
 		if("Autoscroll")
 			auto_scroll = !auto_scroll
 
-/datum/data/pda/app/messenger/proc/create_message(var/mob/living/U, var/obj/item/device/pda/P)
+/datum/data/pda/app/messenger/proc/create_message(var/mob/living/U, var/obj/item/pda/P)
 	var/t = input(U, "Please enter message", name, null) as text|null
 	if(!t)
 		return
 	t = sanitize(copytext(t, 1, MAX_MESSAGE_LEN))
 	t = readd_quotes(t)
-	if (!t || !istype(P))
+	if(!t || !istype(P))
 		return
-	if (!in_range(pda, U) && pda.loc != U)
+	if(!in_range(pda, U) && pda.loc != U)
 		return
 
 	var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 
-	if (!PM || PM.toff || toff)
+	if(!PM || PM.toff || toff)
 		return
 
-	if (last_text && world.time < last_text + 5)
+	if(last_text && world.time < last_text + 5)
 		return
 
 	if(!pda.can_use())
@@ -158,6 +158,7 @@
 		if(signal.data["done"])
 			useTC = 1
 			var/turf/pos = get_turf(P)
+			// TODO: Make the radio system cooperate with the space manager
 			if(pos.z in signal.data["level"])
 				useTC = 2
 				//Let's make this barely readable
@@ -177,9 +178,9 @@
 		if(!PM.conversations.Find("\ref[pda]"))
 			PM.conversations.Add("\ref[pda]")
 
-		nanomanager.update_user_uis(U, P) // Update the sending user's PDA UI so that they can see the new message
-		PM.notify("<b>Message from [pda.owner] ([pda.ownjob]), </b>\"[t]\" (<a href='?src=\ref[PM];choice=Message;target=\ref[pda]'>Reply</a>)")
-		log_pda("[usr] (PDA: [src.name]) sent \"[t]\" to [P.name]")
+		SSnanoui.update_user_uis(U, P) // Update the sending user's PDA UI so that they can see the new message
+		PM.notify("<b>Message from [pda.owner] ([pda.ownjob]), </b>\"[t]\" (<a href='?src=[PM.UID()];choice=Message;target=\ref[pda]'>Reply</a>)")
+		log_pda("(PDA: [src.name]) sent \"[t]\" to [P.name]", usr)
 	else
 		to_chat(U, "<span class='notice'>ERROR: Messaging server is not responding.</span>")
 
@@ -188,19 +189,19 @@
 	var/list/plist = list()
 	var/list/namecounts = list()
 
-	if (toff)
+	if(toff)
 		to_chat(usr, "Turn on your receiver in order to send messages.")
 		return
 
 	for(var/A in PDAs)
-		var/obj/item/device/pda/P = A
+		var/obj/item/pda/P = A
 		var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 
 		if(!P.owner || !PM || PM.hidden || P == pda || PM.toff)
 			continue
 
 		var/name = P.owner
-		if (name in names)
+		if(name in names)
 			namecounts[name]++
 			name = text("[name] ([namecounts[name]])")
 		else

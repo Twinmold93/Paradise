@@ -6,20 +6,22 @@
 	icon_state = "alienh_s"
 
 /mob/living/carbon/alien/humanoid/hunter/New()
-	var/datum/reagents/R = new/datum/reagents(100)
-	reagents = R
-	R.my_atom = src
+	create_reagents(100)
 	if(name == "alien hunter")
 		name = text("alien hunter ([rand(1, 1000)])")
 	real_name = name
-	internal_organs += new /obj/item/organ/internal/xenos/plasmavessel/hunter
+	alien_organs += new /obj/item/organ/internal/xenos/plasmavessel/hunter
 	..()
+
+/mob/living/carbon/alien/humanoid/hunter/movement_delay()
+	. = -1		//hunters are sanic
+	. += ..()	//but they still need to slow down on stun
 
 /mob/living/carbon/alien/humanoid/hunter/handle_regular_hud_updates()
 	..() //-Yvarov
 
-	if (healths)
-		if (stat != 2)
+	if(healths)
+		if(stat != 2)
 			switch(health)
 				if(125 to INFINITY)
 					healths.icon_state = "health0"
@@ -38,7 +40,7 @@
 
 
 /mob/living/carbon/alien/humanoid/hunter/handle_environment()
-	if(m_intent == "run" || resting)
+	if(m_intent == MOVE_INTENT_RUN || resting)
 		..()
 	else
 		adjustPlasma(-heal_rate)
@@ -64,7 +66,7 @@
 #define MAX_ALIEN_LEAP_DIST 7
 
 /mob/living/carbon/alien/humanoid/hunter/proc/leap_at(var/atom/A)
-	if(pounce_cooldown)
+	if(pounce_cooldown > world.time)
 		to_chat(src, "<span class='alertalien'>You are too fatigued to pounce right now!</span>")
 		return
 
@@ -81,34 +83,41 @@
 	else //Maybe uses plasma in the future, although that wouldn't make any sense...
 		leaping = 1
 		update_icons()
-		throw_at(A,MAX_ALIEN_LEAP_DIST,1)
-		leaping = 0
-		update_icons()
+		throw_at(A, MAX_ALIEN_LEAP_DIST, 1, spin = 0, diagonals_first = 1, callback = CALLBACK(src, .leap_end))
 
-/mob/living/carbon/alien/humanoid/hunter/throw_impact(A)
+/mob/living/carbon/alien/humanoid/hunter/proc/leap_end()
+	leaping = 0
+	update_icons()
 
+/mob/living/carbon/alien/humanoid/hunter/throw_impact(atom/A)
 	if(!leaping)
 		return ..()
 
 	if(A)
-		if(istype(A, /mob/living))
+		if(isliving(A))
 			var/mob/living/L = A
-			L.visible_message("<span class ='danger'>[src] pounces on [L]!</span>", "<span class ='userdanger'>[src] pounces on you!</span>")
-			if(ishuman(L))
-				var/mob/living/carbon/human/H = L
-				H.apply_effect(5, WEAKEN, H.run_armor_check(null, "melee"))
+			var/blocked = 0
+			if(ishuman(A))
+				var/mob/living/carbon/human/H = A
+				if(H.check_shields(0, "the [name]", src, attack_type = LEAP_ATTACK))
+					blocked = 1
+			if(!blocked)
+				L.visible_message("<span class ='danger'>[src] pounces on [L]!</span>", "<span class ='userdanger'>[src] pounces on you!</span>")
+				if(ishuman(L))
+					var/mob/living/carbon/human/H = L
+					H.apply_effect(5, WEAKEN, H.run_armor_check(null, "melee"))
+				else
+					L.Weaken(5)
+				sleep(2)//Runtime prevention (infinite bump() calls on hulks)
+				step_towards(src,L)
 			else
-				L.Weaken(5)
-			sleep(2)//Runtime prevention (infinite bump() calls on hulks)
-			step_towards(src,L)
+				Weaken(2, 1, 1)
 
 			toggle_leap(0)
-			pounce_cooldown = !pounce_cooldown
-			spawn(pounce_cooldown_time) //3s by default
-				pounce_cooldown = !pounce_cooldown
-		else
+			pounce_cooldown = world.time + pounce_cooldown_time
+		else if(A.density && !A.CanPass(src))
 			visible_message("<span class ='danger'>[src] smashes into [A]!</span>", "<span class ='alertalien'>[src] smashes into [A]!</span>")
-			weakened = 2
+			Weaken(2, 1, 1)
 
 		if(leaping)
 			leaping = 0
@@ -120,46 +129,3 @@
 	if(leaping)
 		return
 	..()
-
-
-//Modified throw_at() that will use diagonal dirs where appropriate
-//instead of locking it to cardinal dirs
-/mob/living/carbon/alien/humanoid/throw_at(atom/target, range, speed)
-	if(!target || !src)	return 0
-
-	src.throwing = 1
-
-	var/dist_x = abs(target.x - src.x)
-	var/dist_y = abs(target.y - src.y)
-	var/dist_travelled = 0
-	var/dist_since_sleep = 0
-
-	var/tdist_x = dist_x;
-	var/tdist_y = dist_y;
-
-	if(dist_x <= dist_y)
-		tdist_x = dist_y;
-		tdist_y = dist_x;
-
-	var/error = tdist_x/2 - tdist_y
-	while(target && (((((dist_x > dist_y) && ((src.x < target.x) || (src.x > target.x))) || ((dist_x <= dist_y) && ((src.y < target.y) || (src.y > target.y))) || (src.x > target.x)) && dist_travelled < range) || !has_gravity(src)))
-
-		if(!src.throwing) break
-		if(!istype(src.loc, /turf)) break
-
-		var/atom/step = get_step(src, get_dir(src,target))
-		if(!step)
-			break
-		src.Move(step, get_dir(src, step))
-		hit_check()
-		error += (error < 0) ? tdist_x : -tdist_y;
-		dist_travelled++
-		dist_since_sleep++
-		if(dist_since_sleep >= speed)
-			dist_since_sleep = 0
-			sleep(1)
-
-
-	src.throwing = 0
-
-	return 1

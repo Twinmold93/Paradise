@@ -14,22 +14,23 @@
 	new /obj/item/clothing/under/syndicate(src)
 	new /obj/item/clothing/shoes/black(src)
 	new /obj/item/ammo_box/magazine/m10mm(src)
-	new /obj/item/weapon/storage/belt/military(src)
-	new /obj/item/weapon/crowbar/red(src)
+	new /obj/item/storage/belt/military(src)
+	new /obj/item/crowbar/red(src)
 	new /obj/item/clothing/glasses/night(src)
 
 /obj/structure/closet/syndicate/suits
-	desc = "It's a storage unit for operative space gear. Not fancy..."
+	desc = "It's a storage unit for operative space gear."
 
 /obj/structure/closet/syndicate/suits/New()
 	..()
-	new /obj/item/clothing/head/helmet/space/rig/syndi(src)
+	new /obj/item/clothing/head/helmet/space/hardsuit/syndi(src)
 	new /obj/item/clothing/mask/gas/syndicate(src)
-	new /obj/item/clothing/suit/space/rig/syndi(src)
-	new /obj/item/weapon/tank/jetpack/oxygen/harness(src)
+	new /obj/item/clothing/suit/space/hardsuit/syndi(src)
+	new /obj/item/tank/jetpack/oxygen/harness(src)
+	new /obj/item/clothing/shoes/magboots/syndie(src)
 
 /obj/structure/closet/syndicate/nuclear
-	desc = "It's a storage unit for a Syndicate boarding party.."
+	desc = "It's a storage unit for a Syndicate boarding party."
 
 /obj/structure/closet/syndicate/nuclear/New()
 	..()
@@ -38,20 +39,30 @@
 	new /obj/item/ammo_box/magazine/m10mm(src)
 	new /obj/item/ammo_box/magazine/m10mm(src)
 	new /obj/item/ammo_box/magazine/m10mm(src)
-	new /obj/item/weapon/storage/box/teargas(src)
-	new /obj/item/weapon/storage/box/flashbangs(src)
-	new /obj/item/weapon/storage/backpack/duffel/syndie/med(src)
-	new /obj/item/weapon/gun/projectile/automatic/shotgun/bulldog(src)
-	new /obj/item/weapon/gun/projectile/automatic/shotgun/bulldog(src)
-	new /obj/item/weapon/gun/projectile/automatic/shotgun/bulldog(src)
-	new /obj/item/weapon/gun/projectile/automatic/shotgun/bulldog(src)
-	new /obj/item/weapon/gun/projectile/automatic/shotgun/bulldog(src)
-	new /obj/item/weapon/pinpointer/nukeop(src)
-	new /obj/item/weapon/pinpointer/nukeop(src)
-	new /obj/item/weapon/pinpointer/nukeop(src)
-	new /obj/item/weapon/pinpointer/nukeop(src)
-	new /obj/item/weapon/pinpointer/nukeop(src)
-	new /obj/item/device/pda/syndicate(src)
+	new /obj/item/storage/box/teargas(src)
+	new /obj/item/storage/box/flashbangs(src)
+	new /obj/item/storage/backpack/duffel/syndie/med(src)
+	new /obj/item/gun/projectile/automatic/shotgun/bulldog(src)
+	new /obj/item/gun/projectile/automatic/shotgun/bulldog(src)
+	new /obj/item/gun/projectile/automatic/shotgun/bulldog(src)
+	new /obj/item/gun/projectile/automatic/shotgun/bulldog(src)
+	new /obj/item/gun/projectile/automatic/shotgun/bulldog(src)
+	new /obj/item/pda/syndicate(src)
+
+/obj/structure/closet/syndicate/sst
+	desc = "It's a storage unit for an elite syndicate strike team's gear."
+
+/obj/structure/closet/syndicate/sst/New()
+	..()
+	new /obj/item/ammo_box/magazine/mm556x45(src)
+	new /obj/item/gun/projectile/automatic/l6_saw(src)
+	new /obj/item/tank/jetpack/oxygen/harness(src)
+	new /obj/item/storage/belt/military/sst(src)
+	new /obj/item/clothing/glasses/thermal(src)
+	new /obj/item/clothing/shoes/magboots/syndie/advance(src)
+	new /obj/item/clothing/mask/gas/syndicate(src)
+	new /obj/item/clothing/head/helmet/space/hardsuit/syndi/elite/sst(src)
+	new /obj/item/clothing/suit/space/hardsuit/syndi/elite/sst(src)
 
 /obj/structure/closet/syndicate/resources/
 	desc = "An old, dusty locker."
@@ -67,7 +78,7 @@
 
 		//Sad trombone
 		if(pickednum == 1)
-			var/obj/item/weapon/paper/P = new /obj/item/weapon/paper(src)
+			var/obj/item/paper/P = new /obj/item/paper(src)
 			P.name = "IOU"
 			P.info = "Sorry man, we needed the money so we sold your stash. It's ok, we'll double our money for sure this time!"
 
@@ -99,13 +110,21 @@
 		if(pickednum >= 40)
 			new /obj/item/stack/sheet/mineral/uranium(src, rand(rare_min, rare_max))
 
+		//Titanium (rare ore)
+		if(pickednum >= 40)
+			new /obj/item/stack/sheet/mineral/titanium(src, rand(rare_min, rare_max))
+
+		//Plastitanium (rare ore)
+		if(pickednum >= 40)
+			new /obj/item/stack/sheet/mineral/plastitanium(src, rand(rare_min, rare_max))
+
 		//Diamond (rare HONK)
 		if(pickednum >= 45)
 			new /obj/item/stack/sheet/mineral/diamond(src, rand(rare_min, rare_max))
 
 		//Jetpack (You hit the jackpot!)
 		if(pickednum == 50)
-			new /obj/item/weapon/tank/jetpack/carbondioxide(src)
+			new /obj/item/tank/jetpack/carbondioxide(src)
 
 /obj/structure/closet/syndicate/resources/everything
 	desc = "It's an emergency storage closet for repairs."
@@ -121,6 +140,8 @@
 		/obj/item/stack/sheet/mineral/uranium,
 		/obj/item/stack/sheet/mineral/diamond,
 		/obj/item/stack/sheet/mineral/bananium,
+		/obj/item/stack/sheet/mineral/titanium,
+		/obj/item/stack/sheet/mineral/plastitanium,
 		/obj/item/stack/sheet/plasteel,
 		/obj/item/stack/rods
 		)

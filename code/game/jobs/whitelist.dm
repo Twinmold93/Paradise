@@ -18,16 +18,18 @@ var/list/whitelist = list()
 */
 
 /proc/is_job_whitelisted(mob/M, var/rank)
-	if (guest_jobbans(rank))
+	if(guest_jobbans(rank))
 		if(!config.usewhitelist)
 			return 1
-		if(check_rights(R_ADMIN, 0))
+		if(config.disable_karma)
+			return 1
+		if(check_rights(R_ADMIN, 0, M))
 			return 1
 		if(!dbcon.IsConnected())
-			to_chat(usr, "\red Unable to connect to whitelist database. Please try again later.<br>")
+			to_chat(usr, "<span class='warning'>Unable to connect to whitelist database. Please try again later.<br></span>")
 			return 0
 		else
-			var/DBQuery/query = dbcon.NewQuery("SELECT job FROM [format_table_name("whitelist")] WHERE ckey='[M.key]'")
+			var/DBQuery/query = dbcon.NewQuery("SELECT job FROM [format_table_name("whitelist")] WHERE ckey='[M.ckey]'")
 			query.Execute()
 
 
@@ -53,14 +55,16 @@ var/list/whitelist = list()
 
 /proc/load_alienwhitelist()
 	var/text = file2text("config/alienwhitelist.txt")
-	if (!text)
-		diary << "Failed to load config/alienwhitelist.txt\n"
+	if(!text)
+		log_config("Failed to load config/alienwhitelist.txt\n")
 	else
 		alien_whitelist = splittext(text, "\n")
 
 //todo: admin aliens
 /proc/is_alien_whitelisted(mob/M, var/species)
 	if(!config.usealienwhitelist)
+		return 1
+	if(config.disable_karma)
 		return 1
 	if(species == "human" || species == "Human")
 		return 1
@@ -69,10 +73,10 @@ var/list/whitelist = list()
 	if(!alien_whitelist)
 		return 0
 	if(!dbcon.IsConnected())
-		to_chat(usr, "\red Unable to connect to whitelist database. Please try again later.<br>")
+		to_chat(usr, "<span class='warning'>Unable to connect to whitelist database. Please try again later.<br></span>")
 		return 0
 	else
-		var/DBQuery/query = dbcon.NewQuery("SELECT species FROM [format_table_name("whitelist")] WHERE ckey='[M.key]'")
+		var/DBQuery/query = dbcon.NewQuery("SELECT species FROM [format_table_name("whitelist")] WHERE ckey='[M.ckey]'")
 		query.Execute()
 
 		while(query.NextRow())
@@ -84,7 +88,7 @@ var/list/whitelist = list()
 		return 0
 /*
 	if(M && species)
-		for (var/s in alien_whitelist)
+		for(var/s in alien_whitelist)
 			if(findtext(s,"[M.ckey] - [species]"))
 				return 1
 			if(findtext(s,"[M.ckey] - All"))

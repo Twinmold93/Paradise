@@ -20,7 +20,7 @@ var/list/sting_paths
 
 /obj/effect/proc_holder/changeling/evolution_menu/proc/create_menu(var/datum/changeling/changeling)
 	var/dat
-	dat +="<html><head><title>Changling Evolution Menu</title></head>"
+	dat +="<html><head><title>Changeling Evolution Menu</title></head>"
 
 	//javascript, the part that does most of the work~
 	dat += {"
@@ -47,7 +47,7 @@ var/list/sting_paths
 
 						var maintable_data = document.getElementById('maintable_data');
 						var ltr = maintable_data.getElementsByTagName("tr");
-						for ( var i = 0; i < ltr.length; ++i )
+						for( var i = 0; i < ltr.length; ++i )
 						{
 							try{
 								var tr = ltr\[i\];
@@ -60,7 +60,7 @@ var/list/sting_paths
 								var search = lsearch\[0\];
 								//var inner_span = li.getElementsByTagName("span")\[1\] //Should only ever contain one element.
 								//document.write("<p>"+search.innerText+"<br>"+filter+"<br>"+search.innerText.indexOf(filter))
-								if ( search.innerText.toLowerCase().indexOf(filter) == -1 )
+								if( search.innerText.toLowerCase().indexOf(filter) == -1 )
 								{
 									//document.write("a");
 									//ltr.removeChild(tr);
@@ -95,7 +95,7 @@ var/list/sting_paths
 
 					if(!ownsthis)
 					{
-						body += "<a href='?src=\ref[src];P="+power+"'>Evolve</a>"
+						body += "<a href='?src=[UID()];P="+power+"'>Evolve</a>"
 					}
 					body += "</td><td align='center'>";
 
@@ -211,7 +211,7 @@ var/list/sting_paths
 					Hover over a power to see more information<br>
 					Current ability choices remaining: [changeling.geneticpoints]<br>
 					By rendering a lifeform to a husk, we gain enough power to alter and adapt our evolutions.<br>
-					(<a href='?src=\ref[src];readapt=1'>Readapt</a>)<br>
+					(<a href='?src=[UID()];readapt=1'>Readapt</a>)<br>
 					<p>
 				</td>
 			</tr>
@@ -375,7 +375,8 @@ var/list/sting_paths
 			path.on_purchase(src)
 
 	var/mob/living/carbon/C = src		//only carbons have dna now, so we have to typecaste
-	mind.changeling.absorbed_dna |= C.dna
+	mind.changeling.absorbed_dna |= C.dna.Clone()
+	mind.changeling.trim_dna()
 	return 1
 
 //Used to dump the languages from the changeling datum into the actual mob.
@@ -406,7 +407,7 @@ var/list/sting_paths
 			mind.changeling.changeling_speak = 0
 			mind.changeling.reset()
 			for(var/obj/effect/proc_holder/changeling/p in mind.changeling.purchasedpowers)
-				if(p.dna_cost == 0 && keep_free_powers)
+				if((p.dna_cost == 0 && keep_free_powers) || p.always_keep)
 					continue
 				mind.changeling.purchasedpowers -= p
 				p.on_refund(src)

@@ -173,7 +173,7 @@ var/const/POS_HEADER = {"<html>
 		receipt += myArea.name
 	receipt += "</div>"
 	receipt += {"<br />
-		<div>[worldtime2text()], [current_date_string]</div>
+		<div>[station_time_timestamp()], [current_date_string]</div>
 		<table>
 			<tr class=\"first\">
 				<th class=\"first\">Item</th>
@@ -201,8 +201,8 @@ var/const/POS_HEADER = {"<html>
 		</tr>"}
 	receipt += "</table></body></html>"
 
-	playsound(loc, "sound/goonstation/machines/printer_thermal.ogg", 50, 1)
-	var/obj/item/weapon/paper/P = new(loc)
+	playsound(loc, 'sound/goonstation/machines/printer_thermal.ogg', 50, 1)
+	var/obj/item/paper/P = new(loc)
 	P.name="Receipt #[id]-[++sales]"
 	P.info=receipt
 
@@ -224,8 +224,8 @@ var/const/POS_HEADER = {"<html>
 		receipt += myArea.name
 	receipt += "</fieldset>"
 	receipt += {"<fieldset><legend>Order Data</legend>
-		<form action="?src=\ref[src]" method="get">
-		<input type="hidden" name="src" value="\ref[src]" />
+		<form action="?src=[UID()]" method="get">
+		<input type="hidden" name="src" value="[UID()]" />
 		<table>
 			<tr class=\"first\">
 				<th class=\"first\">Item</th>
@@ -241,10 +241,10 @@ var/const/POS_HEADER = {"<html>
 			var/linetotal=LI.units*LI.price
 			receipt += {"<tr class=\"[(i%2)?"even":"odd"]\">
 				<th>[LI.name]</th>
-				<td><a href="?src=\ref[src];setunits=[i]">[LI.units]</a></td>
+				<td><a href="?src=[UID()];setunits=[i]">[LI.units]</a></td>
 				<td>$[num2septext(LI.price)]</td>
 				<td>$[num2septext(linetotal)]</td>
-				<td><a href="?src=\ref[src];removefromorder=[i]" style="color:red;">&times;</a></td>
+				<td><a href="?src=[UID()];removefromorder=[i]" style="color:red;">&times;</a></td>
 			</tr>"}
 			subtotal += linetotal
 	var/taxes = POS_TAX_RATE*subtotal
@@ -280,8 +280,8 @@ var/const/POS_HEADER = {"<html>
 
 /obj/machinery/pos/proc/ProductsScreen()
 	var/dat={"<fieldset><legend>Product List</legend>
-		<form action="?src=\ref[src]" method="get">
-		<input type="hidden" name="src" value="\ref[src]" />
+		<form action="?src=[UID()]" method="get">
+		<input type="hidden" name="src" value="[UID()]" />
 		<table>
 			<tr class=\"first\">
 				<th class=\"first\">Item</th>
@@ -292,17 +292,17 @@ var/const/POS_HEADER = {"<html>
 	for(var/i in products)
 		var/line_item/LI = products[i]
 		dat += {"<tr class=\"[(i%2)?"even":"odd"]\">
-			<th><a href="?src=\ref[src];setpname=[i]">[LI.name]</a></th>
-			<td><a href="?src=\ref[src];setprice=[i]">$[num2septext(LI.price)]</a></td>
+			<th><a href="?src=[UID()];setpname=[i]">[LI.name]</a></th>
+			<td><a href="?src=[UID()];setprice=[i]">$[num2septext(LI.price)]</a></td>
 			<td>[LI.units]</td>
-			<td><a href="?src=\ref[src];rmproduct=[i]" style="color:red;">&times;</a></td>
+			<td><a href="?src=[UID()];rmproduct=[i]" style="color:red;">&times;</a></td>
 		</tr>"}
 	dat += {"</table>
 		<b>New Product:</b><br />
 		<label for="name">Name:</label> <input type="textbox" name="name" value=""/><br />
 		<label for="name">Price:</label> $<input type="textbox" name="price" value="0.00" /><br />
 		<input type="submit" name="act" value="Add Product" /><br />
-		<a href="?src=\ref[src];screen=[POS_SCREEN_IMPORT]">Import</a> | <a href="?src=\ref[src];screen=[POS_SCREEN_EXPORT]">Export</a>
+		<a href="?src=[UID()];screen=[POS_SCREEN_IMPORT]">Import</a> | <a href="?src=[UID()];screen=[POS_SCREEN_EXPORT]">Export</a>
 		</form>
 		</fieldset>"}
 	return dat
@@ -314,15 +314,15 @@ var/const/POS_HEADER = {"<html>
 		var/line_item/LI = products[i]
 		dat += "[LI.name],[LI.price]\n"
 	dat += {"</textarea>
-		<a href="?src=\ref[src];screen=[POS_SCREEN_PRODUCTS]">OK</a>
+		<a href="?src=[UID()];screen=[POS_SCREEN_PRODUCTS]">OK</a>
 		</fieldset>"}
 	return dat
 
 /obj/machinery/pos/proc/ImportScreen()
 	var/dat={"<fieldset>
 		<legend>Import Products as CSV</legend>
-		<form action="?src=\ref[src]" method="get">
-			<input type="hidden" name="src" value="\ref[src]" />
+		<form action="?src=[UID()]" method="get">
+			<input type="hidden" name="src" value="[UID()]" />
 			<textarea name="csv"></textarea>
 			<p>Data must be in the form of a CSV, with no headers or quotation marks.</p>
 			<p>First column must be product names, second must be prices as an unformatted number (####.##)</p>
@@ -333,11 +333,11 @@ var/const/POS_HEADER = {"<html>
 	return dat
 
 /obj/machinery/pos/proc/FinalizeScreen()
-	return "<center><b>Waiting for Credit</b><br /><a href=\"?src=\ref[src];act=Reset\">Cancel</a></center>"
+	return "<center><b>Waiting for Credit</b><br /><a href=\"?src=[UID()];act=Reset\">Cancel</a></center>"
 
 /obj/machinery/pos/proc/SettingsScreen()
-	var/dat={"<form action="?src=\ref[src]" method="get">
-		<input type="hidden" name="src" value="\ref[src]" />
+	var/dat={"<form action="?src=[UID()]" method="get">
+		<input type="hidden" name="src" value="[UID()]" />
 		<fieldset>
 			<legend>Account Settings</legend>
 			<div>
@@ -366,14 +366,14 @@ var/const/POS_HEADER = {"<html>
 	user.set_machine(src)
 	var/logindata=""
 	if(logged_in)
-		logindata={"<a href="?src=\ref[src];logout=1">[logged_in.name]</a>"}
+		logindata={"<a href="?src=[UID()];logout=1">[logged_in.name]</a>"}
 	var/dat = POS_HEADER + {"
 	<div class="navbar">
-		[worldtime2text()], [current_date_string]<br />
+		[station_time_timestamp()], [current_date_string]<br />
 		[logindata]
-		<a href="?src=\ref[src];screen=[POS_SCREEN_ORDER]">Order</a> |
-		<a href="?src=\ref[src];screen=[POS_SCREEN_PRODUCTS]">Products</a> |
-		<a href="?src=\ref[src];screen=[POS_SCREEN_SETTINGS]">Settings</a>
+		<a href="?src=[UID()];screen=[POS_SCREEN_ORDER]">Order</a> |
+		<a href="?src=[UID()];screen=[POS_SCREEN_PRODUCTS]">Products</a> |
+		<a href="?src=[UID()];screen=[POS_SCREEN_SETTINGS]">Settings</a>
 	</div>"}
 	switch(screen)
 		if(POS_SCREEN_LOGIN)    dat += LoginScreen()
@@ -391,7 +391,7 @@ var/const/POS_HEADER = {"<html>
 	return
 
 /obj/machinery/pos/proc/say(var/text)
-	src.visible_message("\icon[src] <span class=\"notice\"><b>[name]</b> states, \"[text]\"</span>")
+	src.visible_message("[bicon(src)] <span class=\"notice\"><b>[name]</b> states, \"[text]\"</span>")
 
 /obj/machinery/pos/Topic(var/href, var/list/href_list)
 	if(..(href,href_list)) return
@@ -403,7 +403,7 @@ var/const/POS_HEADER = {"<html>
 		src.attack_hand(usr)
 		return
 	if(usr != logged_in)
-		to_chat(usr, "\red [logged_in.name] is already logged in.  You cannot use this machine until they log out.")
+		to_chat(usr, "<span class='warning'>[logged_in.name] is already logged in.  You cannot use this machine until they log out.</span>")
 		return
 	if("act" in href_list)
 		switch(href_list["act"])
@@ -431,7 +431,7 @@ var/const/POS_HEADER = {"<html>
 				for(var/list/line in splittext(href_list["csv"],"\n"))
 					var/list/cells = splittext(line,",")
 					if(cells.len<2)
-						to_chat(usr, "\red The CSV must have at least two columns: Product Name, followed by Price (as a number).")
+						to_chat(usr, "<span class='warning'>The CSV must have at least two columns: Product Name, followed by Price (as a number).</span>")
 						src.attack_hand(usr)
 						return
 					var/line_item/LI = new
@@ -445,7 +445,7 @@ var/const/POS_HEADER = {"<html>
 			if("Save Settings")
 				var/datum/money_account/new_linked_account = get_money_account(text2num(href_list["payableto"]),z)
 				if(!new_linked_account)
-					to_chat(usr, "\red Unable to link new account.")
+					to_chat(usr, "<span class='warning'>Unable to link new account.</span>")
 				else
 					linked_account = new_linked_account
 				screen=POS_SCREEN_SETTINGS
@@ -479,10 +479,10 @@ var/const/POS_HEADER = {"<html>
 	src.attack_hand(usr)
 
 /obj/machinery/pos/attackby(var/atom/movable/A, var/mob/user, params)
-	if(istype(A,/obj/item/weapon/card/id))
-		var/obj/item/weapon/card/id/I = A
+	if(istype(A,/obj/item/card/id))
+		var/obj/item/card/id/I = A
 		if(!logged_in)
-			user.visible_message("\blue The machine beeps, and logs you in","You hear a beep.")
+			user.visible_message("<span class='notice'>The machine beeps, and logs you in</span>","You hear a beep.")
 			logged_in = user
 			screen=POS_SCREEN_ORDER
 			update_icon()
@@ -490,50 +490,47 @@ var/const/POS_HEADER = {"<html>
 			return
 		else
 			if(!linked_account)
-				visible_message("\red The machine buzzes, and flashes \"NO LINKED ACCOUNT\" on the screen.","You hear a buzz.")
+				visible_message("<span class='warning'>The machine buzzes, and flashes \"NO LINKED ACCOUNT\" on the screen.</span>","You hear a buzz.")
 				flick(src,"pos-error")
 				return
 			if(screen!=POS_SCREEN_FINALIZE)
-				visible_message("\blue The machine buzzes.","\red You hear a buzz.")
+				visible_message("<span class='notice'>The machine buzzes.</span>","<span class='warning'>You hear a buzz.</span>")
 				flick(src,"pos-error")
 				return
 			var/datum/money_account/acct = get_card_account(I)
 			if(!acct)
-				visible_message("\red The machine buzzes, and flashes \"NO ACCOUNT\" on the screen.","You hear a buzz.")
+				visible_message("<span class='warning'>The machine buzzes, and flashes \"NO ACCOUNT\" on the screen.</span>","You hear a buzz.")
 				flick(src,"pos-error")
 				return
 			if(credits_needed > acct.money)
-				visible_message("\red The machine buzzes, and flashes \"NOT ENOUGH FUNDS\" on the screen.","You hear a buzz.")
+				visible_message("<span class='warning'>The machine buzzes, and flashes \"NOT ENOUGH FUNDS\" on the screen.</span>","You hear a buzz.")
 				flick(src,"pos-error")
 				return
-			visible_message("\blue The machine beeps, and begins printing a receipt","You hear a beep.")
+			visible_message("<span class='notice'>The machine beeps, and begins printing a receipt</span>","You hear a beep.")
 			PrintReceipt()
 			NewOrder()
 			acct.charge(credits_needed,linked_account,"Purchase at POS #[id].")
 			credits_needed=0
 			screen=POS_SCREEN_ORDER
-	else if(istype(A,/obj/item/weapon/spacecash))
+	else if(istype(A, /obj/item/stack/spacecash))
 		if(!linked_account)
-			visible_message("\red The machine buzzes, and flashes \"NO LINKED ACCOUNT\" on the screen.","You hear a buzz.")
+			visible_message("<span class='warning'>The machine buzzes, and flashes \"NO LINKED ACCOUNT\" on the screen.</span>","You hear a buzz.")
 			flick(src,"pos-error")
 			return
 		if(!logged_in || screen!=POS_SCREEN_FINALIZE)
-			visible_message("\blue The machine buzzes.","\red You hear a buzz.")
+			visible_message("<span class='notice'>The machine buzzes.</span>","<span class='warning'>You hear a buzz.</span>")
 			flick(src,"pos-error")
 			return
-		var/obj/item/weapon/spacecash/C=A
-		credits_held += C.get_total()
+		var/obj/item/stack/spacecash/C = A
+		credits_held += C.amount
 		if(credits_held >= credits_needed)
-			visible_message("\blue The machine beeps, and begins printing a receipt","You hear a beep and the sound of paper being shredded.")
+			visible_message("<span class='notice'>The machine beeps, and begins printing a receipt</span>","You hear a beep and the sound of paper being shredded.")
 			PrintReceipt()
 			NewOrder()
 			credits_held -= credits_needed
 			credits_needed=0
 			screen=POS_SCREEN_ORDER
 			if(credits_held)
-				var/obj/item/weapon/storage/box/B = new(loc)
-				dispense_cash(credits_held,B)
-				B.name="change"
-				B.desc="A box of change."
+				new /obj/item/stack/spacecash(loc, credits_held)
 			credits_held=0
 	..()

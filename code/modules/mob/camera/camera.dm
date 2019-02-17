@@ -3,9 +3,10 @@
 /mob/camera
 	name = "camera mob"
 	density = 0
-	anchored = 1
+	move_force = INFINITY
+	move_resist = INFINITY
 	status_flags = GODMODE  // You can't damage it.
-	mouse_opacity = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	see_in_dark = 7
 	invisibility = 101 // No one can see us
 	sight = SEE_SELF
@@ -13,10 +14,6 @@
 
 /mob/camera/experience_pressure_difference()
 	return
-
-/mob/camera/Destroy()
-	..()
-	return QDEL_HINT_HARDDEL_NOW
 
 /mob/camera/Login()
 	..()

@@ -18,20 +18,17 @@
 	parent_organ = "chest"
 	slot = "heart"
 
-
 /obj/item/organ/internal/eyes/luminescent_crystal
 	name = "luminescent eyes"
 	icon_state = "crystal-eyes"
 	organ_tag = "luminescent eyes"
 	light_color = "#1C1C00"
-	parent_organ = "head"
-	slot = "eyes"
 
 /obj/item/organ/internal/eyes/luminescent_crystal/New()
 	set_light(2)
+	..()
 
 /obj/item/organ/internal/brain/crystal
-	name = "crystalized brain"
+	name = "crystallized brain"
 	icon_state = "crystal-brain"
-	organ_tag = "crystalized brain"
-	slot = "brain"
+	organ_tag = "crystallized brain"

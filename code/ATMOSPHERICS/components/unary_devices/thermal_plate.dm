@@ -17,9 +17,8 @@
 		prefix="h"
 	icon_state = "[prefix]off"
 
-/obj/machinery/atmospherics/unary/thermal_plate/process()
-	if(!..())
-		return 0
+/obj/machinery/atmospherics/unary/thermal_plate/process_atmos()
+	..()
 
 	var/datum/gas_mixture/environment = loc.return_air()
 
@@ -28,10 +27,10 @@
 	var/transfer_moles = 0.25 * environment.total_moles()
 	var/datum/gas_mixture/external_removed = environment.remove(transfer_moles)
 
-	if (!external_removed)
+	if(!external_removed)
 		return radiate()
 
-	if (external_removed.total_moles() < 10)
+	if(external_removed.total_moles() < 10)
 		return radiate()
 
 	//Get same info from connected gas
@@ -39,7 +38,7 @@
 	var/internal_transfer_moles = 0.25 * air_contents.total_moles()
 	var/datum/gas_mixture/internal_removed = air_contents.remove(internal_transfer_moles)
 
-	if (!internal_removed)
+	if(!internal_removed)
 		environment.merge(external_removed)
 		return 1
 
@@ -63,7 +62,7 @@
 	var/internal_transfer_moles = 0.25 * air_contents.total_moles()
 	var/datum/gas_mixture/internal_removed = air_contents.remove(internal_transfer_moles)
 
-	if (!internal_removed)
+	if(!internal_removed)
 		return 1
 
 	var/combined_heat_capacity = internal_removed.heat_capacity() + RADIATION_CAPACITY

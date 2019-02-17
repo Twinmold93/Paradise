@@ -1,34 +1,41 @@
 /obj
 	//var/datum/module/mod		//not used
 	var/origin_tech = null	//Used by R&D to determine what research bonuses it grants.
-	var/reliability = 100	//Used by SOME devices to determine how reliable they are.
 	var/crit_fail = 0
 	var/unacidable = 0 //universal "unacidabliness" var, here so you can use it in any obj.
 	animate_movement = 2
 	var/throwforce = 1
 	var/list/attack_verb = list() //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
 	var/sharp = 0		// whether this object cuts
-	var/edge = 0		// whether this object is more likely to dismember
 	var/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
-
+	var/can_deconstruct = TRUE
 	var/damtype = "brute"
 	var/force = 0
+	var/list/armor
+	var/obj_integrity	//defaults to max_integrity
+	var/max_integrity = INFINITY
+	var/integrity_failure = 0 //0 if we have no special broken behavior
+
+	var/resistance_flags = NONE // INDESTRUCTIBLE
+	var/can_be_hit = TRUE //can this be bludgeoned by items?
 
 	var/Mtoollink = 0 // variable to decide if an object should show the multitool menu linking menu, not all objects use it
 
-
+	var/burn_state = FIRE_PROOF // LAVA_PROOF | FIRE_PROOF | FLAMMABLE | ON_FIRE
+	var/burntime = 10 //How long it takes to burn to ashes, in seconds
+	var/burn_world_time //What world time the object will burn up completely
 	var/being_shocked = 0
-
-	// What reagents should be logged when transferred TO this object?
-	// Reagent ID => friendly name
-	var/list/reagents_to_log=list()
+	var/speed_process = FALSE
 
 	var/on_blueprints = FALSE //Are we visible on the station blueprints at roundstart?
 	var/force_blueprints = FALSE //forces the obj to be on the blueprints, regardless of when it was created.
 
 /obj/New()
-	. = ..()
-
+	..()
+	if(!armor)
+		armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
+	if(obj_integrity == null)
+		obj_integrity = max_integrity
 	if(on_blueprints && isturf(loc))
 		var/turf/T = loc
 		if(force_blueprints)
@@ -58,12 +65,11 @@
 	// Nada
 
 /obj/Destroy()
-	machines -= src
+	GLOB.machines -= src
 	processing_objects -= src
-	nanomanager.close_uis(src)
+	GLOB.fast_processing -= src
+	SSnanoui.close_uis(src)
 	return ..()
-
-/obj/item/proc/is_used_on(obj/O, mob/user)
 
 /obj/proc/process()
 	set waitfor = 0
@@ -103,18 +109,18 @@
 		var/is_in_use = 0
 		var/list/nearby = viewers(1, src)
 		for(var/mob/M in nearby)
-			if ((M.client && M.machine == src))
+			if((M.client && M.machine == src))
 				is_in_use = 1
 				src.attack_hand(M)
-		if (istype(usr, /mob/living/silicon/ai) || istype(usr, /mob/living/silicon/robot))
-			if (!(usr in nearby))
-				if (usr.client && usr.machine==src) // && M.machine == src is omitted because if we triggered this by using the dialog, it doesn't matter if our machine changed in between triggering it and this - the dialog is probably still supposed to refresh.
+		if(istype(usr, /mob/living/silicon/ai) || istype(usr, /mob/living/silicon/robot))
+			if(!(usr in nearby))
+				if(usr.client && usr.machine==src) // && M.machine == src is omitted because if we triggered this by using the dialog, it doesn't matter if our machine changed in between triggering it and this - the dialog is probably still supposed to refresh.
 					is_in_use = 1
 					src.attack_ai(usr)
 
 		// check for TK users
 
-		if (istype(usr, /mob/living/carbon/human))
+		if(istype(usr, /mob/living/carbon/human))
 			if(istype(usr.l_hand, /obj/item/tk_grab) || istype(usr.r_hand, /obj/item/tk_grab/))
 				if(!(usr in nearby))
 					if(usr.client && usr.machine==src)
@@ -128,7 +134,7 @@
 		var/list/nearby = viewers(1, src)
 		var/is_in_use = 0
 		for(var/mob/M in nearby)
-			if ((M.client && M.machine == src))
+			if((M.client && M.machine == src))
 				is_in_use = 1
 				src.interact(M)
 		var/ai_in_use = AutoUpdateAI(src)
@@ -140,7 +146,7 @@
 	return
 
 /obj/proc/update_icon()
-	return
+	SEND_SIGNAL(src, COMSIG_OBJ_UPDATE_ICON)
 
 /mob/proc/unset_machine()
 	if(machine)
@@ -163,28 +169,16 @@
 	if(istype(M) && M.client && M.machine == src)
 		src.attack_self(M)
 
-
-/obj/proc/alter_health()
-	return 1
-
 /obj/proc/hide(h)
 	return
 
 
-/obj/proc/hear_talk(mob/M as mob, text)
-	if(talking_atom)
-		talking_atom.catchMessage(text, M)
-
-/*
-	var/mob/mo = locate(/mob) in src
-	if(mo)
-		var/rendered = "<span class='game say'><span class='name'>[M.name]: </span> <span class='message'>[text]</span></span>"
-		mo.show_message(rendered, 2)
-*/
+/obj/proc/hear_talk(mob/M, list/message_pieces)
+	return
 
 /obj/proc/hear_message(mob/M as mob, text)
 
-/obj/proc/multitool_menu(var/mob/user,var/obj/item/device/multitool/P)
+/obj/proc/multitool_menu(var/mob/user,var/obj/item/multitool/P)
 	return "<b>NO MULTITOOL_MENU!</b>"
 
 /obj/proc/linkWith(var/mob/user, var/obj/buffer, var/link/context)
@@ -205,18 +199,18 @@
 /obj/proc/linkMenu(var/obj/O)
 	var/dat=""
 	if(canLink(O, list()))
-		dat += " <a href='?src=\ref[src];link=1'>\[Link\]</a> "
+		dat += " <a href='?src=[UID()];link=1'>\[Link\]</a> "
 	return dat
 
 /obj/proc/format_tag(var/label,var/varname, var/act="set_tag")
 	var/value = vars[varname]
 	if(!value || value=="")
 		value="-----"
-	return "<b>[label]:</b> <a href=\"?src=\ref[src];[act]=[varname]\">[value]</a>"
+	return "<b>[label]:</b> <a href=\"?src=[UID()];[act]=[varname]\">[value]</a>"
 
 
 /obj/proc/update_multitool_menu(mob/user as mob)
-	var/obj/item/device/multitool/P = get_multitool(user)
+	var/obj/item/multitool/P = get_multitool(user)
 
 	if(!istype(P))
 		return 0
@@ -255,22 +249,16 @@ a {
 					dat += linkMenu(P.buffer)
 
 					if(P.buffer)
-						dat += "<a href='?src=\ref[src];flush=1'>\[Flush\]</a>"
+						dat += "<a href='?src=[UID()];flush=1'>\[Flush\]</a>"
 					dat += "</p>"
 				else
-					dat += "<p><b>MULTITOOL BUFFER:</b> <a href='?src=\ref[src];buffer=1'>\[Add Machine\]</a></p>"
+					dat += "<p><b>MULTITOOL BUFFER:</b> <a href='?src=[UID()];buffer=1'>\[Add Machine\]</a></p>"
 	else
 		dat += "<b>ACCESS DENIED</a>"
 	dat += "</body></html>"
 	user << browse(dat, "window=mtcomputer")
 	user.set_machine(src)
 	onclose(user, "mtcomputer")
-
-/obj/singularity_act()
-	ex_act(1.0)
-	if(src && isnull(gcDestroyed))
-		qdel(src)
-	return 2
 
 /obj/singularity_pull(S, current_size)
 	if(anchored)
@@ -282,14 +270,39 @@ a {
 /obj/proc/container_resist(var/mob/living)
 	return
 
-/obj/proc/tesla_act(var/power)
-	being_shocked = 1
-	var/power_bounced = power * 0.5
-	tesla_zap(src, 3, power_bounced)
-	addtimer(src, "reset_shocked", 10)
-
-/obj/proc/reset_shocked()
-	being_shocked = 0
-
 /obj/proc/CanAStarPass()
 	. = !density
+
+/obj/proc/empty_object_contents(burn = 0, new_loc = loc)
+	for(var/obj/item/Item in contents) //Empty out the contents
+		Item.forceMove(new_loc)
+		if(burn)
+			Item.fire_act() //Set them on fire, too
+
+/obj/proc/on_mob_move(dir, mob/user)
+	return
+
+/obj/proc/makeSpeedProcess()
+	if(speed_process)
+		return
+	speed_process = TRUE
+	processing_objects.Remove(src)
+	GLOB.fast_processing.Add(src)
+
+/obj/proc/makeNormalProcess()
+	if(!speed_process)
+		return
+	speed_process = FALSE
+	processing_objects.Add(src)
+	GLOB.fast_processing.Remove(src)
+
+/obj/vv_get_dropdown()
+	. = ..()
+	.["Delete all of type"] = "?_src_=vars;delall=[UID()]"
+	if(!speed_process)
+		.["Make speed process"] = "?_src_=vars;makespeedy=[UID()]"
+	else
+		.["Make normal process"] = "?_src_=vars;makenormalspeed=[UID()]"
+
+/obj/proc/check_uplink_validity()
+	return 1

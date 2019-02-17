@@ -3,10 +3,11 @@
 	desc = "It's useful for igniting plasma."
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "igniter1"
+	armor = list(melee = 50, bullet = 30, laser = 70, energy = 50, bomb = 20, bio = 0, rad = 0)
 	var/id = null
 	var/on = 1.0
 	anchored = 1.0
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 2
 	active_power_usage = 4
 
@@ -25,9 +26,9 @@
 	return
 
 /obj/machinery/igniter/process()	//ugh why is this even in process()?
-	if (src.on && !(stat & NOPOWER) )
+	if(src.on && !(stat & NOPOWER) )
 		var/turf/location = src.loc
-		if (isturf(location))
+		if(isturf(location))
 			location.hotspot_expose(1000,500,1)
 	return 1
 
@@ -58,7 +59,7 @@
 	..()
 
 /obj/machinery/sparker/power_change()
-	if ( powered() && disable == 0 )
+	if( powered() && disable == 0 )
 		stat &= ~NOPOWER
 		icon_state = "[base_state]"
 //		src.sd_set_light(2)
@@ -67,44 +68,44 @@
 		icon_state = "[base_state]-p"
 //		src.sd_set_light(0)
 
-/obj/machinery/sparker/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
-	if(istype(W, /obj/item/device/detective_scanner))
+/obj/machinery/sparker/attackby(obj/item/I, mob/user, params)
+	if(istype(I, /obj/item/detective_scanner))
 		return
-	if (istype(W, /obj/item/weapon/screwdriver))
+	if(isscrewdriver(I))
 		add_fingerprint(user)
-		src.disable = !src.disable
-		if (src.disable)
-			user.visible_message("\red [user] has disabled the [src]!", "\red You disable the connection to the [src].")
+		disable = !disable
+		if(disable)
+			user.visible_message("<span class='warning'>[user] has disabled [src]!</span>", "<span class='warning'>You disable the connection to [src].</span>")
 			icon_state = "[base_state]-d"
-		if (!src.disable)
-			user.visible_message("\red [user] has reconnected the [src]!", "\red You fix the connection to the [src].")
-			if(src.powered())
+		if(!disable)
+			user.visible_message("<span class='warning'>[user] has reconnected [src]!</span>", "<span class='warning'>You fix the connection to [src].</span>")
+			if(powered())
 				icon_state = "[base_state]"
 			else
 				icon_state = "[base_state]-p"
+	else
+		return ..()
 
 /obj/machinery/sparker/attack_ai()
-	if (src.anchored)
+	if(src.anchored)
 		return src.spark()
 	else
 		return
 
 /obj/machinery/sparker/proc/spark()
-	if (!(powered()))
+	if(!(powered()))
 		return
 
-	if ((src.disable) || (src.last_spark && world.time < src.last_spark + 50))
+	if((src.disable) || (src.last_spark && world.time < src.last_spark + 50))
 		return
 
 
 	flick("[base_state]-spark", src)
-	var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-	s.set_up(2, 1, src)
-	s.start()
+	do_sparks(2, 1, src)
 	src.last_spark = world.time
 	use_power(1000)
 	var/turf/location = src.loc
-	if (isturf(location))
+	if(isturf(location))
 		location.hotspot_expose(1000,500,1)
 	return 1
 

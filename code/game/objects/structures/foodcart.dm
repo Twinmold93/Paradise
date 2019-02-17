@@ -7,20 +7,20 @@
 	density = 1
 	//Food slots
 	var/list/food_slots[6]
-	//var/obj/item/weapon/reagent_containers/food/snacks/food1 = null
-	//var/obj/item/weapon/reagent_containers/food/snacks/food2 = null
-	//var/obj/item/weapon/reagent_containers/food/snacks/food3 = null
-	//var/obj/item/weapon/reagent_containers/food/snacks/food4 = null
-	//var/obj/item/weapon/reagent_containers/food/snacks/food5 = null
-	//var/obj/item/weapon/reagent_containers/food/snacks/food6 = null
+	//var/obj/item/reagent_containers/food/snacks/food1 = null
+	//var/obj/item/reagent_containers/food/snacks/food2 = null
+	//var/obj/item/reagent_containers/food/snacks/food3 = null
+	//var/obj/item/reagent_containers/food/snacks/food4 = null
+	//var/obj/item/reagent_containers/food/snacks/food5 = null
+	//var/obj/item/reagent_containers/food/snacks/food6 = null
 	//Drink slots
 	var/list/drink_slots[6]
-	//var/obj/item/weapon/reagent_containers/food/drinks/drink1 = null
-	//var/obj/item/weapon/reagent_containers/food/drinks/drink2 = null
-	//var/obj/item/weapon/reagent_containers/food/drinks/drink3 = null
-	//var/obj/item/weapon/reagent_containers/food/drinks/drink4 = null
-	//var/obj/item/weapon/reagent_containers/food/drinks/drink5 = null
-	//var/obj/item/weapon/reagent_containers/food/drinks/drink6 = null
+	//var/obj/item/reagent_containers/food/drinks/drink1 = null
+	//var/obj/item/reagent_containers/food/drinks/drink2 = null
+	//var/obj/item/reagent_containers/food/drinks/drink3 = null
+	//var/obj/item/reagent_containers/food/drinks/drink4 = null
+	//var/obj/item/reagent_containers/food/drinks/drink5 = null
+	//var/obj/item/reagent_containers/food/drinks/drink6 = null
 
 /obj/structure/foodcart/proc/put_in_cart(obj/item/I, mob/user)
 	user.drop_item()
@@ -32,7 +32,7 @@
 /obj/structure/foodcart/attackby(obj/item/I, mob/user, params)
 	var/fail_msg = "<span class='notice'>There are no open spaces for this in [src].</span>"
 	if(!I.is_robot_module())
-		if(istype(I, /obj/item/weapon/reagent_containers/food/snacks))
+		if(istype(I, /obj/item/reagent_containers/food/snacks))
 			var/success = 0
 			for(var/s=1,s<=6,s++)
 				if(!food_slots[s])
@@ -43,7 +43,7 @@
 					break;
 			if(!success)
 				to_chat(user, fail_msg)
-		else if(istype(I, /obj/item/weapon/reagent_containers/food/drinks))
+		else if(istype(I, /obj/item/reagent_containers/food/drinks))
 			var/success = 0
 			for(var/s=1,s<=6,s++)
 				if(!drink_slots[s])
@@ -54,16 +54,16 @@
 					break;
 			if(!success)
 				to_chat(user, fail_msg)
-		else if(istype(I, /obj/item/weapon/wrench))
-			if (!anchored && !isinspace())
-				playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
+		else if(istype(I, /obj/item/wrench))
+			if(!anchored && !isinspace())
+				playsound(src.loc, I.usesound, 50, 1)
 				user.visible_message( \
 					"[user] tightens \the [src]'s casters.", \
 					"<span class='notice'> You have tightened \the [src]'s casters.</span>", \
 					"You hear ratchet.")
 				anchored = 1
 			else if(anchored)
-				playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
+				playsound(src.loc, I.usesound, 50, 1)
 				user.visible_message( \
 					"[user] loosens \the [src]'s casters.", \
 					"<span class='notice'> You have loosened \the [src]'s casters.</span>", \
@@ -76,29 +76,29 @@
 	user.set_machine(src)
 	var/dat
 	if(food_slots[1])
-		dat += "<a href='?src=\ref[src];f1=1'>[food_slots[1]]</a><br>"
+		dat += "<a href='?src=[UID()];f1=1'>[food_slots[1]]</a><br>"
 	if(food_slots[2])
-		dat += "<a href='?src=\ref[src];f2=1'>[food_slots[2]]</a><br>"
+		dat += "<a href='?src=[UID()];f2=1'>[food_slots[2]]</a><br>"
 	if(food_slots[3])
-		dat += "<a href='?src=\ref[src];f3=1'>[food_slots[3]]</a><br>"
+		dat += "<a href='?src=[UID()];f3=1'>[food_slots[3]]</a><br>"
 	if(food_slots[4])
-		dat += "<a href='?src=\ref[src];f4=1'>[food_slots[4]]</a><br>"
+		dat += "<a href='?src=[UID()];f4=1'>[food_slots[4]]</a><br>"
 	if(food_slots[5])
-		dat += "<a href='?src=\ref[src];f5=1'>[food_slots[5]]</a><br>"
+		dat += "<a href='?src=[UID()];f5=1'>[food_slots[5]]</a><br>"
 	if(food_slots[6])
-		dat += "<a href='?src=\ref[src];f6=1'>[food_slots[6]]</a><br>"
+		dat += "<a href='?src=[UID()];f6=1'>[food_slots[6]]</a><br>"
 	if(drink_slots[1])
-		dat += "<a href='?src=\ref[src];d1=1'>[drink_slots[1]]</a><br>"
+		dat += "<a href='?src=[UID()];d1=1'>[drink_slots[1]]</a><br>"
 	if(drink_slots[2])
-		dat += "<a href='?src=\ref[src];d2=1'>[drink_slots[2]]</a><br>"
+		dat += "<a href='?src=[UID()];d2=1'>[drink_slots[2]]</a><br>"
 	if(drink_slots[3])
-		dat += "<a href='?src=\ref[src];d3=1'>[drink_slots[3]]</a><br>"
+		dat += "<a href='?src=[UID()];d3=1'>[drink_slots[3]]</a><br>"
 	if(drink_slots[4])
-		dat += "<a href='?src=\ref[src];d4=1'>[drink_slots[4]]</a><br>"
+		dat += "<a href='?src=[UID()];d4=1'>[drink_slots[4]]</a><br>"
 	if(drink_slots[5])
-		dat += "<a href='?src=\ref[src];d5=1'>[drink_slots[5]]</a><br>"
+		dat += "<a href='?src=[UID()];d5=1'>[drink_slots[5]]</a><br>"
 	if(drink_slots[6])
-		dat += "<a href='?src=\ref[src];d6=1'>[drink_slots[6]]</a><br>"
+		dat += "<a href='?src=[UID()];d6=1'>[drink_slots[6]]</a><br>"
 	var/datum/browser/popup = new(user, "foodcart", name, 240, 160)
 	popup.set_content(dat)
 	popup.open()

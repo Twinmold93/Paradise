@@ -1,17 +1,17 @@
 /////////Apprentice Contract//////////
 
-/obj/item/weapon/contract
+/obj/item/contract
 	name = "contract"
 	desc = "A magic contract previously signed by an apprentice. In exchange for instruction in the magical arts, they are bound to answer your call for aid."
 	icon = 'icons/obj/wizard.dmi'
 	icon_state ="scroll2"
 	throw_speed = 1
 	throw_range = 5
-	w_class = 1.0
+	w_class = WEIGHT_CLASS_TINY
 	var/used = 0
 
 
-/obj/item/weapon/contract/attack_self(mob/user as mob)
+/obj/item/contract/attack_self(mob/user as mob)
 	user.set_machine(src)
 	var/dat
 	if(used)
@@ -21,20 +21,20 @@
 		dat += "<I>Using this contract, you may summon an apprentice to aid you on your mission.</I><BR>"
 		dat += "<I>If you are unable to establish contact with your apprentice, you can feed the contract back to the spellbook to refund your points.</I><BR>"
 		dat += "<B>Which school of magic is your apprentice studying?:</B><BR>"
-		dat += "<A href='byond://?src=\ref[src];school=destruction'>Destruction</A><BR>"
+		dat += "<A href='byond://?src=[UID()];school=destruction'>Destruction</A><BR>"
 		dat += "<I>Your apprentice is skilled in offensive magic. They know Magic Missile and Fireball.</I><BR>"
-		dat += "<A href='byond://?src=\ref[src];school=bluespace'>Bluespace Manipulation</A><BR>"
+		dat += "<A href='byond://?src=[UID()];school=bluespace'>Bluespace Manipulation</A><BR>"
 		dat += "<I>Your apprentice is able to defy physics, melting through solid objects and travelling great distances in the blink of an eye. They know Teleport and Ethereal Jaunt.</I><BR>"
-		dat += "<A href='byond://?src=\ref[src];school=healing'>Healing</A><BR>"
+		dat += "<A href='byond://?src=[UID()];school=healing'>Healing</A><BR>"
 		dat += "<I>Your apprentice is training to cast spells that will aid your survival. They know Forcewall and Charge and come with a Staff of Healing.</I><BR>"
-		dat += "<A href='byond://?src=\ref[src];school=robeless'>Robeless</A><BR>"
+		dat += "<A href='byond://?src=[UID()];school=robeless'>Robeless</A><BR>"
 		dat += "<I>Your apprentice is training to cast spells without their robes. They know Knock and Mindswap.</I><BR>"
 	user << browse(dat, "window=radio")
 	onclose(user, "radio")
 	return
 
 
-/obj/item/weapon/contract/Topic(href, href_list)
+/obj/item/contract/Topic(href, href_list)
 	..()
 	var/mob/living/carbon/human/H = usr
 
@@ -46,50 +46,50 @@
 	if(loc == H || (in_range(src, H) && istype(loc, /turf)))
 		H.set_machine(src)
 		if(href_list["school"])
-			if (used)
+			if(used)
 				to_chat(H, "You already used this contract!")
 				return
 			used = 1
 			var/list/candidates = pollCandidates("Do you want to play as the wizard apprentice of [H.real_name]?", ROLE_WIZARD, 1)
 			if(candidates.len)
 				var/mob/C = pick(candidates)
-				new /obj/effect/effect/harmless_smoke(H.loc)
+				new /obj/effect/particle_effect/smoke(H.loc)
 				var/mob/living/carbon/human/M = new/mob/living/carbon/human(H.loc)
 				M.key = C.key
-				to_chat(M, "<B>You are the [H.real_name]'s apprentice! You are bound by magic contract to follow their orders and help them in accomplishing their goals.")
+				to_chat(M, "<B>You are the [H.real_name]'s apprentice! You are bound by magic contract to follow [H.p_their()] orders and help [H.p_them()] in accomplishing their goals.")
 				switch(href_list["school"])
 					if("destruction")
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/projectile/magic_missile(M))
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/dumbfire/fireball(M))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/projectile/magic_missile(null))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/fireball(null))
 						to_chat(M, "<B>Your service has not gone unrewarded, however. Studying under [H.real_name], you have learned powerful, destructive spells. You are able to cast magic missile and fireball.")
 					if("bluespace")
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/area_teleport/teleport(M))
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/ethereal_jaunt(M))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/area_teleport/teleport(null))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/ethereal_jaunt(null))
 						to_chat(M, "<B>Your service has not gone unrewarded, however. Studying under [H.real_name], you have learned reality bending mobility spells. You are able to cast teleport and ethereal jaunt.")
 					if("healing")
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/charge(M))
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/aoe_turf/conjure/forcewall(M))
-						M.equip_to_slot_or_del(new /obj/item/weapon/gun/magic/staff/healing(M), slot_r_hand)
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/charge(null))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/forcewall(null))
+						M.equip_to_slot_or_del(new /obj/item/gun/magic/staff/healing(M), slot_r_hand)
 						to_chat(M, "<B>Your service has not gone unrewarded, however. Studying under [H.real_name], you have learned livesaving survival spells. You are able to cast charge and forcewall.")
 					if("robeless")
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/aoe_turf/knock(M))
-						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/mind_transfer(M))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/aoe_turf/knock(null))
+						M.mind.AddSpell(new /obj/effect/proc_holder/spell/targeted/mind_transfer(null))
 						to_chat(M, "<B>Your service has not gone unrewarded, however. Studying under [H.real_name], you have learned stealthy, robeless spells. You are able to cast knock and mindswap.")
 
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/color/lightpurple(M), slot_w_uniform)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(M), slot_shoes)
 				M.equip_to_slot_or_del(new /obj/item/clothing/suit/wizrobe(M), slot_wear_suit)
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/wizard(M), slot_head)
-				M.equip_to_slot_or_del(new /obj/item/weapon/storage/backpack(M), slot_back)
-				M.equip_to_slot_or_del(new /obj/item/weapon/storage/box(M), slot_in_backpack)
-				M.equip_to_slot_or_del(new /obj/item/weapon/teleportation_scroll/apprentice(M), slot_r_store)
-				var/wizard_name_first = pick(wizard_first)
-				var/wizard_name_second = pick(wizard_second)
+				M.equip_to_slot_or_del(new /obj/item/storage/backpack(M), slot_back)
+				M.equip_to_slot_or_del(new /obj/item/storage/box(M), slot_in_backpack)
+				M.equip_to_slot_or_del(new /obj/item/teleportation_scroll/apprentice(M), slot_r_store)
+				var/wizard_name_first = pick(GLOB.wizard_first)
+				var/wizard_name_second = pick(GLOB.wizard_second)
 				var/randomname = "[wizard_name_first] [wizard_name_second]"
 				var/newname = sanitize(copytext(input(M, "You are the wizard's apprentice. Would you like to change your name to something else?", "Name change", randomname) as null|text,1,MAX_NAME_LEN))
 
-				if (!newname)
+				if(!newname)
 					newname = randomname
 				M.mind.name = newname
 				M.real_name = newname
@@ -100,7 +100,7 @@
 				new_objective.explanation_text = "Protect [H.real_name], the wizard."
 				M.mind.objectives += new_objective
 				ticker.mode.traitors += M.mind
-				M.mind.special_role = "apprentice"
+				M.mind.special_role = SPECIAL_ROLE_WIZARD_APPRENTICE
 				ticker.mode.update_wiz_icons_added(M.mind)
 				M.faction = list("wizard")
 			else
@@ -111,7 +111,7 @@
 
 ///////////////////////////Veil Render//////////////////////
 
-/obj/item/weapon/veilrender
+/obj/item/veilrender
 	name = "veil render"
 	desc = "A wicked curved blade of alien origin, recovered from the ruins of a vast city."
 	icon = 'icons/obj/wizard.dmi'
@@ -119,7 +119,7 @@
 	item_state = "render"
 	force = 15
 	throwforce = 10
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	var/charged = 1
 	var/spawn_type = /obj/singularity/narsie/wizard
@@ -127,7 +127,7 @@
 	var/activate_descriptor = "reality"
 	var/rend_desc = "You should run now."
 
-/obj/item/weapon/veilrender/attack_self(mob/user as mob)
+/obj/item/veilrender/attack_self(mob/user as mob)
 	if(charged)
 		new /obj/effect/rend(get_turf(user), spawn_type, spawn_amt, rend_desc)
 		charged = 0
@@ -165,13 +165,13 @@
 		qdel(src)
 
 /obj/effect/rend/attackby(obj/item/I as obj, mob/user as mob)
-	if(istype(I, /obj/item/weapon/nullrod))
+	if(istype(I, /obj/item/nullrod))
 		user.visible_message("<span class='danger'>[user] seals \the [src] with \the [I].</span>")
 		qdel(src)
 		return
 	..()
 
-/obj/item/weapon/veilrender/vealrender
+/obj/item/veilrender/vealrender
 	name = "veal render"
 	desc = "A wicked curved blade of alien origin, recovered from the ruins of a vast farm."
 	spawn_type = /mob/living/simple_animal/cow
@@ -179,7 +179,7 @@
 	activate_descriptor = "hunger"
 	rend_desc = "Reverberates with the sound of ten thousand moos."
 
-/obj/item/weapon/veilrender/honkrender
+/obj/item/veilrender/honkrender
 	name = "honk render"
 	desc = "A wicked curved blade of alien origin, recovered from the ruins of a vast circus."
 	spawn_type = /mob/living/simple_animal/hostile/retaliate/clown
@@ -189,7 +189,7 @@
 	icon_state = "clownrender"
 
 
-/obj/item/weapon/veilrender/crabrender
+/obj/item/veilrender/crabrender
 	name = "crab render"
 	desc = "A wicked curved blade of alien origin, recovered from the ruins of a vast aquarium."
 	spawn_type = /mob/living/simple_animal/crab
@@ -199,7 +199,7 @@
 
 /////////////////////////////////////////Scrying///////////////////
 
-/obj/item/weapon/scrying
+/obj/item/scrying
 	name = "scrying orb"
 	desc = "An incandescent orb of otherworldly energy, staring into it gives you vision beyond mortal means."
 	icon = 'icons/obj/projectiles.dmi'
@@ -211,18 +211,17 @@
 	force = 15
 	hitsound = 'sound/items/welder2.ogg'
 
-/obj/item/weapon/scrying/attack_self(mob/user as mob)
+/obj/item/scrying/attack_self(mob/user as mob)
 	to_chat(user, "<span class='notice'> You can see...everything!</span>")
-	visible_message("<span class='danger'>[user] stares into [src], their eyes glazing over.</span>")
+	visible_message("<span class='danger'>[user] stares into [src], [user.p_their()] eyes glazing over.</span>")
 	user.ghostize(1)
 
 /////////////////////Multiverse Blade////////////////////
 var/global/list/multiverse = list()
 
-/obj/item/weapon/multisword
+/obj/item/multisword
 	name = "multiverse sword"
 	desc = "A weapon capable of conquering the universe and beyond. Activate it to summon copies of yourself from others dimensions to fight by your side."
-	icon = 'icons/obj/weapons.dmi'
 	icon_state = "energy_katana"
 	item_state = "energy_katana"
 	hitsound = 'sound/weapons/bladeslice.ogg'
@@ -231,8 +230,7 @@ var/global/list/multiverse = list()
 	force = 20
 	throwforce = 10
 	sharp = 1
-	edge = 1
-	w_class = 2
+	w_class = WEIGHT_CLASS_SMALL
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	var/faction = list("unassigned")
 	var/cooldown = 0
@@ -241,25 +239,25 @@ var/global/list/multiverse = list()
 	var/evil = TRUE
 	var/probability_evil = 30 //what's the probability this sword will be evil when activated?
 	var/duplicate_self = 0 //Do we want the species randomized along with equipment should the user be duplicated in their entirety?
-	var/sword_type = /obj/item/weapon/multisword //type of sword to equip.
+	var/sword_type = /obj/item/multisword //type of sword to equip.
 
-/obj/item/weapon/multisword/New()
+/obj/item/multisword/New()
 	..()
 	multiverse |= src
 
 
-/obj/item/weapon/multisword/Destroy()
+/obj/item/multisword/Destroy()
 	multiverse.Remove(src)
 	return ..()
 
-/obj/item/weapon/multisword/attack(mob/living/M as mob, mob/living/user as mob)  //to prevent accidental friendly fire or out and out grief.
+/obj/item/multisword/attack(mob/living/M as mob, mob/living/user as mob)  //to prevent accidental friendly fire or out and out grief.
 	if(M.real_name == user.real_name)
 		to_chat(user, "<span class='warning'>The [src] detects benevolent energies in your target and redirects your attack!</span>")
 		return
 	..()
 
-/obj/item/weapon/multisword/attack_self(mob/user)
-	if(user.mind.special_role == "apprentice")
+/obj/item/multisword/attack_self(mob/user)
+	if(user.mind.special_role == SPECIAL_ROLE_WIZARD_APPRENTICE)
 		to_chat(user, "<span class='warning'>You know better than to touch your teacher's stuff.</span>")
 		return
 	if(cooldown < world.time)
@@ -279,7 +277,7 @@ var/global/list/multiverse = list()
 					var/datum/objective/hijackclone/hijack_objective = new /datum/objective/hijackclone
 					hijack_objective.owner = usr.mind
 					usr.mind.objectives += hijack_objective
-					hijack_objective.explanation_text = "Ensure only [usr.real_name] and their copies are on the shuttle!"
+					hijack_objective.explanation_text = "Ensure only [usr.real_name] and [usr.p_their()] copies are on the shuttle!"
 					to_chat(usr, "<B>Objective #[1]</B>: [hijack_objective.explanation_text]")
 					ticker.mode.traitors += usr.mind
 					usr.mind.special_role = "[usr.real_name] Prime"
@@ -296,7 +294,7 @@ var/global/list/multiverse = list()
 					evil = FALSE
 		else
 			cooldown = world.time + cooldown_between_uses
-			for(var/obj/item/weapon/multisword/M in multiverse)
+			for(var/obj/item/multisword/M in multiverse)
 				if(M.assigned == assigned)
 					M.cooldown = cooldown
 
@@ -312,7 +310,7 @@ var/global/list/multiverse = list()
 		to_chat(user, "<span class='warning'><B>[src] is recharging! Keep in mind it shares a cooldown with the swords wielded by your copies.</span>")
 
 
-/obj/item/weapon/multisword/proc/spawn_copy(var/client/C, var/turf/T, mob/user)
+/obj/item/multisword/proc/spawn_copy(var/client/C, var/turf/T, mob/user)
 	var/mob/living/carbon/human/M = new/mob/living/carbon/human(T)
 	if(duplicate_self)
 		user.client.prefs.copy_to(M)
@@ -320,14 +318,14 @@ var/global/list/multiverse = list()
 		C.prefs.copy_to(M)
 	M.key = C.key
 	M.mind.name = user.real_name
-	to_chat(M, "<B>You are an alternate version of [user.real_name] from another universe! Help them accomplish their goals at all costs.</B>")
+	to_chat(M, "<B>You are an alternate version of [user.real_name] from another universe! Help [user.p_them()] accomplish [user.p_their()] goals at all costs.</B>")
 	M.faction = list("[user.real_name]")
 	if(duplicate_self)
-		M.set_species(user.get_species()) //duplicate the sword user's species.
+		M.set_species(user.dna.species.type) //duplicate the sword user's species.
 	else
 		if(prob(50))
-			var/list/all_species = list("Human","Unathi","Skrell","Tajaran","Kidan","Golem","Diona","Machine","Slime People","Grey","Vulpkanin")
-			M.set_species(pick(all_species))
+			var/list/list_all_species = list(/datum/species/human, /datum/species/unathi, /datum/species/skrell, /datum/species/tajaran, /datum/species/kidan, /datum/species/golem, /datum/species/diona, /datum/species/machine, /datum/species/slime, /datum/species/grey, /datum/species/vulpkanin)
+			M.set_species(pick(list_all_species))
 	M.real_name = user.real_name //this is clear down here in case the user happens to become a golem; that way they have the proper name.
 	M.name = user.real_name
 	if(duplicate_self)
@@ -344,23 +342,23 @@ var/global/list/multiverse = list()
 		var/datum/objective/hijackclone/hijack_objective = new /datum/objective/hijackclone
 		hijack_objective.owner = M.mind
 		M.mind.objectives += hijack_objective
-		hijack_objective.explanation_text = "Ensure only [usr.real_name] and their copies are on the shuttle!"
+		hijack_objective.explanation_text = "Ensure only [usr.real_name] and [usr.p_their()] copies are on the shuttle!"
 		to_chat(M, "<B>Objective #[1]</B>: [hijack_objective.explanation_text]")
-		M.mind.special_role = "multiverse traveller"
+		M.mind.special_role = SPECIAL_ROLE_MULTIVERSE
 		log_game("[M.key] was made a multiverse traveller with the objective to help [usr.real_name] hijack.")
 	else
 		var/datum/objective/protect/new_objective = new /datum/objective/protect
 		new_objective.owner = M.mind
 		new_objective.target = usr.mind
-		new_objective.explanation_text = "Protect [usr.real_name], your copy, and help them defend the innocent from the mobs of multiverse clones."
+		new_objective.explanation_text = "Protect [usr.real_name], your copy, and help [usr.p_them()] defend the innocent from the mobs of multiverse clones."
 		M.mind.objectives += new_objective
 		to_chat(M, "<B>Objective #[1]</B>: [new_objective.explanation_text]")
-		M.mind.special_role = "multiverse traveller"
+		M.mind.special_role = SPECIAL_ROLE_MULTIVERSE
 		log_game("[M.key] was made a multiverse traveller with the objective to help [usr.real_name] protect the station.")
 
-/obj/item/weapon/multisword/proc/equip_copy(var/mob/living/carbon/human/M)
+/obj/item/multisword/proc/equip_copy(var/mob/living/carbon/human/M)
 
-	var/obj/item/weapon/multisword/sword = new sword_type
+	var/obj/item/multisword/sword = new sword_type
 	sword.assigned = assigned
 	sword.faction = list("[assigned]")
 	sword.evil = evil
@@ -431,7 +429,7 @@ var/global/list/multiverse = list()
 
 		M.equip_to_slot_or_del(sword, slot_r_hand) //Don't duplicate what's equipped to hands, or else duplicate swords could be generated...or weird cases of factionless swords.
 	else
-		if(M.get_species() == "Tajaran" || M.get_species() == "Unathi")
+		if(istajaran(M) || isunathi(M))
 			M.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(M), slot_shoes)	//If they can't wear shoes, give them a pair of sandals.
 
 		var/randomize = pick("mobster","roman","wizard","cyborg","syndicate","assistant", "animu", "cultist", "highlander", "clown", "killer", "pirate", "soviet", "officer", "gladiator")
@@ -441,7 +439,7 @@ var/global/list/multiverse = list()
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/fedora(M), slot_head)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/laceup(M), slot_shoes)
 				M.equip_to_slot_or_del(new /obj/item/clothing/gloves/color/black(M), slot_gloves)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses(M), slot_glasses)
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/suit_jacket/really_black(M), slot_w_uniform)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
@@ -451,21 +449,21 @@ var/global/list/multiverse = list()
 				M.equip_to_slot_or_del(new hat(M), slot_head)
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/roman(M), slot_w_uniform)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/roman(M), slot_shoes)
-				M.equip_to_slot_or_del(new /obj/item/weapon/shield/riot/roman(M), slot_l_hand)
+				M.equip_to_slot_or_del(new /obj/item/shield/riot/roman(M), slot_l_hand)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("wizard")
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/color/lightpurple(M), slot_w_uniform)
 				M.equip_to_slot_or_del(new /obj/item/clothing/suit/wizrobe/red(M), slot_wear_suit)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(M), slot_shoes)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/wizard/red(M), slot_head)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("cyborg")
-				if(M.get_species() != "Machine")
-					for(var/obj/item/organ/O in M.organs)
-						O.robotize()
+				if(!ismachine(M))
+					for(var/obj/item/organ/O in M.bodyparts)
+						O.robotize(make_tough = 1)
 				M.equip_to_slot_or_del(new /obj/item/clothing/glasses/thermal/eyepatch(M), slot_glasses)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
@@ -474,44 +472,43 @@ var/global/list/multiverse = list()
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/combat(M), slot_shoes)
 				M.equip_to_slot_or_del(new /obj/item/clothing/gloves/combat(M), slot_gloves)
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/helmet/swat(M), slot_head)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/suit/armor/vest(M), slot_wear_suit)
 				M.equip_to_slot_or_del(new /obj/item/clothing/mask/gas(M),slot_wear_mask)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("assistant")
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(M), slot_w_uniform)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/black(M), slot_shoes)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("animu")
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(M), slot_shoes)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/kitty(M), slot_head)
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/schoolgirl(M), slot_w_uniform)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("cultist")
-				M.equip_to_slot_or_del(new /obj/item/clothing/head/culthood/alt(M), slot_head)
-				M.equip_to_slot_or_del(new /obj/item/clothing/suit/cultrobes/alt(M), slot_wear_suit)
+				M.equip_to_slot_or_del(new /obj/item/clothing/suit/hooded/cultrobes/alt(M), slot_wear_suit)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/cult(M), slot_shoes)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("highlander")
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/kilt(M), slot_w_uniform)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/beret(M), slot_head)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/combat(M), slot_shoes)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("clown")
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/rank/clown(M), slot_w_uniform)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/clown_shoes(M), slot_shoes)
 				M.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/clown_hat(M), slot_wear_mask)
-				M.equip_to_slot_or_del(new /obj/item/weapon/bikehorn(M), slot_l_store)
+				M.equip_to_slot_or_del(new /obj/item/bikehorn(M), slot_l_store)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("killer")
@@ -520,28 +517,28 @@ var/global/list/multiverse = list()
 				M.equip_to_slot_or_del(new /obj/item/clothing/gloves/color/latex(M), slot_gloves)
 				M.equip_to_slot_or_del(new /obj/item/clothing/mask/surgical(M), slot_wear_mask)
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/welding(M), slot_head)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/suit/apron(M), slot_wear_suit)
-				M.equip_to_slot_or_del(new /obj/item/weapon/kitchen/knife(M), slot_l_store)
-				M.equip_to_slot_or_del(new /obj/item/weapon/scalpel(M), slot_r_store)
+				M.equip_to_slot_or_del(new /obj/item/kitchen/knife(M), slot_l_store)
+				M.equip_to_slot_or_del(new /obj/item/scalpel(M), slot_r_store)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 				for(var/obj/item/carried_item in M.contents)
-					if(!istype(carried_item, /obj/item/weapon/implant))
-						carried_item.add_blood(M)
+					if(!istype(carried_item, /obj/item/implant))
+						carried_item.add_mob_blood(M)
 
 			if("pirate")
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/pirate(M), slot_w_uniform)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/brown(M), slot_shoes)
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/bandana(M), slot_head)
 				M.equip_to_slot_or_del(new /obj/item/clothing/glasses/eyepatch(M), slot_glasses)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
 			if("soviet")
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/hgpiratecap(M), slot_head)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/combat(M), slot_shoes)
 				M.equip_to_slot_or_del(new /obj/item/clothing/gloves/combat(M), slot_gloves)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/suit/hgpirate(M), slot_wear_suit)
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/soviet(M), slot_w_uniform)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
@@ -551,7 +548,7 @@ var/global/list/multiverse = list()
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/combat(M), slot_shoes)
 				M.equip_to_slot_or_del(new /obj/item/clothing/gloves/combat(M), slot_gloves)
 				M.equip_to_slot_or_del(new /obj/item/clothing/mask/cigarette/cigar/havana(M), slot_wear_mask)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/suit/jacket/miljacket(M), slot_wear_suit)
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/syndicate(M), slot_w_uniform)
 				M.equip_to_slot_or_del(new /obj/item/clothing/glasses/eyepatch(M), slot_glasses)
@@ -560,7 +557,7 @@ var/global/list/multiverse = list()
 			if("gladiator")
 				M.equip_to_slot_or_del(new /obj/item/clothing/head/helmet/gladiator(M), slot_head)
 				M.equip_to_slot_or_del(new /obj/item/clothing/under/gladiator(M), slot_w_uniform)
-				M.equip_to_slot_or_del(new /obj/item/device/radio/headset(M), slot_l_ear)
+				M.equip_to_slot_or_del(new /obj/item/radio/headset(M), slot_l_ear)
 				M.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(M), slot_shoes)
 				M.equip_to_slot_or_del(sword, slot_r_hand)
 
@@ -568,11 +565,11 @@ var/global/list/multiverse = list()
 			else
 				return
 
-	var/obj/item/weapon/card/id/W = new /obj/item/weapon/card/id
+	var/obj/item/card/id/W = new /obj/item/card/id
 	if(duplicate_self)
 		var/duplicated_access = usr.get_item_by_slot(slot_wear_id)
-		if(duplicated_access && istype(duplicated_access, /obj/item/weapon/card/id))
-			var/obj/item/weapon/card/id/duplicated_id = duplicated_access
+		if(duplicated_access && istype(duplicated_access, /obj/item/card/id))
+			var/obj/item/card/id/duplicated_id = duplicated_access
 			W.access = duplicated_id.access
 			W.icon_state = duplicated_id.icon_state
 		else
@@ -587,12 +584,17 @@ var/global/list/multiverse = list()
 	W.SetOwnerInfo(M)
 	M.equip_to_slot_or_del(W, slot_wear_id)
 
+	if(isvox(M))
+		M.dna.species.after_equip_job(null, M) //Nitrogen tanks
+	if(isplasmaman(M))
+		M.dna.species.after_equip_job(null, M) //No fireballs from other dimensions.
+
 	M.update_icons()
 
-/obj/item/weapon/multisword/pure_evil
+/obj/item/multisword/pure_evil
 	probability_evil = 100
 
-/obj/item/weapon/multisword/pike //If We are to be used and spent, let it be for a noble purpose.
+/obj/item/multisword/pike //If We are to be used and spent, let it be for a noble purpose.
 	name = "phantom pike"
 	desc = "A fishing pike that appears to be imbued with a peculiar energy."
 	icon_state = "harpoon"
@@ -600,27 +602,27 @@ var/global/list/multiverse = list()
 	cooldown_between_uses = 200 //Half the time
 	probability_evil = 100
 	duplicate_self = 1
-	sword_type = /obj/item/weapon/multisword/pike
+	sword_type = /obj/item/multisword/pike
 
 
 /////////////////////////////////////////Necromantic Stone///////////////////
 
-/obj/item/device/necromantic_stone
+/obj/item/necromantic_stone
 	name = "necromantic stone"
 	desc = "A shard capable of resurrecting humans as skeleton thralls."
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "necrostone"
 	item_state = "electronic"
 	origin_tech = "bluespace=4;materials=4"
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	var/list/spooky_scaries = list()
 	var/unlimited = 0
 	var/heresy = 0
 
-/obj/item/device/necromantic_stone/unlimited
+/obj/item/necromantic_stone/unlimited
 	unlimited = 1
 
-/obj/item/device/necromantic_stone/attack(mob/living/carbon/human/M as mob, mob/living/carbon/human/user as mob)
+/obj/item/necromantic_stone/attack(mob/living/carbon/human/M as mob, mob/living/carbon/human/user as mob)
 
 	if(!istype(M))
 		return ..()
@@ -644,16 +646,16 @@ var/global/list/multiverse = list()
 	if(heresy)
 		spawnheresy(M)//oh god why
 	else
-		M.set_species("Skeleton")
+		M.set_species(/datum/species/skeleton)
 		M.visible_message("<span class = 'warning'> A massive amount of flesh sloughs off [M] and a skeleton rises up!</span>")
 		M.revive()
 		equip_skeleton(M)
 	spooky_scaries |= M
 	to_chat(M, "<span class='userdanger'>You have been revived by </span><B>[user.real_name]!</B>")
-	to_chat(M, "<span class='userdanger'>They are your master now, assist them even if it costs you your new life!</span>")
+	to_chat(M, "<span class='userdanger'>[user.p_theyre(TRUE)] your master now, assist them even if it costs you your new life!</span>")
 	desc = "A shard capable of resurrecting humans as skeleton thralls[unlimited ? "." : ", [spooky_scaries.len]/3 active thralls."]"
 
-/obj/item/device/necromantic_stone/proc/check_spooky()
+/obj/item/necromantic_stone/proc/check_spooky()
 	if(unlimited) //no point, the list isn't used.
 		return
 	for(var/X in spooky_scaries)
@@ -668,7 +670,7 @@ var/global/list/multiverse = list()
 
 //Funny gimmick, skeletons always seem to wear roman/ancient armour
 //Voodoo Zombie Pirates added for paradise
-/obj/item/device/necromantic_stone/proc/equip_skeleton(mob/living/carbon/human/H as mob)
+/obj/item/necromantic_stone/proc/equip_skeleton(mob/living/carbon/human/H as mob)
 	for(var/obj/item/I in H)
 		H.unEquip(I)
 	var/randomSpooky = "roman"//defualt
@@ -680,39 +682,39 @@ var/global/list/multiverse = list()
 			H.equip_to_slot_or_del(new hat(H), slot_head)
 			H.equip_to_slot_or_del(new /obj/item/clothing/under/roman(H), slot_w_uniform)
 			H.equip_to_slot_or_del(new /obj/item/clothing/shoes/roman(H), slot_shoes)
-			H.equip_to_slot_or_del(new /obj/item/weapon/shield/riot/roman(H), slot_l_hand)
-			H.equip_to_slot_or_del(new /obj/item/weapon/claymore(H), slot_r_hand)
-			H.equip_to_slot_or_del(new /obj/item/weapon/twohanded/spear(H), slot_back)
+			H.equip_to_slot_or_del(new /obj/item/shield/riot/roman(H), slot_l_hand)
+			H.equip_to_slot_or_del(new /obj/item/claymore(H), slot_r_hand)
+			H.equip_to_slot_or_del(new /obj/item/twohanded/spear(H), slot_back)
 		if("pirate")
 			H.equip_to_slot_or_del(new /obj/item/clothing/under/pirate(H), slot_w_uniform)
 			H.equip_to_slot_or_del(new /obj/item/clothing/suit/pirate_brown(H),  slot_wear_suit)
 			H.equip_to_slot_or_del(new /obj/item/clothing/head/bandana(H), slot_head)
 			H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H), slot_shoes)
 			H.equip_to_slot_or_del(new /obj/item/clothing/glasses/eyepatch(H), slot_glasses)
-			H.equip_to_slot_or_del(new /obj/item/weapon/claymore(H), slot_r_hand)
-			H.equip_to_slot_or_del(new /obj/item/weapon/twohanded/spear(H), slot_back)
-			H.equip_to_slot_or_del(new /obj/item/weapon/shield/riot/roman(H), slot_l_hand)
+			H.equip_to_slot_or_del(new /obj/item/claymore(H), slot_r_hand)
+			H.equip_to_slot_or_del(new /obj/item/twohanded/spear(H), slot_back)
+			H.equip_to_slot_or_del(new /obj/item/shield/riot/roman(H), slot_l_hand)
 		if("yand")//mine is an evil laugh
 			H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H), slot_shoes)
 			H.equip_to_slot_or_del(new /obj/item/clothing/head/kitty(H), slot_head)
 			H.equip_to_slot_or_del(new /obj/item/clothing/under/schoolgirl(H), slot_w_uniform)
 			H.equip_to_slot_or_del(new /obj/item/clothing/suit/armor/vest(H),  slot_wear_suit)
-			H.equip_to_slot_or_del(new /obj/item/weapon/katana(H), slot_r_hand)
-			H.equip_to_slot_or_del(new /obj/item/weapon/shield/riot/roman(H), slot_l_hand)
-			H.equip_to_slot_or_del(new /obj/item/weapon/twohanded/spear(H), slot_back)
+			H.equip_to_slot_or_del(new /obj/item/katana(H), slot_r_hand)
+			H.equip_to_slot_or_del(new /obj/item/shield/riot/roman(H), slot_l_hand)
+			H.equip_to_slot_or_del(new /obj/item/twohanded/spear(H), slot_back)
 		if("clown")
 			H.equip_to_slot_or_del(new /obj/item/clothing/under/rank/clown(H), slot_w_uniform)
 			H.equip_to_slot_or_del(new /obj/item/clothing/shoes/clown_shoes(H), slot_shoes)
 			H.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/clown_hat(H), slot_wear_mask)
 			H.equip_to_slot_or_del(new /obj/item/clothing/head/stalhelm(H), slot_head)
-			H.equip_to_slot_or_del(new /obj/item/weapon/bikehorn(H), slot_l_store)
-			H.equip_to_slot_or_del(new /obj/item/weapon/claymore(H), slot_r_hand)
-			H.equip_to_slot_or_del(new /obj/item/weapon/shield/riot/roman(H), slot_l_hand)
-			H.equip_to_slot_or_del(new /obj/item/weapon/twohanded/spear(H), slot_back)
+			H.equip_to_slot_or_del(new /obj/item/bikehorn(H), slot_l_store)
+			H.equip_to_slot_or_del(new /obj/item/claymore(H), slot_r_hand)
+			H.equip_to_slot_or_del(new /obj/item/shield/riot/roman(H), slot_l_hand)
+			H.equip_to_slot_or_del(new /obj/item/twohanded/spear(H), slot_back)
 
-/obj/item/device/necromantic_stone/proc/spawnheresy(mob/living/carbon/human/H as mob)
-	H.set_species("Human")
-	if (H.gender == MALE)
+/obj/item/necromantic_stone/proc/spawnheresy(mob/living/carbon/human/H as mob)
+	H.set_species(/datum/species/human)
+	if(H.gender == MALE)
 		H.change_gender(FEMALE)
 
 	var/list/anime_hair =list("Odango", "Kusanagi Hair", "Pigtails", "Hime Cut", "Floorlength Braid", "Ombre", "Twincurls", "Twincurls 2")
@@ -733,23 +735,23 @@ var/global/list/multiverse = list()
 	H.equip_to_slot_or_del(new /obj/item/clothing/head/kitty(H), slot_head)
 	H.equip_to_slot_or_del(new /obj/item/clothing/under/schoolgirl(H), slot_w_uniform)
 	H.equip_to_slot_or_del(new /obj/item/clothing/suit/armor/vest(H),  slot_wear_suit)
-	H.equip_to_slot_or_del(new /obj/item/weapon/katana(H), slot_r_hand)
-	H.equip_to_slot_or_del(new /obj/item/weapon/shield/riot/roman(H), slot_l_hand)
-	H.equip_to_slot_or_del(new /obj/item/weapon/twohanded/spear(H), slot_back)
+	H.equip_to_slot_or_del(new /obj/item/katana(H), slot_r_hand)
+	H.equip_to_slot_or_del(new /obj/item/shield/riot/roman(H), slot_l_hand)
+	H.equip_to_slot_or_del(new /obj/item/twohanded/spear(H), slot_back)
 	if(!H.real_name || H.real_name == "unknown")
 		H.real_name = "Neko-chan"
 	else
 		H.real_name = "[H.name]-chan"
 	H.say("NYA!~")
 
-/obj/item/device/necromantic_stone/nya
+/obj/item/necromantic_stone/nya
 	name = "nya-cromantic stone"
 	desc = "A shard capable of resurrecting humans as creatures of Vile Heresy. Even the Wizard Federation fears it.."
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "nyacrostone"
 	item_state = "electronic"
 	origin_tech = "bluespace=4;materials=4"
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	heresy = 1
 	unlimited = 1
 
@@ -767,8 +769,8 @@ var/global/list/multiverse = list()
 	var/obj/item/link = null
 	var/cooldown_time = 30 //3s
 	var/cooldown = 0
-
-
+	burntime = 0
+	burn_state = FLAMMABLE
 
 /obj/item/voodoo/attackby(obj/item/I as obj, mob/user as mob, params)
 	if(target && cooldown < world.time)
@@ -776,32 +778,37 @@ var/global/list/multiverse = list()
 			to_chat(target, "<span class='userdanger'>You suddenly feel very hot</span>")
 			target.bodytemperature += 50
 			GiveHint(target)
-		else if(can_puncture(I))
+		else if(is_pointed(I))
 			to_chat(target, "<span class='userdanger'>You feel a stabbing pain in [parse_zone(user.zone_sel.selecting)]!</span>")
 			target.Weaken(2)
 			GiveHint(target)
-		else if(istype(I,/obj/item/weapon/bikehorn))
+		else if(istype(I,/obj/item/bikehorn))
 			to_chat(target, "<span class='userdanger'>HONK</span>")
-			target << 'sound/items/AirHorn.ogg'
-			target.ear_damage += rand(0,3)
+			target << 'sound/items/airhorn.ogg'
+			target.MinimumDeafTicks(3)
 			GiveHint(target)
 		cooldown = world.time +cooldown_time
 		return
+
 	if(!link)
-		if(I.loc == user && istype(I) && I.w_class <= 2)
+		if(I.loc == user && istype(I) && I.w_class <= WEIGHT_CLASS_SMALL)
 			user.drop_item()
 			I.loc = src
 			link = I
 			to_chat(user, "You attach [I] to the doll.")
 			update_targets()
 	..()
+
 /obj/item/voodoo/check_eye(mob/user as mob)
-	return src.loc == user
+	if(loc != user)
+		user.reset_perspective(null)
+		user.unset_machine()
 
 /obj/item/voodoo/attack_self(mob/user as mob)
 	if(!target && possible.len)
 		target = input(user, "Select your victim!", "Voodoo") as null|anything in possible
 		return
+
 	if(user.zone_sel.selecting == "chest")
 		if(link)
 			target = null
@@ -810,6 +817,7 @@ var/global/list/multiverse = list()
 			link = null
 			update_targets()
 			return
+
 	if(target && cooldown < world.time)
 		switch(user.zone_sel.selecting)
 			if("mouth")
@@ -818,11 +826,9 @@ var/global/list/multiverse = list()
 				log_game("[user][user.key] made [target][target.key] say [wgw] with a voodoo doll.")
 			if("eyes")
 				user.set_machine(src)
-				if(user.client)
-					user.client.eye = target
-					user.client.perspective = EYE_PERSPECTIVE
+				user.reset_perspective(target)
 				spawn(100)
-					user.reset_view()
+					user.reset_perspective(null)
 					user.unset_machine()
 			if("r_leg","l_leg")
 				to_chat(user, "<span class='notice'>You move the doll's legs around.</span>")
@@ -850,7 +856,7 @@ var/global/list/multiverse = list()
 	possible = list()
 	if(!link)
 		return
-	for(var/mob/living/carbon/human/H in living_mob_list)
+	for(var/mob/living/carbon/human/H in GLOB.living_mob_list)
 		if(md5(H.dna.uni_identity) in link.fingerprints)
 			possible |= H
 
@@ -868,3 +874,9 @@ var/global/list/multiverse = list()
 		target.IgniteMob()
 		GiveHint(target,1)
 	return ..()
+
+/obj/item/organ/internal/heart/cursed/wizard
+	pump_delay = 60
+	heal_brute = 25
+	heal_burn = 25
+	heal_oxy = 25

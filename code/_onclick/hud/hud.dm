@@ -27,6 +27,8 @@
 	var/obj/screen/move_intent
 	var/obj/screen/module_store_icon
 
+	var/obj/screen/devil/soul_counter/devilsouldisplay
+
 	var/list/static_inventory = list()		//the screen objects which are static
 	var/list/toggleable_inventory = list()	//the screen objects which can be hidden
 	var/list/hotkeybuttons = list()			//the buttons that can be used via hotkeys
@@ -42,44 +44,31 @@
 
 /datum/hud/New(mob/owner)
 	mymob = owner
+	hide_actions_toggle = new
+	hide_actions_toggle.InitialiseIcon(mymob)
 
 /datum/hud/Destroy()
 	if(mymob.hud_used == src)
 		mymob.hud_used = null
 
-	qdel(hide_actions_toggle)
-	hide_actions_toggle = null
+	QDEL_NULL(hide_actions_toggle)
 
-	qdel(module_store_icon)
-	module_store_icon = null
+	QDEL_NULL(module_store_icon)
 
-	if(static_inventory.len)
-		for(var/thing in static_inventory)
-			qdel(thing)
-		static_inventory.Cut()
+	QDEL_LIST(static_inventory)
 
 	inv_slots.Cut()
 	action_intent = null
 	move_intent = null
 
-	if(toggleable_inventory.len)
-		for(var/thing in toggleable_inventory)
-			qdel(thing)
-		toggleable_inventory.Cut()
+	QDEL_LIST(toggleable_inventory)
 
-	if(hotkeybuttons.len)
-		for(var/thing in hotkeybuttons)
-			qdel(thing)
-		hotkeybuttons.Cut()
+	QDEL_LIST(hotkeybuttons)
 
-	if(infodisplay.len)
-		for(var/thing in infodisplay)
-			qdel(thing)
-		infodisplay.Cut()
+	QDEL_LIST(infodisplay)
 
 	//clear mob refs to screen objects
 	mymob.throw_icon = null
-	mymob.internals = null
 	mymob.healths = null
 	mymob.healthdoll = null
 	mymob.pullin = null
@@ -92,6 +81,7 @@
 	alien_plasma_display = null
 	vampire_blood_display = null
 	nightvisionicon = null
+	devilsouldisplay = null
 
 	mymob = null
 	return ..()
@@ -110,6 +100,15 @@
 	if(display_hud_version > HUD_VERSIONS)	//If the requested version number is greater than the available versions, reset back to the first version
 		display_hud_version = 1
 
+	if(mymob.client.view < world.view)
+		if(mymob.client.view < ARBITRARY_VIEWRANGE_NOHUD)
+			to_chat(mymob, "<span class='notice'>HUD is unavailable with this view range.</span>")
+			display_hud_version = HUD_STYLE_NOHUD
+		else
+			if(display_hud_version == HUD_STYLE_STANDARD)
+				to_chat(mymob, "<span class='notice'>Standard HUD mode is unavailable with a smaller-than-normal view range.</span>")
+				display_hud_version = HUD_STYLE_REDUCED
+
 	switch(display_hud_version)
 		if(HUD_STYLE_STANDARD)	//Default HUD
 			hud_shown = 1	//Governs behavior of other procs
@@ -121,6 +120,8 @@
 				mymob.client.screen += hotkeybuttons
 			if(infodisplay.len)
 				mymob.client.screen += infodisplay
+
+			mymob.client.screen += hide_actions_toggle
 
 			if(action_intent)
 				action_intent.screen_loc = initial(action_intent.screen_loc) //Restore intent selection to the original position
@@ -157,8 +158,8 @@
 				mymob.client.screen -= infodisplay
 
 	hud_version = display_hud_version
-	persistant_inventory_update()
-	mymob.update_action_buttons()
+	persistent_inventory_update()
+	mymob.update_action_buttons(1)
 	reorganize_alerts()
 	reload_fullscreen()
 
@@ -173,7 +174,7 @@
 /datum/hud/proc/hidden_inventory_update()
 	return
 
-/datum/hud/proc/persistant_inventory_update()
+/datum/hud/proc/persistent_inventory_update()
 	return
 
 //Triggered when F12 is pressed (Unless someone changed something in the DMF)
@@ -186,4 +187,3 @@
 		to_chat(usr, "<span class ='info'>Switched HUD mode. Press F12 to toggle.</span>")
 	else
 		to_chat(usr, "<span class ='warning'>This mob type does not use a HUD.</span>")
-

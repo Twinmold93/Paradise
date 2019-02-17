@@ -6,7 +6,7 @@
 	required_players = 10
 	required_enemies = 1	// how many of each type are required
 	recommended_enemies = 3
-	var/protected_species_changeling = list("Machine", "Slime People")
+	var/protected_species_changeling = list("Machine")
 
 /datum/game_mode/traitor/changeling/announce()
 	to_chat(world, "<B>The current game mode is - Traitor+Changeling!</B>")
@@ -19,7 +19,7 @@
 
 	var/list/datum/mind/possible_changelings = get_players_for_role(ROLE_CHANGELING)
 
-	for(var/mob/new_player/player in player_list)
+	for(var/mob/new_player/player in GLOB.player_list)
 		if((player.mind in possible_changelings) && (player.client.prefs.species in protected_species_changeling))
 			possible_changelings -= player.mind
 
@@ -35,7 +35,7 @@
 /datum/game_mode/traitor/changeling/post_setup()
 	for(var/datum/mind/changeling in changelings)
 		grant_changeling_powers(changeling.current)
-		changeling.special_role = "Changeling"
+		changeling.special_role = SPECIAL_ROLE_CHANGELING
 		forge_changeling_objectives(changeling)
 		greet_changeling(changeling)
 	..()

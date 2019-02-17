@@ -27,8 +27,8 @@
 
 /obj/structure/closet/wardrobe/red/New()
 	..()
-	new /obj/item/weapon/storage/backpack/duffel/security(src)
-	new /obj/item/weapon/storage/backpack/duffel/security(src)
+	new /obj/item/storage/backpack/duffel/security(src)
+	new /obj/item/storage/backpack/duffel/security(src)
 	new /obj/item/clothing/mask/bandana/red(src)
 	new /obj/item/clothing/mask/bandana/red(src)
 	new /obj/item/clothing/mask/bandana/red(src)
@@ -38,6 +38,9 @@
 	new /obj/item/clothing/under/rank/security/formal(src)
 	new /obj/item/clothing/under/rank/security/formal(src)
 	new /obj/item/clothing/under/rank/security/formal(src)
+	new /obj/item/clothing/under/rank/security/skirt(src)
+	new /obj/item/clothing/under/rank/security/skirt(src)
+	new /obj/item/clothing/under/rank/security/skirt(src)
 	new /obj/item/clothing/shoes/jackboots(src)
 	new /obj/item/clothing/shoes/jackboots(src)
 	new /obj/item/clothing/shoes/jackboots(src)
@@ -50,6 +53,9 @@
 	new /obj/item/clothing/head/beret/sec(src)
 	new /obj/item/clothing/head/beret/sec(src)
 	new /obj/item/clothing/head/beret/sec(src)
+	new /obj/item/clothing/head/officer(src)
+	new /obj/item/clothing/head/officer(src)
+	new /obj/item/clothing/head/officer(src)
 
 /obj/structure/closet/redcorp
 	name = "corporate security wardrobe"
@@ -127,6 +133,9 @@
 	new /obj/item/clothing/shoes/sandal(src)
 	new /obj/item/clothing/shoes/sandal(src)
 	new /obj/item/clothing/shoes/sandal(src)
+	new /obj/item/clothing/shoes/footwraps(src)
+	new /obj/item/clothing/shoes/footwraps(src)
+	new /obj/item/clothing/shoes/footwraps(src)
 
 
 /obj/structure/closet/wardrobe/orange
@@ -147,8 +156,8 @@
 
 /obj/structure/closet/wardrobe/yellow
 	name = "yellow wardrobe"
-	icon_state = "wardrobe-y"
-	icon_closed = "wardrobe-y"
+	icon_state = "yellow"
+	icon_closed = "yellow"
 
 /obj/structure/closet/wardrobe/yellow/New()
 	..()
@@ -162,17 +171,20 @@
 
 /obj/structure/closet/wardrobe/atmospherics_yellow
 	name = "atmospherics wardrobe"
-	icon_state = "yellow"
-	icon_closed = "yellow"
+	icon_state = "atmostech"
+	icon_closed = "atmostech"
 
 /obj/structure/closet/wardrobe/atmospherics_yellow/New()
 	..()
 	new /obj/item/clothing/under/rank/atmospheric_technician(src)
 	new /obj/item/clothing/under/rank/atmospheric_technician(src)
 	new /obj/item/clothing/under/rank/atmospheric_technician(src)
-	new /obj/item/clothing/shoes/black(src)
-	new /obj/item/clothing/shoes/black(src)
-	new /obj/item/clothing/shoes/black(src)
+	new /obj/item/clothing/under/rank/atmospheric_technician/skirt(src)
+	new /obj/item/clothing/under/rank/atmospheric_technician/skirt(src)
+	new /obj/item/clothing/under/rank/atmospheric_technician/skirt(src)
+	new /obj/item/clothing/shoes/workboots(src)
+	new /obj/item/clothing/shoes/workboots(src)
+	new /obj/item/clothing/shoes/workboots(src)
 	new /obj/item/clothing/head/hardhat/red(src)
 	new /obj/item/clothing/head/hardhat/red(src)
 	new /obj/item/clothing/head/hardhat/red(src)
@@ -184,17 +196,20 @@
 
 /obj/structure/closet/wardrobe/engineering_yellow
 	name = "engineering wardrobe"
-	icon_state = "yellow"
-	icon_closed = "yellow"
+	icon_state = "engineer"
+	icon_closed = "engineer"
 
 /obj/structure/closet/wardrobe/engineering_yellow/New()
 	..()
 	new /obj/item/clothing/under/rank/engineer(src)
 	new /obj/item/clothing/under/rank/engineer(src)
 	new /obj/item/clothing/under/rank/engineer(src)
-	new /obj/item/clothing/shoes/orange(src)
-	new /obj/item/clothing/shoes/orange(src)
-	new /obj/item/clothing/shoes/orange(src)
+	new /obj/item/clothing/under/rank/engineer/skirt(src)
+	new /obj/item/clothing/under/rank/engineer/skirt(src)
+	new /obj/item/clothing/under/rank/engineer/skirt(src)
+	new /obj/item/clothing/shoes/workboots(src)
+	new /obj/item/clothing/shoes/workboots(src)
+	new /obj/item/clothing/shoes/workboots(src)
 	new /obj/item/clothing/head/hardhat(src)
 	new /obj/item/clothing/head/hardhat(src)
 	new /obj/item/clothing/head/hardhat(src)
@@ -236,7 +251,13 @@
 	new /obj/item/clothing/under/rank/medical/green(src)
 	new /obj/item/clothing/head/surgery/green(src)
 	new /obj/item/clothing/under/rank/medical/purple(src)
+	new /obj/item/clothing/under/rank/medical/skirt(src)
+	new /obj/item/clothing/under/rank/medical/skirt(src)
 	new /obj/item/clothing/head/surgery/purple(src)
+	new /obj/item/clothing/under/medigown(src)
+	new /obj/item/clothing/under/medigown(src)
+	new /obj/item/clothing/under/medigown(src)
+	new /obj/item/clothing/under/medigown(src)
 	new /obj/item/clothing/shoes/black(src)
 	new /obj/item/clothing/shoes/black(src)
 	new /obj/item/clothing/shoes/black(src)
@@ -268,6 +289,9 @@
 	new /obj/item/clothing/under/rank/scientist(src)
 	new /obj/item/clothing/under/rank/scientist(src)
 	new /obj/item/clothing/under/rank/scientist(src)
+	new /obj/item/clothing/under/rank/scientist/skirt(src)
+	new /obj/item/clothing/under/rank/scientist/skirt(src)
+	new /obj/item/clothing/under/rank/scientist/skirt(src)
 	new /obj/item/clothing/suit/storage/labcoat(src)
 	new /obj/item/clothing/suit/storage/labcoat(src)
 	new /obj/item/clothing/suit/storage/labcoat(src)
@@ -286,12 +310,10 @@
 
 /obj/structure/closet/wardrobe/robotics_black/New()
 	..()
-	new /obj/item/clothing/glasses/hud/diagnostic(src)
-	new /obj/item/clothing/glasses/hud/diagnostic(src)
 	new /obj/item/clothing/under/rank/roboticist(src)
 	new /obj/item/clothing/under/rank/roboticist(src)
-	new /obj/item/clothing/suit/storage/labcoat(src)
-	new /obj/item/clothing/suit/storage/labcoat(src)
+	new /obj/item/clothing/under/rank/roboticist/skirt(src)
+	new /obj/item/clothing/under/rank/roboticist/skirt(src)
 	new /obj/item/clothing/shoes/black(src)
 	new /obj/item/clothing/shoes/black(src)
 	new /obj/item/clothing/gloves/fingerless(src)
@@ -309,16 +331,18 @@
 	..()
 	new /obj/item/clothing/under/rank/chemist(src)
 	new /obj/item/clothing/under/rank/chemist(src)
+	new /obj/item/clothing/under/rank/chemist/skirt(src)
+	new /obj/item/clothing/under/rank/chemist/skirt(src)
 	new /obj/item/clothing/shoes/white(src)
 	new /obj/item/clothing/shoes/white(src)
 	new /obj/item/clothing/suit/storage/labcoat/chemist(src)
 	new /obj/item/clothing/suit/storage/labcoat/chemist(src)
-	new /obj/item/weapon/storage/backpack/chemistry(src)
-	new /obj/item/weapon/storage/backpack/chemistry(src)
-	new /obj/item/weapon/storage/backpack/satchel_chem(src)
-	new /obj/item/weapon/storage/backpack/satchel_chem(src)
-	new /obj/item/weapon/storage/bag/chemistry(src)
-	new /obj/item/weapon/storage/bag/chemistry(src)
+	new /obj/item/storage/backpack/chemistry(src)
+	new /obj/item/storage/backpack/chemistry(src)
+	new /obj/item/storage/backpack/satchel_chem(src)
+	new /obj/item/storage/backpack/satchel_chem(src)
+	new /obj/item/storage/bag/chemistry(src)
+	new /obj/item/storage/bag/chemistry(src)
 	new /obj/item/clothing/mask/gas(src)
 	new /obj/item/clothing/mask/gas(src)
 
@@ -336,10 +360,10 @@
 	new /obj/item/clothing/shoes/white(src)
 	new /obj/item/clothing/suit/storage/labcoat/genetics(src)
 	new /obj/item/clothing/suit/storage/labcoat/genetics(src)
-	new /obj/item/weapon/storage/backpack/genetics(src)
-	new /obj/item/weapon/storage/backpack/genetics(src)
-	new /obj/item/weapon/storage/backpack/satchel_gen(src)
-	new /obj/item/weapon/storage/backpack/satchel_gen(src)
+	new /obj/item/storage/backpack/genetics(src)
+	new /obj/item/storage/backpack/genetics(src)
+	new /obj/item/storage/backpack/satchel_gen(src)
+	new /obj/item/storage/backpack/satchel_gen(src)
 
 
 /obj/structure/closet/wardrobe/virology_white
@@ -351,16 +375,18 @@
 	..()
 	new /obj/item/clothing/under/rank/virologist(src)
 	new /obj/item/clothing/under/rank/virologist(src)
+	new /obj/item/clothing/under/rank/virologist/skirt(src)
+	new /obj/item/clothing/under/rank/virologist/skirt(src)
 	new /obj/item/clothing/shoes/white(src)
 	new /obj/item/clothing/shoes/white(src)
 	new /obj/item/clothing/suit/storage/labcoat/virologist(src)
 	new /obj/item/clothing/suit/storage/labcoat/virologist(src)
 	new /obj/item/clothing/mask/surgical(src)
 	new /obj/item/clothing/mask/surgical(src)
-	new /obj/item/weapon/storage/backpack/virology(src)
-	new /obj/item/weapon/storage/backpack/virology(src)
-	new /obj/item/weapon/storage/backpack/satchel_vir(src)
-	new /obj/item/weapon/storage/backpack/satchel_vir(src)
+	new /obj/item/storage/backpack/virology(src)
+	new /obj/item/storage/backpack/virology(src)
+	new /obj/item/storage/backpack/satchel_vir(src)
+	new /obj/item/storage/backpack/satchel_vir(src)
 
 
 /obj/structure/closet/wardrobe/medic_white
@@ -372,6 +398,8 @@
 	..()
 	new /obj/item/clothing/under/rank/medical(src)
 	new /obj/item/clothing/under/rank/medical(src)
+	new /obj/item/clothing/under/rank/medical/skirt(src)
+	new /obj/item/clothing/under/rank/medical/skirt(src)
 	new /obj/item/clothing/under/rank/medical/blue(src)
 	new /obj/item/clothing/under/rank/medical/green(src)
 	new /obj/item/clothing/under/rank/medical/purple(src)
@@ -381,6 +409,12 @@
 	new /obj/item/clothing/suit/storage/labcoat(src)
 	new /obj/item/clothing/mask/surgical(src)
 	new /obj/item/clothing/mask/surgical(src)
+	new /obj/item/clothing/under/medigown(src)
+	new /obj/item/clothing/under/medigown(src)
+	new /obj/item/clothing/under/medigown(src)
+	new /obj/item/clothing/under/medigown(src)
+	new /obj/item/clothing/head/headmirror(src)
+	new /obj/item/clothing/head/headmirror(src)
 
 
 /obj/structure/closet/wardrobe/grey
@@ -400,7 +434,7 @@
 	new /obj/item/clothing/head/soft/grey(src)
 	new /obj/item/clothing/head/soft/grey(src)
 	if(prob(50))
-		new /obj/item/weapon/storage/backpack/duffel(src)
+		new /obj/item/storage/backpack/duffel(src)
 	if(prob(40))
 		new /obj/item/clothing/under/assistantformal(src)
 	if(prob(40))
@@ -428,3 +462,20 @@
 	new /obj/item/clothing/shoes/orange(src)
 	new /obj/item/clothing/shoes/purple(src)
 	new /obj/item/clothing/shoes/leather(src)
+
+/obj/structure/closet/wardrobe/coroner
+	name = "coroner wardrobe"
+	icon_state = "black"
+	icon_closed = "black"
+
+/obj/structure/closet/wardrobe/coroner/New()
+	..()
+	if(prob(50))
+		new /obj/item/storage/backpack/medic(src)
+	else
+		new /obj/item/storage/backpack/satchel_med(src)
+	new /obj/item/storage/backpack/duffel/medical(src)
+	new /obj/item/clothing/suit/storage/labcoat/mortician(src)
+	new /obj/item/clothing/shoes/white(src)
+	new /obj/item/clothing/under/rank/medical/mortician(src)
+	new /obj/item/clothing/head/surgery/black(src)

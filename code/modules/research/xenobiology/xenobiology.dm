@@ -7,7 +7,8 @@
 	icon = 'icons/mob/slimes.dmi'
 	icon_state = "grey slime extract"
 	force = 1
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
+	container_type = INJECTABLE | DRAWABLE
 	throwforce = 0
 	throw_speed = 3
 	throw_range = 6
@@ -25,8 +26,8 @@
 	..()
 
 /obj/item/slime_extract/New()
-		..()
-		create_reagents(100)
+	..()
+	create_reagents(100)
 
 /obj/item/slime_extract/grey
 	name = "grey slime extract"
@@ -121,11 +122,13 @@
 /obj/item/slimepotion
 	name = "slime potion"
 	desc = "A hard yet gelatinous capsule excreted by a slime, containing mysterious substances."
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	origin_tech = "biotech=4"
 
-/obj/item/slimepotion/afterattack(obj/item/weapon/reagent_containers/target, mob/user , proximity)
-	if (istype(target))
+/obj/item/slimepotion/afterattack(obj/item/reagent_containers/target, mob/user, proximity_flag)
+	if(!proximity_flag)
+		return
+	if(istype(target))
 		to_chat(user, "<span class='notice'>You cannot transfer [src] to [target]! It appears the potion must be given directly to a slime to absorb.</span>") // le fluff faec
 		return
 
@@ -134,58 +137,45 @@
 	desc = "A potent chemical mix that nullifies a slime's hunger, causing it to become docile and tame."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "bottle19"
+	var/being_used = 0
 
 /obj/item/slimepotion/docility/attack(mob/living/carbon/slime/M, mob/user)
 	if(!isslime(M))
-		to_chat(user, "<span class='warning'> The potion only works on slimes!</span>")
-		return ..()
+		to_chat(user, "<span class='warning'>The potion only works on slimes!</span>")
+		return
 	if(M.stat)
-		to_chat(user, "<span class='warning'> The slime is dead!</span>")
-		return..()
-	if(M.mind)
-		to_chat(user, "<span class='warning'> The slime resists!</span>")
-		return ..()
-	if(M.is_adult)
-		var/mob/living/simple_animal/adultslime/pet = new /mob/living/simple_animal/adultslime(M.loc)
-		pet.icon_state = "[M.colour] adult slime"
-		pet.icon_living = "[M.colour] adult slime"
-		pet.icon_dead = "[M.colour] baby slime dead"
-		pet.colour = "[M.colour]"
-		qdel(M)
-		var/newname = sanitize(copytext(input(user, "Would you like to give the slime a name?", "Name your new pet", "pet slime") as null|text,1,MAX_NAME_LEN))
+		to_chat(user, "<span class='warning'>The slime is dead!</span>")
+		return
+	if(being_used)
+		to_chat(user, "<span class='warning'>You're already using this on another slime!</span>")
+		return
 
-		if (!newname)
-			newname = "pet slime"
-		pet.name = newname
-		pet.real_name = newname
-		qdel(src)
-	else
-		var/mob/living/simple_animal/slime/pet = new /mob/living/simple_animal/slime(M.loc)
-		pet.icon_state = "[M.colour] baby slime"
-		pet.icon_living = "[M.colour] baby slime"
-		pet.icon_dead = "[M.colour] baby slime dead"
-		pet.colour = "[M.colour]"
-		qdel(M)
-		var/newname = sanitize(copytext(input(user, "Would you like to give the slime a name?", "Name your new pet", "pet slime") as null|text,1,MAX_NAME_LEN))
+	M.docile = 1
+	M.nutrition = 700
+	to_chat(M, "<span class='warning'>You absorb the potion and feel your intense desire to feed melt away.</span>")
+	to_chat(user, "<span class='notice'>You feed the slime the potion, removing its hunger and calming it.</span>")
+	being_used = 1
+	var/newname = sanitize(copytext(input(user, "Would you like to give the slime a name?", "Name your new pet", "pet slime") as null|text,1,MAX_NAME_LEN))
 
-		if (!newname)
-			newname = "pet slime"
-		pet.name = newname
-		pet.real_name = newname
-		qdel(src)
-	to_chat(user, "You feed the slime the potion, removing it's powers and calming it.")
+	if(!newname)
+		newname = "pet slime"
+	M.name = newname
+	M.real_name = newname
+	qdel(src)
 
 /obj/item/slimepotion/sentience
 	name = "sentience potion"
-	desc = "A miraculous chemical mix that can raise the intelligence of creatures to human levels. Unlike normal slime potions, it can be absorbed by any nonsentient being."
+	desc = "A miraculous chemical mix that can raise the intelligence of creatures to human levels."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "bottle19"
-	origin_tech = "biotech=5"
+	origin_tech = "biotech=6"
 	var/list/not_interested = list()
 	var/being_used = 0
 	var/sentience_type = SENTIENCE_ORGANIC
 
-/obj/item/slimepotion/sentience/afterattack(mob/living/M, mob/user)
+/obj/item/slimepotion/sentience/afterattack(mob/living/M, mob/user, proximity_flag)
+	if(!proximity_flag)
+		return
 	if(being_used || !ismob(M))
 		return
 	if(!isanimal(M) || M.ckey) //only works on animals that aren't player controlled
@@ -216,13 +206,59 @@
 		SM.master_commander = user
 		SM.sentience_act()
 		to_chat(SM, "<span class='warning'>All at once it makes sense: you know what you are and who you are! Self awareness is yours!</span>")
-		to_chat(SM, "<span class='userdanger'>You are grateful to be self aware and owe [user] a great debt. Serve [user], and assist them in completing their goals at any cost.</span>")
+		to_chat(SM, "<span class='userdanger'>You are grateful to be self aware and owe [user] a great debt. Serve [user], and assist [user.p_them()] in completing [user.p_their()] goals at any cost.</span>")
+		if(SM.flags_2 & HOLOGRAM_2) //Check to see if it's a holodeck creature
+			to_chat(SM, "<span class='userdanger'>You also become depressingly aware that you are not a real creature, but instead a holoform. Your existence is limited to the parameters of the holodeck.</span>")
 		to_chat(user, "<span class='notice'>[M] accepts the potion and suddenly becomes attentive and aware. It worked!</span>")
 		qdel(src)
 	else
 		to_chat(user, "<span class='notice'>[M] looks interested for a moment, but then looks back down. Maybe you should try again later.</span>")
 		being_used = 0
 		..()
+
+/obj/item/slimepotion/transference
+	name = "consciousness transference potion"
+	desc = "A strange slime-based chemical that, when used, allows the user to transfer their consciousness to a lesser being."
+	icon = 'icons/obj/chemical.dmi'
+	icon_state = "bottle19"
+	origin_tech = "biotech=6"
+	var/prompted = FALSE
+	var/animal_type = SENTIENCE_ORGANIC
+
+/obj/item/slimepotion/transference/afterattack(mob/living/M, mob/user, proximity_flag)
+	if(!proximity_flag)
+		return
+	if(prompted || !ismob(M))
+		return
+	if(!isanimal(M) || M.ckey) //much like sentience, these will not work on something that is already player controlled
+		to_chat(user, "<span class='warning'>[M] already has a higher consciousness!</span>")
+		return ..()
+	if(M.stat)
+		to_chat(user, "<span class='warning'>[M] is dead!</span>")
+		return ..()
+	var/mob/living/simple_animal/SM = M
+	if(SM.sentience_type != animal_type)
+		to_chat(user, "<span class='warning'>You cannot transfer your consciousness to [SM].</span>") //no controlling machines
+		return ..()
+	if(jobban_isbanned(user, ROLE_SENTIENT))
+		to_chat(user, "<span class='warning'>Your mind goes blank as you attempt to use the potion.</span>")
+		return
+
+	prompted = TRUE
+	if(alert("This will permanently transfer your consciousness to [SM]. Are you sure you want to do this?",,"Yes","No")=="No")
+		prompted = FALSE
+		return
+
+	to_chat(user, "<span class='notice'>You drink the potion then place your hands on [SM]...</span>")
+	user.mind.transfer_to(SM)
+	SM.universal_speak = 1
+	SM.faction = user.faction
+	SM.sentience_act() //Same deal here as with sentience
+	user.death()
+	to_chat(SM, "<span class='notice'>In a quick flash, you feel your consciousness flow into [SM]!</span>")
+	to_chat(SM, "<span class='warning'>You are now [SM]. Your allegiances, alliances, and roles are still the same as they were prior to consciousness transfer!</span>")
+	SM.name = "[SM.name] as [user.real_name]"
+	qdel(src)
 
 /obj/item/slimepotion/steroid
 	name = "slime steroid"
@@ -305,16 +341,19 @@
 	desc = "A potent chemical mix that will remove the slowdown from any item."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "bottle3"
+	origin_tech = "biotech=5"
 
-/obj/item/slimepotion/speed/afterattack(obj/item/C, mob/user)
+/obj/item/slimepotion/speed/afterattack(obj/item/C, mob/user, proximity_flag)
+	if(!proximity_flag)
+		return
 	..()
 	if(!istype(C))
 		to_chat(user, "<span class='warning'>The potion can only be used on items!</span>")
 		return
 	if(C.slowdown <= 0)
-		to_chat(user, "<span class='warning'>The [C] can't be made any faster!</span>")
+		to_chat(user, "<span class='warning'>[C] can't be made any faster!</span>")
 		return..()
-	to_chat(user, "<span class='notice'>You slather the red gunk over the [C], making it faster.</span>")
+	to_chat(user, "<span class='notice'>You slather the red gunk over [C], making it faster.</span>")
 	C.color = "#FF0000"
 	C.slowdown = 0
 	qdel(src)
@@ -324,10 +363,13 @@
 	desc = "A potent chemical mix that will fireproof any article of clothing. Has three uses."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "bottle17"
+	origin_tech = "biotech=5"
 	var/uses = 3
 
-/obj/item/slimepotion/fireproof/afterattack(obj/item/clothing/C, mob/user)
+/obj/item/slimepotion/fireproof/afterattack(obj/item/clothing/C, mob/user, proximity_flag)
 	..()
+	if(!proximity_flag)
+		return
 	if(!uses)
 		qdel(src)
 		return
@@ -335,90 +377,17 @@
 		to_chat(user, "<span class='warning'>The potion can only be used on clothing!</span>")
 		return
 	if(C.max_heat_protection_temperature == FIRE_IMMUNITY_SUIT_MAX_TEMP_PROTECT)
-		to_chat(user, "<span class='warning'>The [C] is already fireproof!</span>")
+		to_chat(user, "<span class='warning'>[C] is already fireproof!</span>")
 		return ..()
-	to_chat(user, "<span class='notice'>You slather the blue gunk over the [C], fireproofing it.</span>")
+	to_chat(user, "<span class='notice'>You slather the blue gunk over [C], fireproofing it.</span>")
 	C.name = "fireproofed [C.name]"
 	C.color = "#000080"
 	C.max_heat_protection_temperature = FIRE_IMMUNITY_SUIT_MAX_TEMP_PROTECT
 	C.heat_protection = C.body_parts_covered
+	C.burn_state = FIRE_PROOF
 	uses --
 	if(!uses)
 		qdel(src)
-
-////////Adamantine Golem stuff I dunno where else to put it
-
-/obj/effect/golemrune
-	anchored = 1
-	desc = "a strange rune used to create golems. It glows when spirits are nearby."
-	name = "rune"
-	icon = 'icons/obj/rune.dmi'
-	icon_state = "golem"
-	unacidable = 1
-	layer = TURF_LAYER
-	var/list/mob/dead/observer/ghosts[0]
-
-/obj/effect/golemrune/New()
-	..()
-	processing_objects.Add(src)
-
-/obj/effect/golemrune/process()
-	if(ghosts.len>0)
-		icon_state = "golem2"
-	else
-		icon_state = "golem"
-
-/obj/effect/golemrune/attack_hand(mob/living/user as mob)
-	var/mob/dead/observer/ghost
-	for(var/mob/dead/observer/O in src.loc)
-		if(!check_observer(O))
-			to_chat(O, "\red You are not eligible to become a golem.")
-			continue
-		ghost = O
-		break
-	if(!ghost)
-		to_chat(user, "The rune fizzles uselessly. There is no spirit nearby.")
-		return
-	var/mob/living/carbon/human/golem/G = new /mob/living/carbon/human/golem
-	G.change_gender(pick(MALE,FEMALE))
-	G.loc = src.loc
-	G.key = ghost.key
-	to_chat(G, "You are an adamantine golem. You move slowly, but are highly resistant to heat and cold as well as blunt trauma. You are unable to wear clothes, but can still use most tools. Serve [user], and assist them in completing their goals at any cost.")
-	qdel(src)
-
-/obj/effect/golemrune/Topic(href,href_list)
-	if("signup" in href_list)
-		var/mob/dead/observer/O = locate(href_list["signup"])
-		volunteer(O)
-
-/obj/effect/golemrune/attack_ghost(var/mob/dead/observer/O)
-	if(!O) return
-	volunteer(O)
-
-/obj/effect/golemrune/proc/check_observer(var/mob/dead/observer/O)
-	if(!O)
-		return 0
-	if(!O.client)
-		return 0
-	if(O.mind && O.mind.current && O.mind.current.stat != DEAD)
-		return 0
-	if(O.has_enabled_antagHUD == 1 && config.antag_hud_restricted)
-		return 0
-	return 1
-
-/obj/effect/golemrune/proc/volunteer(var/mob/dead/observer/O)
-	if(O in ghosts)
-		ghosts.Remove(O)
-		to_chat(O, "\red You are no longer signed up to be a golem.")
-	else
-		if(!check_observer(O))
-			to_chat(O, "\red You are not eligible to become a golem.")
-			return
-		ghosts.Add(O)
-		to_chat(O, "\blue You are signed up to be a golem.")
-
-
-
 
 /obj/effect/timestop
 	anchored = 1
@@ -430,7 +399,7 @@
 	pixel_x = -64
 	pixel_y = -64
 	unacidable = 1
-	mouse_opacity = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	var/mob/living/immune = list() // the one who creates the timestop is immune
 	var/list/stopped_atoms = list()
 	var/freezerange = 2
@@ -439,16 +408,16 @@
 
 /obj/effect/timestop/New()
 	..()
-	for(var/mob/living/M in player_list)
+	for(var/mob/living/M in GLOB.player_list)
 		for(var/obj/effect/proc_holder/spell/aoe_turf/conjure/timestop/T in M.mind.spell_list) //People who can stop time are immune to timestop
 			immune |= M
 
 
 /obj/effect/timestop/proc/timestop()
-	playsound(get_turf(src), 'sound/magic/TIMEPARADOX2.ogg', 100, 1, -1)
+	playsound(get_turf(src), 'sound/magic/timeparadox2.ogg', 100, 1, -1)
 	for(var/i in 1 to duration-1)
-		for(var/A in orange (freezerange, src.loc))
-			if(istype(A, /mob/living))
+		for(var/A in orange (freezerange, loc))
+			if(isliving(A))
 				var/mob/living/M = A
 				if(M in immune)
 					continue
@@ -498,7 +467,7 @@
 	singular_name = "floor tile"
 	desc = "Through a series of micro-teleports, these tiles let people move at incredible speeds."
 	icon_state = "tile-bluespace"
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	force = 6
 	materials = list(MAT_METAL=500)
 	throwforce = 10
@@ -521,7 +490,7 @@
 	singular_name = "floor tile"
 	desc = "Time seems to flow very slowly around these tiles."
 	icon_state = "tile-sepia"
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	force = 6
 	materials = list(MAT_METAL=500)
 	throwforce = 10
@@ -533,16 +502,16 @@
 
 /obj/item/areaeditor/blueprints/slime
 	name = "cerulean prints"
-	desc = "A one use set of blueprints made of jelly like organic material. Renaming an area to 'Xenobiology Lab' will extend the reach of the management console."
+	desc = "A one use set of blueprints made of jelly like organic material. Extends the reach of the management console."
 	color = "#2956B2"
 
 /obj/item/areaeditor/blueprints/slime/edit_area()
-	. = ..()
+	..()
 	var/area/A = get_area(src)
-	if(.)
-		for(var/turf/T in A)
-			T.color = "#2956B2"
-		qdel(src)
+	for(var/turf/T in A)
+		T.color = "#2956B2"
+	A.xenobiology_compatible = TRUE
+	qdel(src)
 
 /turf/simulated/floor/sepia
 	slowdown = 2

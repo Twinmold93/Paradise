@@ -11,7 +11,8 @@
 */
 /mob/living/silicon/ai/DblClickOn(var/atom/A, params)
 	if(client.click_intercept)
-		client.click_intercept.InterceptClickOn(src, params, A)
+		// Not doing a click intercept here, because otherwise we double-tap with the `ClickOn` proc.
+		// But we return here since we don't want to do regular dblclick handling
 		return
 
 	if(control_disabled || stat) return
@@ -27,13 +28,45 @@
 		client.click_intercept.InterceptClickOn(src, params, A)
 		return
 
-	if(world.time <= next_click)
+	if(next_click > world.time)
 		return
-	next_click = world.time + 1
+	changeNext_click(1)
 
+	if(multicam_on)
+		var/turf/T = get_turf(A)
+		if(T)
+			for(var/obj/screen/movable/pic_in_pic/ai/P in T.vis_locs)
+				if(P.ai == src)
+					P.Click(params)
+					break
 
 	if(control_disabled || stat)
 		return
+
+	var/turf/pixel_turf = get_turf_pixel(A)
+	if(isnull(pixel_turf))
+		return
+	if(!can_see(A))
+		if(isturf(A)) //On unmodified clients clicking the static overlay clicks the turf underneath
+			return // So there's no point messaging admins
+		message_admins("[key_name_admin(src)] might be running a modified client! (failed can_see on AI click of [A]([ADMIN_COORDJMP(pixel_turf)]))")
+		var/message = "[key_name(src)] might be running a modified client! (failed can_see on AI click of [A]([COORD(pixel_turf)]))"
+		log_admin(message)
+		send2irc_adminless_only("NOCHEAT", "[key_name(src)] might be running a modified client! (failed checkTurfVis on AI click of [A]([COORD(pixel_turf)]))")
+
+
+	var/turf_visible
+	if(pixel_turf)
+		turf_visible = cameranet.checkTurfVis(pixel_turf)
+		if(!turf_visible)
+			if(istype(loc, /obj/item/aicard) && (pixel_turf in view(client.view, loc)))
+				turf_visible = TRUE
+			else
+				if(pixel_turf.obscured)
+					log_admin("[key_name_admin(src)] might be running a modified client! (failed checkTurfVis on AI click of [A]([COORD(pixel_turf)])")
+					message_admins("[key_name_admin(src)] might be running a modified client! (failed checkTurfVis on AI click of [A]([ADMIN_COORDJMP(pixel_turf)]))")
+					send2irc_adminless_only("NOCHEAT", "[key_name(src)] might be running a modified client! (failed checkTurfVis on AI click of [A]([COORD(pixel_turf)]))")
+				return
 
 	var/list/modifiers = params2list(params)
 	if(modifiers["shift"] && modifiers["ctrl"])
@@ -126,38 +159,37 @@
 
 /obj/machinery/door/airlock/AIAltShiftClick()  // Sets/Unsets Emergency Access Override
 	if(density)
-		Topic(src, list("src"= "\ref[src]", "command"="emergency", "activate" = "1"), 1) // 1 meaning no window (consistency!)
+		Topic(src, list("src" = UID(), "command"="emergency", "activate" = "1"), 1) // 1 meaning no window (consistency!)
 	else
-		Topic(src, list("src"= "\ref[src]", "command"="emergency", "activate" = "0"), 1)
+		Topic(src, list("src" = UID(), "command"="emergency", "activate" = "0"), 1)
 	return
 
-/atom/proc/AIShiftClick()
+/atom/proc/AIShiftClick(var/mob/user)
+	if(user.client)
+		user.examinate(src)
 	return
 
 /obj/machinery/door/airlock/AIShiftClick()  // Opens and closes doors!
 	if(density)
-		Topic(src, list("src"= "\ref[src]", "command"="open", "activate" = "1"), 1) // 1 meaning no window (consistency!)
+		Topic(src, list("src" = UID(), "command"="open", "activate" = "1"), 1) // 1 meaning no window (consistency!)
 	else
-		Topic(src, list("src"= "\ref[src]", "command"="open", "activate" = "0"), 1)
+		Topic(src, list("src" = UID(), "command"="open", "activate" = "0"), 1)
 	return
 
 /atom/proc/AICtrlClick(var/mob/living/silicon/ai/user)
-	if(user.holo)
-		var/obj/machinery/hologram/holopad/H = user.holo
-		H.face_atom(src)
 	return
 
 /obj/machinery/door/airlock/AICtrlClick() // Bolts doors
 	if(locked)
-		Topic(src, list("src"= "\ref[src]", "command"="bolts", "activate" = "0"), 1)// 1 meaning no window (consistency!)
+		Topic(src, list("src" = UID(), "command"="bolts", "activate" = "0"), 1)// 1 meaning no window (consistency!)
 	else
-		Topic(src, list("src"= "\ref[src]", "command"="bolts", "activate" = "1"), 1)
+		Topic(src, list("src" = UID(), "command"="bolts", "activate" = "1"), 1)
 
 /obj/machinery/power/apc/AICtrlClick() // turns off/on APCs.
 	Topic("breaker=1", list("breaker"="1"), 0) // 0 meaning no window (consistency! wait...)
 
 /obj/machinery/turretid/AICtrlClick() //turns off/on Turrets
-	Topic(src, list("src"= "\ref[src]", "command"="enable", "value"="[!enabled]"), 1) // 1 meaning no window (consistency!)
+	Topic(src, list("src" = UID(), "command"="enable", "value"="[!enabled]"), 1) // 1 meaning no window (consistency!)
 
 /atom/proc/AIAltClick(var/atom/A)
 	AltClick(A)
@@ -165,25 +197,30 @@
 /obj/machinery/door/airlock/AIAltClick() // Electrifies doors.
 	if(!electrified_until)
 		// permanent shock
-		Topic(src, list("src"= "\ref[src]", "command"="electrify_permanently", "activate" = "1"), 1) // 1 meaning no window (consistency!)
+		Topic(src, list("src" = UID(), "command"="electrify_permanently", "activate" = "1"), 1) // 1 meaning no window (consistency!)
 	else
 		// disable/6 is not in Topic; disable/5 disables both temporary and permanent shock
-		Topic(src, list("src"= "\ref[src]", "command"="electrify_permanently", "activate" = "0"), 1)
+		Topic(src, list("src" = UID(), "command"="electrify_permanently", "activate" = "0"), 1)
 	return
 
 /obj/machinery/turretid/AIAltClick() //toggles lethal on turrets
-	Topic(src, list("src"= "\ref[src]", "command"="lethal", "value"="[!lethal]"), 1) // 1 meaning no window (consistency!)
+	Topic(src, list("src" = UID(), "command"="lethal", "value"="[!lethal]"), 1) // 1 meaning no window (consistency!)
 
 /atom/proc/AIMiddleClick()
 	return
 
 /obj/machinery/door/airlock/AIMiddleClick() // Toggles door bolt lights.
 	if(!src.lights)
-		Topic(src, list("src"= "\ref[src]", "command"="lights", "activate" = "1"), 1) // 1 meaning no window (consistency!)
+		Topic(src, list("src" = UID(), "command"="lights", "activate" = "1"), 1) // 1 meaning no window (consistency!)
 	else
-		Topic(src, list("src"= "\ref[src]", "command"="lights", "activate" = "0"), 1)
+		Topic(src, list("src" = UID(), "command"="lights", "activate" = "0"), 1)
 	return
 
+/obj/machinery/ai_slipper/AICtrlClick() //Turns liquid dispenser on or off
+	ToggleOn()
+
+/obj/machinery/ai_slipper/AIAltClick() //Dispenses liquid if on
+	Activate()
 
 //
 // Override AdjacentQuick for AltClicking

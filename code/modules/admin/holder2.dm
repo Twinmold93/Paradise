@@ -24,17 +24,22 @@ var/list/admin_datums = list()
 	rights = initial_rights
 	admin_datums[ckey] = src
 
+/datum/admins/Destroy()
+	..()
+	return QDEL_HINT_HARDDEL_NOW
+
 /datum/admins/proc/associate(client/C)
 	if(istype(C))
 		owner = C
 		owner.holder = src
+		owner.on_holder_add()
 		owner.add_admin_verbs()	//TODO
 		owner.verbs -= /client/proc/readmin
-		admins |= C
+		GLOB.admins |= C
 
 /datum/admins/proc/disassociate()
 	if(owner)
-		admins -= owner
+		GLOB.admins -= owner
 		owner.remove_admin_verbs()
 		owner.holder = null
 		owner = null
@@ -85,7 +90,7 @@ you will have to do something like if(client.holder.rights & R_ADMIN) yourself.
 	admin_datums -= ckey
 	if(holder)
 		holder.disassociate()
-		del(holder)
+		qdel(holder)
 	return 1
 
 //This proc checks whether subject has at least ONE of the rights specified in rights_required.
@@ -95,3 +100,9 @@ you will have to do something like if(client.holder.rights & R_ADMIN) yourself.
 			return 0
 		return 1
 	return 0
+
+/datum/admins/vv_edit_var(var_name, var_value)
+	return FALSE // no admin abuse
+
+/datum/admins/can_vv_delete()
+	return FALSE // don't break shit either

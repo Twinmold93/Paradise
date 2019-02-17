@@ -1,7 +1,7 @@
-/obj/item/device/pizza_bomb
+/obj/item/pizza_bomb
 	name = "pizza box"
 	desc = "A box suited for pizzas."
-	icon = 'icons/obj/food/food.dmi'
+	icon = 'icons/obj/food/pizza.dmi'
 	icon_state = "pizzabox1"
 	var/timer = 10 //Adjustable timer
 	var/timer_set = 0
@@ -11,7 +11,7 @@
 	var/correct_wire
 	var/armer //Used for admin purposes
 
-/obj/item/device/pizza_bomb/attack_self(mob/user)
+/obj/item/pizza_bomb/attack_self(mob/user)
 	if(disarmed)
 		to_chat(user, "<span class='notice'>\The [src] is disarmed.</span>")
 		return
@@ -40,7 +40,7 @@
 		name = "pizza bomb"
 		desc = "OH GOD THAT'S NOT A PIZZA"
 		icon_state = "pizzabox_bomb"
-		audible_message("<span class='warning'>\icon[src] *beep* *beep*</span>")
+		audible_message("<span class='warning'>[bicon(src)] *beep* *beep*</span>")
 		to_chat(user, "<span class='danger'>That's no pizza! That's a bomb!</span>")
 		message_admins("[key_name_admin(usr)] has triggered a pizza bomb armed by [armer] at <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>(JMP)</a>.")
 		log_game("[key_name(usr)] has triggered a pizza bomb armed by [armer] ([loc.x],[loc.y],[loc.z]).")
@@ -48,26 +48,26 @@
 		sleep(timer)
 		return go_boom()
 
-/obj/item/device/pizza_bomb/proc/go_boom()
+/obj/item/pizza_bomb/proc/go_boom()
 	if(disarmed)
-		visible_message("<span class='danger'>\icon[src] Sparks briefly jump out of the [correct_wire] wire on \the [src], but it's disarmed!")
+		visible_message("<span class='danger'>[bicon(src)] Sparks briefly jump out of the [correct_wire] wire on \the [src], but it's disarmed!")
 		return
-	src.audible_message("\icon[src] <b>[src]</b> beeps, \"Enjoy the pizza!\"")
+	src.audible_message("[bicon(src)] <b>[src]</b> beeps, \"Enjoy the pizza!\"")
 	src.visible_message("<span class='userdanger'>\The [src] violently explodes!</span>")
 	explosion(src.loc,1,2,4,flame_range = 2) //Identical to a minibomb
 	qdel(src)
 
-/obj/item/device/pizza_bomb/attackby(var/obj/item/I, var/mob/user, params)
-	if(istype(I, /obj/item/weapon/wirecutters) && primed)
+/obj/item/pizza_bomb/attackby(var/obj/item/I, var/mob/user, params)
+	if(istype(I, /obj/item/wirecutters) && primed)
 		to_chat(user, "<span class='danger'>Oh God, what wire do you cut?!</span>")
 		var/chosen_wire = input(user, "OH GOD OH GOD", "WHAT WIRE?!") in wires
 		if(!in_range(src, usr) || issilicon(usr) || !usr.canmove || usr.restrained())
 			return
-		playsound(src, 'sound/items/Wirecutter.ogg', 50, 1, 1)
+		playsound(src, I.usesound, 50, 1, 1)
 		user.visible_message("<span class='warning'>[user] cuts the [chosen_wire] wire!</span>", "<span class='danger'>You cut the [chosen_wire] wire!</span>")
 		sleep(5)
 		if(chosen_wire == correct_wire)
-			src.audible_message("<span class='warning'>\icon[src] \The [src] suddenly stops beeping and seems lifeless.</span>")
+			src.audible_message("<span class='warning'>[bicon(src)] \The [src] suddenly stops beeping and seems lifeless.</span>")
 			to_chat(user, "<span class='notice'>You did it!</span>")
 			icon_state = "pizzabox_bomb_[correct_wire]"
 			name = "pizza bomb"
@@ -79,23 +79,27 @@
 			to_chat(user, "<span class='userdanger'>WRONG WIRE!</span>")
 			go_boom()
 			return
-	if(istype(I, /obj/item/weapon/wirecutters) && disarmed)
+	if(istype(I, /obj/item/wirecutters) && disarmed)
 		if(!in_range(user, src))
 			to_chat(user, "<span class='warning'>You can't see the box well enough to cut the wires out.</span>")
 			return
 		user.visible_message("<span class='notice'>[user] starts removing the payload and wires from \the [src].</span>")
-		if(do_after(user, 40, target = src))
-			playsound(src, 'sound/items/Wirecutter.ogg', 50, 1, 1)
+		if(do_after(user, 40 * I.toolspeed, target = src))
+			playsound(src, I.usesound, 50, 1, 1)
 			user.unEquip(src)
 			user.visible_message("<span class='notice'>[user] removes the insides of \the [src]!</span>")
 			var/obj/item/stack/cable_coil/C = new /obj/item/stack/cable_coil(src.loc)
 			C.amount = 3
-			new /obj/item/weapon/bombcore/miniature(src.loc)
+			new /obj/item/bombcore/miniature(src.loc)
 			new /obj/item/pizzabox(src.loc)
 			qdel(src)
 		return
 	..()
 
-/obj/item/device/pizza_bomb/New()
+/obj/item/pizza_bomb/New()
 	..()
 	correct_wire = pick(wires)
+
+/obj/item/pizza_bomb/autoarm
+	timer_set = 1
+	timer = 30 // 3 seconds

@@ -93,7 +93,7 @@
 	var/max = world.maxx-TRANSITIONEDGE
 	var/min = 1+TRANSITIONEDGE
 
-	var/_z = rand(ZLEVEL_CENTCOMM+1,MAX_Z)	//select a random space zlevel
+	var/_z = pick(levels_by_trait(REACHABLE))	//select a random space zlevel
 
 	//now select coordinates for a border turf
 	var/_x
@@ -117,7 +117,8 @@
 	AM.newtonian_move(dir)
 
 
-
+/turf/space/transit/rpd_act()
+	return
 
 //Overwrite because we dont want people building rods in space.
 /turf/space/transit/attackby()

@@ -11,6 +11,7 @@
 	desc = "A huge chunk of metal used to seperate rooms."
 	anchored = 1
 	icon = 'icons/turf/walls/wall.dmi'
+	icon_state = "wall"
 	var/mineral = "metal"
 	var/walltype = "metal"
 	var/opening = 0
@@ -26,7 +27,26 @@
 	/turf/simulated/wall/r_wall/rust)
 	smooth = SMOOTH_TRUE
 
+/obj/structure/falsewall/New(loc)
+	..()
+	air_update_turf(1)
+
+/obj/structure/falsewall/Destroy()
+	density = 0
+	air_update_turf(1)
+	return ..()
+
+/obj/structure/falsewall/CanAtmosPass(turf/T)
+	return !density
+
+/obj/structure/falsewall/attack_ghost(mob/user)
+	if(user.can_advanced_admin_interact())
+		toggle(user)
+
 /obj/structure/falsewall/attack_hand(mob/user)
+	toggle(user)
+
+/obj/structure/falsewall/proc/toggle(mob/user)
 	if(opening)
 		return
 
@@ -47,6 +67,7 @@
 		sleep(4)
 		set_opacity(1)
 		update_icon()
+	air_update_turf(1)
 	opening = 0
 
 /obj/structure/falsewall/proc/do_the_flick()
@@ -59,9 +80,9 @@
 
 /obj/structure/falsewall/update_icon()
 	if(density)
+		icon_state = initial(icon_state)
 		smooth = SMOOTH_TRUE
-		smooth_icon(src)
-		icon_state = ""
+		queue_smooth(src)
 	else
 		icon_state = "fwall_open"
 
@@ -75,7 +96,7 @@
 		qdel(src)
 	return T
 
-/obj/structure/falsewall/attackby(obj/item/weapon/W, mob/user, params)
+/obj/structure/falsewall/attackby(obj/item/W, mob/user, params)
 	if(opening)
 		to_chat(user, "<span class='warning'>You must wait until the door has stopped moving.</span>")
 		return
@@ -85,20 +106,20 @@
 		if(T.density)
 			to_chat(user, "<span class='warning'>[src] is blocked!</span>")
 			return
-		if(istype(W, /obj/item/weapon/screwdriver))
-			if (!istype(T, /turf/simulated/floor))
+		if(istype(W, /obj/item/screwdriver))
+			if(!istype(T, /turf/simulated/floor))
 				to_chat(user, "<span class='warning'>[src] bolts must be tightened on the floor!</span>")
 				return
 			user.visible_message("<span class='notice'>[user] tightens some bolts on the wall.</span>", "<span class='warning'>You tighten the bolts on the wall.</span>")
 			ChangeToWall()
-		if(istype(W, /obj/item/weapon/weldingtool))
-			var/obj/item/weapon/weldingtool/WT = W
+		if(istype(W, /obj/item/weldingtool))
+			var/obj/item/weldingtool/WT = W
 			if(WT.remove_fuel(0,user))
 				dismantle(user)
 	else
 		to_chat(user, "<span class='warning'>You can't reach, close it first!</span>")
 
-	if(istype(W, /obj/item/weapon/gun/energy/plasmacutter) || istype(W, /obj/item/weapon/pickaxe/drill/diamonddrill) || istype(W, /obj/item/weapon/pickaxe/drill/jackhammer) || istype(W, /obj/item/weapon/melee/energy/blade))
+	if(istype(W, /obj/item/gun/energy/plasmacutter) || istype(W, /obj/item/pickaxe/drill/diamonddrill) || istype(W, /obj/item/pickaxe/drill/jackhammer) || istype(W, /obj/item/melee/energy/blade))
 		dismantle(user)
 
 /obj/structure/falsewall/proc/dismantle(mob/user)
@@ -106,16 +127,16 @@
 	new /obj/structure/girder/displaced(loc)
 	if(mineral == "metal")
 		if(istype(src, /obj/structure/falsewall/reinforced))
-			new /obj/item/stack/sheet/plasteel(loc)
-			new /obj/item/stack/sheet/plasteel(loc)
+			new /obj/item/stack/sheet/plasteel(loc, 2)
 		else
-			new /obj/item/stack/sheet/metal(loc)
-			new /obj/item/stack/sheet/metal(loc)
+			new /obj/item/stack/sheet/metal(loc, 2)
+	else if(mineral == "wood")
+		new/obj/item/stack/sheet/wood(loc, 2)
 	else
 		var/P = text2path("/obj/item/stack/sheet/mineral/[mineral]")
 		new P(loc)
 		new P(loc)
-	playsound(src, 'sound/items/Welder.ogg', 100, 1)
+	playsound(src, 'sound/items/welder.ogg', 100, 1)
 	qdel(src)
 
 /*
@@ -144,14 +165,14 @@
 	name = "uranium wall"
 	desc = "A wall with uranium plating. This is probably a bad idea."
 	icon = 'icons/turf/walls/uranium_wall.dmi'
-	icon_state = ""
+	icon_state = "uranium"
 	mineral = "uranium"
 	walltype = "uranium"
 	var/active = null
 	var/last_event = 0
 	canSmoothWith = list(/obj/structure/falsewall/uranium, /turf/simulated/wall/mineral/uranium)
 
-/obj/structure/falsewall/uranium/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+/obj/structure/falsewall/uranium/attackby(obj/item/W as obj, mob/user as mob, params)
 	radiate()
 	..()
 
@@ -179,7 +200,7 @@
 	name = "gold wall"
 	desc = "A wall with gold plating. Swag!"
 	icon = 'icons/turf/walls/gold_wall.dmi'
-	icon_state = ""
+	icon_state = "gold"
 	mineral = "gold"
 	walltype = "gold"
 	canSmoothWith = list(/obj/structure/falsewall/gold, /turf/simulated/wall/mineral/gold)
@@ -188,7 +209,7 @@
 	name = "silver wall"
 	desc = "A wall with silver plating. Shiny."
 	icon = 'icons/turf/walls/silver_wall.dmi'
-	icon_state = ""
+	icon_state = "silver"
 	mineral = "silver"
 	walltype = "silver"
 	canSmoothWith = list(/obj/structure/falsewall/silver, /turf/simulated/wall/mineral/silver)
@@ -197,7 +218,7 @@
 	name = "diamond wall"
 	desc = "A wall with diamond plating. You monster."
 	icon = 'icons/turf/walls/diamond_wall.dmi'
-	icon_state = ""
+	icon_state = "diamond"
 	mineral = "diamond"
 	walltype = "diamond"
 	canSmoothWith = list(/obj/structure/falsewall/diamond, /turf/simulated/wall/mineral/diamond)
@@ -207,21 +228,22 @@
 	name = "plasma wall"
 	desc = "A wall with plasma plating. This is definately a bad idea."
 	icon = 'icons/turf/walls/plasma_wall.dmi'
-	icon_state = ""
+	icon_state = "plasma"
 	mineral = "plasma"
 	walltype = "plasma"
 	canSmoothWith = list(/obj/structure/falsewall/plasma, /turf/simulated/wall/mineral/plasma, /turf/simulated/wall/mineral/alien)
 
-/obj/structure/falsewall/plasma/attackby(obj/item/weapon/W, mob/user, params)
+/obj/structure/falsewall/plasma/attackby(obj/item/W, mob/user, params)
 	if(is_hot(W) > 300)
 		message_admins("Plasma falsewall ignited by [key_name_admin(user)] in ([x],[y],[z] - <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
 		log_game("Plasma falsewall ignited by [key_name(user)] in ([x],[y],[z])")
+		investigate_log("was <font color='red'><b>ignited</b></font> by [key_name(user)]","atmos")
 		burnbabyburn()
 		return
 	..()
 
 /obj/structure/falsewall/plasma/proc/burnbabyburn(user)
-	playsound(src, 'sound/items/Welder.ogg', 100, 1)
+	playsound(src, 'sound/items/welder.ogg', 100, 1)
 	atmos_spawn_air(SPAWN_HEAT | SPAWN_TOXINS, 400)
 	new /obj/structure/girder/displaced(loc)
 	qdel(src)
@@ -234,25 +256,25 @@
 	name = "alien wall"
 	desc = "A strange-looking alien wall."
 	icon = 'icons/turf/walls/plasma_wall.dmi'
-	icon_state = ""
+	icon_state = "plasma"
 	mineral = "alien"
 	walltype = "alien"
 	canSmoothWith = list(/obj/structure/falsewall/alien, /turf/simulated/wall/mineral/alien)
 
 
-/obj/structure/falsewall/clown
+/obj/structure/falsewall/bananium
 	name = "bananium wall"
 	desc = "A wall with bananium plating. Honk!"
 	icon = 'icons/turf/walls/bananium_wall.dmi'
-	icon_state = ""
+	icon_state = "bananium"
 	mineral = "clown"
 	walltype = "clown"
-	canSmoothWith = list(/obj/structure/falsewall/clown, /turf/simulated/wall/mineral/clown)
+	canSmoothWith = list(/obj/structure/falsewall/bananium, /turf/simulated/wall/mineral/bananium)
 
 /obj/structure/falsewall/sandstone
 	name = "sandstone wall"
 	desc = "A wall with sandstone plating."
-	icon_state = ""
+	icon_state = "sandstone"
 	mineral = "sandstone"
 	walltype = "sandstone"
 	canSmoothWith = list(/obj/structure/falsewall/sandstone, /turf/simulated/wall/mineral/sandstone)
@@ -261,7 +283,7 @@
 	name = "wooden wall"
 	desc = "A wall with wooden plating. Stiff."
 	icon = 'icons/turf/walls/wood_wall.dmi'
-	icon_state = ""
+	icon_state = "wood"
 	mineral = "wood"
 	walltype = "wood"
 	canSmoothWith = list(/obj/structure/falsewall/wood, /turf/simulated/wall/mineral/wood)
@@ -270,7 +292,7 @@
 	name = "rough metal wall"
 	desc = "A wall with rough metal plating."
 	icon = 'icons/turf/walls/iron_wall.dmi'
-	icon_state = ""
+	icon_state = "iron"
 	mineral = "metal"
 	walltype = "iron"
 	canSmoothWith = list(/obj/structure/falsewall/iron, /turf/simulated/wall/mineral/iron)
@@ -283,3 +305,21 @@
 	mineral = "abductor"
 	walltype = "abductor"
 	canSmoothWith = list(/obj/structure/falsewall/abductor, /turf/simulated/wall/mineral/abductor)
+
+/obj/structure/falsewall/titanium
+	desc = "A light-weight titanium wall used in shuttles."
+	icon = 'icons/turf/walls/shuttle_wall.dmi'
+	icon_state = "shuttle"
+	mineral = /obj/item/stack/sheet/mineral/titanium
+	walltype = /turf/simulated/wall/mineral/titanium
+	smooth = SMOOTH_MORE
+	canSmoothWith = list(/turf/simulated/wall/mineral/titanium, /obj/machinery/door/airlock/shuttle, /obj/machinery/door/airlock, /obj/structure/window/full/shuttle, /obj/structure/shuttle/engine/heater)
+
+/obj/structure/falsewall/plastitanium
+	desc = "An evil wall of plasma and titanium."
+	icon = 'icons/turf/walls/plastitanium_wall.dmi'
+	icon_state = "shuttle"
+	mineral = /obj/item/stack/sheet/mineral/plastitanium
+	walltype = /turf/simulated/wall/mineral/plastitanium
+	smooth = SMOOTH_MORE
+	canSmoothWith = list(/turf/simulated/wall/mineral/plastitanium, /obj/machinery/door/airlock/shuttle, /obj/machinery/door/airlock, /obj/structure/window/full/shuttle, /obj/structure/shuttle/engine/heater)

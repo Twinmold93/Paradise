@@ -10,6 +10,7 @@
 
 	var/obj/machinery/atmospherics/unary/heat_exchanger/partner = null
 	var/update_cycle
+	burn_state = LAVA_PROOF
 
 /obj/machinery/atmospherics/unary/heat_exchanger/update_icon()
 	if(node)
@@ -19,7 +20,7 @@
 
 	return
 
-/obj/machinery/atmospherics/unary/heat_exchanger/initialize()
+/obj/machinery/atmospherics/unary/heat_exchanger/atmos_init()
 	if(!partner)
 		var/partner_connect = turn(dir,180)
 
@@ -31,17 +32,16 @@
 
 	..()
 
-/obj/machinery/atmospherics/unary/heat_exchanger/process()
-	if(!..())
-		return 0
+/obj/machinery/atmospherics/unary/heat_exchanger/process_atmos()
+	..()
 	if(!partner)
 		return 0
 
-	if(!air_master || air_master.current_cycle <= update_cycle)
+	if(!SSair || SSair.times_fired <= update_cycle)
 		return 0
 
-	update_cycle = air_master.current_cycle
-	partner.update_cycle = air_master.current_cycle
+	update_cycle = SSair.times_fired
+	partner.update_cycle = SSair.times_fired
 
 	var/air_heat_capacity = air_contents.heat_capacity()
 	var/other_air_heat_capacity = partner.air_contents.heat_capacity()

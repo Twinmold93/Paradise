@@ -8,7 +8,7 @@
 	name = "gas mask"
 //	desc = "A face-covering mask that can be connected to an air supply. It seems to house some odd electronics."
 	var/obj/item/voice_changer/changer
-	origin_tech = "syndicate=4"
+	burn_state = FIRE_PROOF
 
 /obj/item/clothing/mask/gas/voice/verb/Toggle_Voice_Changer()
 	set category = "Object"
@@ -29,3 +29,10 @@
 /obj/item/clothing/mask/gas/voice/New()
 	..()
 	changer = new(src)
+
+/obj/item/clothing/mask/gas/voice/clown
+	name = "clown wig and mask"
+	desc = "A true prankster's facial attire. A clown is incomplete without his wig and mask."
+	icon_state = "clown"
+	item_state = "clown_hat"
+	flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT | BLOCKHAIR

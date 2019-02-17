@@ -10,9 +10,9 @@
 	var/widenet = 0 //is this scrubber acting on the 3x3 area around it.
 
 	volume = 750
-	
+
 	var/minrate = 0//probably useless, but whatever
-	var/maxrate = 10 * ONE_ATMOSPHERE
+	var/maxrate = 10 * ONE_ATMOSPHERE / 4
 
 /obj/machinery/portable_atmospherics/scrubber/emp_act(severity)
 	if(stat & (BROKEN|NOPOWER))
@@ -41,18 +41,18 @@
 
 	return
 
-/obj/machinery/portable_atmospherics/scrubber/process()
+/obj/machinery/portable_atmospherics/scrubber/process_atmos()
 	..()
 
 	if(!on)
 		return
 	scrub(loc)
-	if (widenet)
+	if(widenet)
 		var/turf/T = loc
-		if (istype(T))
-			for (var/turf/simulated/tile in T.GetAtmosAdjacentTurfs(alldir=1))
+		if(istype(T))
+			for(var/turf/simulated/tile in T.GetAtmosAdjacentTurfs(alldir=1))
 				scrub(tile)
-	
+
 /obj/machinery/portable_atmospherics/scrubber/proc/scrub(var/turf/simulated/tile)
 	var/datum/gas_mixture/environment
 	if(holding)
@@ -69,7 +69,7 @@
 		removed = loc.remove_air(transfer_moles)
 
 	//Filter it
-	if (removed)
+	if(removed)
 		var/datum/gas_mixture/filtered_out = new
 
 		filtered_out.temperature = removed.temperature
@@ -108,7 +108,7 @@
 /obj/machinery/portable_atmospherics/scrubber/attack_ai(var/mob/user as mob)
 	src.add_hiddenprint(user)
 	return src.attack_hand(user)
-	
+
 /obj/machinery/portable_atmospherics/scrubber/attack_ghost(var/mob/user as mob)
 	return src.attack_hand(user)
 
@@ -116,8 +116,20 @@
 	ui_interact(user)
 	return
 
-/obj/machinery/portable_atmospherics/scrubber/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null)
-	var/list/data[0]
+/obj/machinery/portable_atmospherics/scrubber/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1, var/datum/topic_state/state = physical_state)
+	// update the ui if it exists, returns null if no ui is passed/found
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
+	if(!ui)
+		// the ui does not exist, so we'll create a new() one
+        // for a list of parameters and their descriptions see the code docs in \code\modules\nano\nanoui.dm
+		ui = new(user, src, ui_key, "portscrubber.tmpl", "Portable Scrubber", 480, 400, state = state)
+		// open the new ui window
+		ui.open()
+		// auto update every Master Controller tick
+		ui.set_auto_update(1)
+
+/obj/machinery/portable_atmospherics/scrubber/ui_data(mob/user, ui_key = "main", datum/topic_state/state = physical_state)
+	var/data[0]
 	data["portConnected"] = connected_port ? 1 : 0
 	data["tankPressure"] = round(air_contents.return_pressure() > 0 ? air_contents.return_pressure() : 0)
 	data["rate"] = round(volume_rate)
@@ -126,21 +138,10 @@
 	data["on"] = on ? 1 : 0
 
 	data["hasHoldingTank"] = holding ? 1 : 0
-	if (holding)
+	if(holding)
 		data["holdingTank"] = list("name" = holding.name, "tankPressure" = round(holding.air_contents.return_pressure() > 0 ? holding.air_contents.return_pressure() : 0))
 
-	// update the ui if it exists, returns null if no ui is passed/found
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data)
-	if (!ui)
-		// the ui does not exist, so we'll create a new() one
-        // for a list of parameters and their descriptions see the code docs in \code\modules\nano\nanoui.dm
-		ui = new(user, src, ui_key, "portscrubber.tmpl", "Portable Scrubber", 480, 400, state = physical_state)
-		// when the ui is first opened this is the data it will use
-		ui.set_initial_data(data)
-		// open the new ui window
-		ui.open()
-		// auto update every Master Controller tick
-		ui.set_auto_update(1)
+	return data
 
 /obj/machinery/portable_atmospherics/scrubber/Topic(href, href_list)
 	if(..())
@@ -160,7 +161,7 @@
 		volume_rate = Clamp(volume_rate+diff, minrate, maxrate)
 
 	src.add_fingerprint(usr)
-	
+
 /obj/machinery/portable_atmospherics/scrubber/huge
 	name = "Huge Air Scrubber"
 	icon_state = "scrubber:0"
@@ -172,7 +173,7 @@
 	var/global/gid = 1
 	var/id = 0
 	var/stationary = 0
-	
+
 /obj/machinery/portable_atmospherics/scrubber/huge/New()
 	..()
 	id = gid
@@ -191,8 +192,8 @@
 	else
 		icon_state = "scrubber:0"
 
-/obj/machinery/portable_atmospherics/scrubber/huge/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob, params)
-	if(istype(W, /obj/item/weapon/wrench))
+/obj/machinery/portable_atmospherics/scrubber/huge/attackby(var/obj/item/W as obj, var/mob/user as mob, params)
+	if(istype(W, /obj/item/wrench))
 		if(stationary)
 			to_chat(user, "<span class='warning'>The bolts are too tight for you to unscrew!</span>")
 			return
@@ -201,13 +202,13 @@
 			return
 
 		anchored = !anchored
-		playsound(src.loc, 'sound/items/Ratchet.ogg', 50, 1)
+		playsound(loc, W.usesound, 50, 1)
 		to_chat(user, "<span class='notice'>You [anchored ? "wrench" : "unwrench"] \the [src].</span>")
 		return
 
-	else if ((istype(W, /obj/item/device/analyzer)) && get_dist(user, src) <= 1)
+	else if((istype(W, /obj/item/analyzer)) && get_dist(user, src) <= 1)
 		atmosanalyzer_scan(air_contents, user)
-		
+
 /obj/machinery/portable_atmospherics/scrubber/huge/stationary
 	name = "Stationary Air Scrubber"
 	stationary = 1

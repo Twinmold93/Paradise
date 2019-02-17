@@ -14,12 +14,12 @@
 
 /datum/game_mode/wizard/raginmages/announce()
 	to_chat(world, "<B>The current game mode is - Ragin' Mages!</B>")
-	to_chat(world, "<B>The \red Space Wizard Federation\black is pissed, help defeat all the space wizards!</B>")
+	to_chat(world, "<B>The <font color='red'>Space Wizard Federation</font> is pissed, help defeat all the space wizards!</B>")
 
 
 /datum/game_mode/wizard/raginmages/greet_wizard(var/datum/mind/wizard, var/you_are=1)
-	if (you_are)
-		to_chat(wizard.current, "<B>\red You are the Space Wizard!</B>")
+	if(you_are)
+		to_chat(wizard.current, "<span class='danger'>You are the Space Wizard!</span>")
 	to_chat(wizard.current, "<B>The Space Wizards Federation has given you the following tasks:</B>")
 
 	var/obj_count = 1
@@ -61,18 +61,18 @@
 					message_admins("[wizard.current] went into crit in the wizard lair, another wizard is likely camping")
 					end_squabble(get_area(wizard.current))
 				else
-					to_chat(wizard.current, "\red <font size='4'>The Space Wizard Federation is upset with your performance and have terminated your employment.</font>")
+					to_chat(wizard.current, "<span class='warning'><font size='4'>The Space Wizard Federation is upset with your performance and have terminated your employment.</font></span>")
 					wizard.current.gib() // *REAL* ACTION!! *REAL* DRAMA!! *REAL* BLOODSHED!!
 			continue
 		if(wizard.current.client && wizard.current.client.is_afk() > 10 * 60 * 10) // 10 minutes
-			to_chat(wizard.current, "\red <font size='4'>The Space Wizard Federation is upset with your performance and have terminated your employment.</font>")
+			to_chat(wizard.current, "<span class='warning'><font size='4'>The Space Wizard Federation is upset with your performance and have terminated your employment.</font></span>")
 			wizard.current.gib() // Let's keep the round moving
 			continue
 		if(!wizard.current.client)
 			continue // Could just be a bad connection, so SSD wiz's shouldn't be gibbed over it, but they're not "alive" either
 		wizards_alive++
 
-	if (wizards_alive)
+	if(wizards_alive)
 		if(!time_checked) time_checked = world.time
 		if(world.time > time_till_chaos && world.time > time_checked + delay_per_mage && (mages_made < wizard_cap))
 			time_checked = world.time
@@ -110,13 +110,13 @@
 				qdel(B.container)
 		if(L)
 			qdel(L)
-	for(var/obj/item/weapon/spellbook/B in A)
+	for(var/obj/item/spellbook/B in A)
 		// No goodies for you
 		qdel(B)
 
 /datum/game_mode/wizard/raginmages/proc/make_more_mages()
 
-	if(making_mage || shuttle_master.emergency.mode >= SHUTTLE_ESCAPE)
+	if(making_mage || SSshuttle.emergency.mode >= SHUTTLE_ESCAPE)
 		return 0
 	making_mage = 1
 	var/list/candidates = list()
@@ -128,7 +128,7 @@
 		if(!candidates.len)
 			message_admins("No applicable clients for the next ragin' mage, asking ghosts instead.")
 			var/time_passed = world.time
-			for(var/mob/dead/observer/G in player_list)
+			for(var/mob/dead/observer/G in GLOB.player_list)
 				if(!jobban_isbanned(G, "wizard") && !jobban_isbanned(G, "Syndicate"))
 					spawn(0)
 						switch(alert(G, "Do you wish to be considered for the position of Space Wizard Foundation 'diplomat'?","Please answer in 30 seconds!","Yes","No"))
@@ -161,7 +161,7 @@
 				mages_made++
 				return 1
 			else
-				log_to_dd("The candidates list for ragin' mages contained non-observer entries!")
+				log_runtime(EXCEPTION("The candidates list for ragin' mages contained non-observer entries!"), src)
 				return 0
 
 // ripped from -tg-'s wizcode, because whee lets make a very general proc for a very specific gamemode
@@ -180,6 +180,6 @@
 
 /datum/game_mode/wizard/raginmages/declare_completion()
 	if(finished)
-		feedback_set_details("round_end_result","loss - wizard killed")
-		to_chat(world, "\red <FONT size = 3><B> The crew has managed to hold off the wizard attack! The Space Wizards Federation has been taught a lesson they will not soon forget!</B></FONT>")
+		feedback_set_details("round_end_result","raging wizard loss - wizard killed")
+		to_chat(world, "<span class='warning'><FONT size = 3><B> The crew has managed to hold off the wizard attack! The Space Wizards Federation has been taught a lesson they will not soon forget!</B></FONT></span>")
 	..(1)

@@ -42,14 +42,14 @@
 	..(severity)
 
 /obj/machinery/space_heater/air_conditioner/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/weapon/stock_parts/cell))
+	if(istype(I, /obj/item/stock_parts/cell))
 		if(open)
 			if(cell)
 				to_chat(user, "There is already a power cell inside.")
 				return
 			else
 				// insert cell
-				var/obj/item/weapon/stock_parts/cell/C = usr.get_active_hand()
+				var/obj/item/stock_parts/cell/C = usr.get_active_hand()
 				if(istype(C))
 					user.drop_item()
 					cell = C
@@ -60,7 +60,7 @@
 		else
 			to_chat(user, "The hatch must be open to insert a power cell.")
 			return
-	else if(istype(I, /obj/item/weapon/screwdriver))
+	else if(istype(I, /obj/item/screwdriver))
 		open = !open
 		user.visible_message("<span class='notice'>[user] [open ? "opens" : "closes"] the hatch on the [src].</span>", "<span class='notice'>You [open ? "open" : "close"] the hatch on the [src].</span>")
 		update_icon()
@@ -68,8 +68,8 @@
 			user << browse(null, "window=aircond")
 			user.unset_machine()
 	else
-		..()
-	return
+		return ..()
+
 /obj/machinery/space_heater/air_conditioner/attack_hand(mob/user as mob)
 	src.add_fingerprint(user)
 	interact(user)
@@ -80,20 +80,20 @@
 		var/dat
 		dat = "Power cell: "
 		if(cell)
-			dat += "<A href='byond://?src=\ref[src];op=cellremove'>Installed</A><BR>"
+			dat += "<A href='byond://?src=[UID()];op=cellremove'>Installed</A><BR>"
 		else
-			dat += "<A href='byond://?src=\ref[src];op=cellinstall'>Removed</A><BR>"
+			dat += "<A href='byond://?src=[UID()];op=cellinstall'>Removed</A><BR>"
 
 
 		// AUTOFIXED BY fix_string_idiocy.py
 		// C:\Users\Rob\Documents\Projects\vgstation13\code\ATMOSPHERICS\chiller.dm:95: dat += "Power Level: [cell ? round(cell.percent(),1) : 0]%<BR><BR>"
 		dat += {"Power Level: [cell ? round(cell.percent(),1) : 0]%<BR><BR>
 			Set Temperature:
-			<A href='?src=\ref[src];op=temp;val=-5'>-</A>
-			<A href='?src=\ref[src];op=temp;val=-1'>-</A>
+			<A href='?src=[UID()];op=temp;val=-5'>-</A>
+			<A href='?src=[UID()];op=temp;val=-1'>-</A>
 			[temp]&deg;C
-			<A href='?src=\ref[src];op=temp;val=1'>+</A>
-			<A href='?src=\ref[src];op=temp;val=5'>+</A><BR>"}
+			<A href='?src=[UID()];op=temp;val=1'>+</A>
+			<A href='?src=[UID()];op=temp;val=5'>+</A><BR>"}
 		// END AUTOFIX
 		user.set_machine(src)
 		user << browse("<HEAD><TITLE>Air Conditioner Control Panel</TITLE></HEAD><TT>[dat]</TT>", "window=aircond")
@@ -105,9 +105,9 @@
 	return
 
 /obj/machinery/space_heater/air_conditioner/Topic(href, href_list)
-	if (usr.stat)
+	if(usr.stat)
 		return
-	if ((in_range(src, usr) && istype(src.loc, /turf)) || (istype(usr, /mob/living/silicon)))
+	if((in_range(src, usr) && istype(src.loc, /turf)) || (istype(usr, /mob/living/silicon)))
 		usr.set_machine(src)
 
 		switch(href_list["op"])
@@ -120,7 +120,7 @@
 
 			if("cellremove")
 				if(open && cell && !usr.get_active_hand())
-					cell.updateicon()
+					cell.update_icon()
 					usr.put_in_hands(cell)
 					cell.add_fingerprint(usr)
 					cell = null
@@ -129,7 +129,7 @@
 
 			if("cellinstall")
 				if(open && !cell)
-					var/obj/item/weapon/stock_parts/cell/C = usr.get_active_hand()
+					var/obj/item/stock_parts/cell/C = usr.get_active_hand()
 					if(istype(C))
 						usr.drop_item()
 						cell = C

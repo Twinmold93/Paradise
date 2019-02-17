@@ -77,10 +77,6 @@
 			src.text = ""
 			src.build_traitor(correct_person)
 			return src.text
-		if("malf")
-			src.text = ""
-			src.build_malf(correct_person)
-			return src.text
 		if("changeling","traitorchan")
 			src.text = ""
 			src.build_changeling(correct_person)
@@ -93,9 +89,9 @@
 /*
 /datum/intercept_text/proc/pick_mob()
 	var/list/dudes = list()
-	for(var/mob/living/carbon/human/man in player_list)
-		if (!man.mind) continue
-		if (man.mind.assigned_role=="MODE") continue
+	for(var/mob/living/carbon/human/man in GLOB.player_list)
+		if(!man.mind) continue
+		if(man.mind.assigned_role == man.mind.special_role) continue
 		dudes += man
 	if(dudes.len==0)
 		return null
@@ -104,7 +100,7 @@
 
 /datum/intercept_text/proc/pick_fingerprints()
 	var/mob/living/carbon/human/dude = src.pick_mob()
-	//if (!dude) return pick_fingerprints() //who coded that is totally crasy or just a traitor. -- rastaf0
+	//if(!dude) return pick_fingerprints() //who coded that is totally crasy or just a traitor. -- rastaf0
 	if(dude)
 		return num2text(md5(dude.dna.uni_identity))
 	else
@@ -113,10 +109,18 @@
 
 /datum/intercept_text/proc/get_suspect()
 	var/list/dudes = list()
-	for(var/mob/living/carbon/human/man in player_list) if(man.client && man.client.prefs.nanotrasen_relation == "Opposed")
-		dudes += man
-	for(var/i = 0, i < max(player_list.len/10,2), i++)
-		dudes += pick(player_list)
+	for(var/mob/living/carbon/human/man in GLOB.player_list)
+		if(man.client && man.client.prefs.nanotrasen_relation == "Opposed")
+			//don't include suspects who can't possibly be the antag based on their job (no suspecting the captain of being a damned dirty tator)
+			if(man.mind && man.mind.assigned_role)
+				if((man.mind.assigned_role in ticker.mode.protected_jobs) || (man.mind.assigned_role in ticker.mode.restricted_jobs))
+					return
+			//don't include suspects who can't possibly be the antag based on their species (no suspecting the machines of being sneaky changelings)
+			if(man.dna.species.name in ticker.mode.protected_species)
+				return
+			dudes += man
+	for(var/i = 0, i < max(GLOB.player_list.len/10,2), i++)
+		dudes += pick(GLOB.player_list)
 	return pick(dudes)
 
 /datum/intercept_text/proc/build_traitor(datum/mind/correct_person)
@@ -195,12 +199,6 @@
 	src.text += "environment. As this may cause panic among the crew, all efforts should be made to keep this information a secret from all but "
 	src.text += "the most trusted crew-members."
 
-/datum/intercept_text/proc/build_malf(datum/mind/correct_person)
-	var/a_name = pick(src.anomalies)
-	src.text += "<BR><BR>A [a_name] was recently picked up by a nearby stations sensors in your sector. If it came into contact with your ship or "
-	src.text += "electrical equipment, it may have had hazardarous and unpredictable effect. Closely observe any non carbon based life forms "
-	src.text += "for signs of unusual behaviour, but keep this information discreet at all times due to this possibly dangerous scenario."
-
 /datum/intercept_text/proc/build_changeling(datum/mind/correct_person)
 	var/cname = pick(src.changeling_names)
 	var/orgname1 = pick(src.org_names_1)
@@ -212,14 +210,14 @@
 	var/prob_right_job = rand(prob_correct_job_lower, prob_correct_job_higher)
 	if(prob(prob_right_job))
 		if(correct_person)
-			if(correct_person:assigned_role=="MODE")
-				changeling_job = pick(joblist)
+			if(correct_person:assigned_role == correct_person:special_role)
+				changeling_job = pick(GLOB.joblist)
 			else
 				changeling_job = correct_person:assigned_role
 	else
-		changeling_job = pick(joblist)
+		changeling_job = pick(GLOB.joblist)
 	if(prob(prob_right_dude) && ticker.mode == "changeling")
-		if(correct_person:assigned_role=="MODE")
+		if(correct_person:assigned_role == correct_person:special_role)
 			changeling_name = correct_person:current
 		else
 			changeling_name = src.pick_mob()

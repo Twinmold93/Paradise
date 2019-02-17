@@ -2,71 +2,66 @@
 	name = "Regenerate"
 	desc = "We regenerate, healing all damage from our form."
 	req_stat = DEAD
+	always_keep = 1
 
 //Revive from regenerative stasis
 /obj/effect/proc_holder/changeling/revive/sting_action(var/mob/living/carbon/user)
-	if(user.stat == DEAD)
-		dead_mob_list -= user
-		living_mob_list |= user
-	user.stat = CONSCIOUS
-	user.setToxLoss(0)
-	user.setOxyLoss(0)
-	user.setCloneLoss(0)
-	user.setBrainLoss(0)
-	user.SetParalysis(0)
-	user.SetStunned(0)
-	user.SetWeakened(0)
+	user.setToxLoss(0, FALSE)
+	user.setOxyLoss(0, FALSE)
+	user.setCloneLoss(0, FALSE)
+	user.setBrainLoss(0, FALSE)
+	user.SetParalysis(0, FALSE)
+	user.SetStunned(0, FALSE)
+	user.SetWeakened(0, FALSE)
 	user.radiation = 0
-	user.eye_blind = 0
-	user.eye_blurry = 0
-	user.ear_deaf = 0
-	user.ear_damage = 0
-	user.heal_overall_damage(user.getBruteLoss(), user.getFireLoss())
+	user.SetEyeBlind(0, FALSE)
+	user.SetEyeBlurry(0, FALSE)
+	user.RestoreEars()
+	user.heal_overall_damage(user.getBruteLoss(), user.getFireLoss(), updating_health = FALSE)
+	user.CureBlind(FALSE)
+	user.CureDeaf()
+	user.CureNearsighted(FALSE)
 	user.reagents.clear_reagents()
 	user.germ_level = 0
-	user.next_pain_time = 0
-	user.traumatic_shock = 0
 	user.timeofdeath = 0
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		H.restore_blood()
+		H.traumatic_shock = 0
 		H.shock_stage = 0
-		spawn(1)
-			H.fixblood()
-		H.species.create_organs(H)
+		H.next_pain_time = 0
+		H.dna.species.create_organs(H)
 		// Now that recreating all organs is necessary, the rest of this organ stuff probably
 		//  isn't, but I don't want to remove it, just in case.
-		for(var/organ_name in H.organs_by_name)
-			var/obj/item/organ/external/O = H.organs_by_name[organ_name]
-			if(!O) continue
-			for(var/obj/item/weapon/shard/shrapnel/s in O.implants)
-				if(istype(s))
-					O.implants -= s
-					H.contents -= s
-					qdel(s)
+		for(var/organ_name in H.bodyparts_by_name)
+			var/obj/item/organ/external/O = H.bodyparts_by_name[organ_name]
+			if(!O)
+				continue
 			O.brute_dam = 0
 			O.burn_dam = 0
 			O.damage_state = "00"
 			O.germ_level = 0
-			O.hidden = null
-			O.number_wounds = 0
+			QDEL_NULL(O.hidden)
 			O.open = 0
+			O.internal_bleeding = FALSE
 			O.perma_injury = 0
-			O.stage = 0
 			O.status = 0
-			O.trace_chemicals = list()
-			O.wounds = list()
-			O.wound_update_accuracy = 1
+			O.trace_chemicals.Cut()
 		for(var/obj/item/organ/internal/IO in H.internal_organs)
-			IO.damage = 0
-			IO.trace_chemicals = list()
-		H.updatehealth()
+			IO.rejuvenate()
+			IO.trace_chemicals.Cut()
+		H.remove_all_embedded_objects()
+	user.status_flags &= ~(FAKEDEATH)
+	user.updatehealth("revive sting")
+	user.update_blind_effects()
+	user.update_blurry_effects()
+	user.mind.changeling.regenerating = FALSE
+
 	to_chat(user, "<span class='notice'>We have regenerated.</span>")
 
 	user.regenerate_icons()
 
-	user.status_flags &= ~(FAKEDEATH)
-	user.update_canmove()
+	user.update_revive() //Handle waking up the changeling after the regenerative stasis has completed.
 	user.mind.changeling.purchasedpowers -= src
 	user.med_hud_set_status()
 	user.med_hud_set_health()

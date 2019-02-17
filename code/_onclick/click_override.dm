@@ -18,14 +18,14 @@
 	/* Note, when making a new click override it is ABSOLUTELY VITAL that you set the source's clickOverride to null at some point if you don't want them to be stuck with it forever.
 	Calling the super will do this for you automatically, but if you want a click override to NOT clear itself after the first click, you must do it at some other point in the code*/
 
-/obj/item/weapon/badminBook/
+/obj/item/badminBook/
 	name = "old book"
 	desc = "An old, leather bound tome."
 	icon = 'icons/obj/library.dmi'
 	icon_state = "book"
 	var/datum/middleClickOverride/clickBehavior = new /datum/middleClickOverride/badminClicker
 
-/obj/item/weapon/badminBook/attack_self(mob/living/user as mob)
+/obj/item/badminBook/attack_self(mob/living/user as mob)
 	if(user.middleClickOverride)
 		to_chat(user, "<span class='warning'>You try to draw power from the [src], but you cannot hold the power at this time!</span>")
 		return
@@ -33,13 +33,13 @@
 	to_chat(user, "<span class='notice'>You draw a bit of power from the [src], you can use <b>middle click</b> or <b>alt click</b> to release the power!</span>")
 
 /datum/middleClickOverride/badminClicker
-	var/summon_path = /obj/item/weapon/reagent_containers/food/snacks/cookie
+	var/summon_path = /obj/item/reagent_containers/food/snacks/cookie
 
 /datum/middleClickOverride/badminClicker/onClick(var/atom/A, var/mob/living/user)
 	var/atom/movable/newObject = new summon_path
 	newObject.loc = get_turf(A)
 	to_chat(user, "<span class='notice'>You release the power you had stored up, summoning \a [newObject.name]! </span>")
-	usr.loc.visible_message("<span class='notice'>[user] waves \his hand and summons \a [newObject.name]</span>")
+	usr.loc.visible_message("<span class='notice'>[user] waves [user.p_their()] hand and summons \a [newObject.name]</span>")
 	..()
 
 /datum/middleClickOverride/power_gloves
@@ -62,7 +62,7 @@
 		to_chat(user, "<span class='warning'>There is no cable here to power the gloves.</span>")
 		return
 	user.visible_message("<span class='warning'>[user.name] fires an arc of electricity at [L]!</span>", "<span class='warning'>You fire an arc of electricity at [L]!</span>", "You hear the loud crackle of electricity!")
-	var/datum/powernet/PN = C.get_powernet()
+	playsound(user.loc, 'sound/effects/eleczap.ogg', 75, 1)
 	user.Beam(L,icon_state="lightning[rand(1,12)]",icon='icons/effects/effects.dmi',time=5)
-	electrocute_mob(L, PN, user)
+	electrocute_mob(L, C, user)
 	last_shocked = world.time

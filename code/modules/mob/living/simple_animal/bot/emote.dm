@@ -1,6 +1,6 @@
 /mob/living/simple_animal/bot/emote(var/act, var/m_type=1, var/message = null)
 	var/param = null
-	if (findtext(act, "-", 1, null))
+	if(findtext(act, "-", 1, null))
 		var/t1 = findtext(act, "-", 1, null)
 		param = copytext(act, t1 + 1, length(act) + 1)
 		act = copytext(act, 1, t1)
@@ -9,7 +9,7 @@
 		act = copytext(act,1,length(act))
 
 	//Emote Cooldown System (it's so simple!)
-	// proc/handle_emote_CD() located in [code\modules\mob\emote.dm]
+	//proc/handle_emote_CD() located in [code\modules\mob\emote.dm]
 	var/on_CD = 0
 	act = lowertext(act)
 	switch(act)
@@ -28,92 +28,44 @@
 
 	switch(act)
 		if("ping")
-			var/M = null
-			if(param)
-				for (var/mob/A in view(null, null))
-					if (param == A.name)
-						M = A
-						break
-			if(!M)
-				param = null
+			var/M = handle_emote_param(param)
 
-			if (param)
-				message = "<B>[src]</B> pings at [param]."
-			else
-				message = "<B>[src]</B> pings."
+			message = "<B>[src]</B> pings[M ? " at [M]" : ""]."
 			playsound(src.loc, 'sound/machines/ping.ogg', 50, 0)
 			m_type = 2
 
 		if("buzz")
-			var/M = null
-			if(param)
-				for (var/mob/A in view(null, null))
-					if (param == A.name)
-						M = A
-						break
-			if(!M)
-				param = null
+			var/M = handle_emote_param(param)
 
-			if (param)
-				message = "<B>[src]</B> buzzes at [param]."
-			else
-				message = "<B>[src]</B> buzzes."
+			message = "<B>[src]</B> buzzes[M ? " at [M]" : ""]."
 			playsound(src.loc, 'sound/machines/buzz-sigh.ogg', 50, 0)
 			m_type = 2
 
 		if("beep")
-			var/M = null
-			if(param)
-				for (var/mob/A in view(null, null))
-					if (param == A.name)
-						M = A
-						break
-			if(!M)
-				param = null
+			var/M = handle_emote_param(param)
 
-			if (param)
-				message = "<B>[src]</B> beeps at [param]."
-			else
-				message = "<B>[src]</B> beeps."
+			message = "<B>[src]</B> beeps[M ? " at [M]" : ""]."
 			playsound(src.loc, 'sound/machines/twobeep.ogg', 50, 0)
 			m_type = 2
 
 		if("yes")
-			var/M = null
-			if(param)
-				for (var/mob/A in view(null, null))
-					if (param == A.name)
-						M = A
-						break
-			if(!M)
-				param = null
+			var/M = handle_emote_param(param)
 
-			if (param)
-				message = "<B>[src]</B> emits an affirmative blip at [param]."
-			else
-				message = "<B>[src]</B> emits an affirmative blip."
+			message = "<B>[src]</B> emits an affirmative blip[M ? " at [M]" : ""]."
 			playsound(src.loc, 'sound/machines/synth_yes.ogg', 50, 0)
 			m_type = 2
 
 		if("no")
-			var/M = null
-			if(param)
-				for (var/mob/A in view(null, null))
-					if (param == A.name)
-						M = A
-						break
-			if(!M)
-				param = null
+			var/M = handle_emote_param(param)
 
-			if (param)
-				message = "<B>[src]</B> emits a negative blip at [param]."
-			else
-				message = "<B>[src]</B> emits a negative blip."
+			message = "<B>[src]</B> emits an negative blip[M ? " at [M]" : ""]."
 			playsound(src.loc, 'sound/machines/synth_no.ogg', 50, 0)
 			m_type = 2
 
 		if("scream", "screams")
-			message = "<B>[src]</B> screams!"
+			var/M = handle_emote_param(param)
+
+			message = "<B>[src]</B> screams[M ? " at [M]" : ""]!"
 			playsound(src.loc, 'sound/goonstation/voice/robot_scream.ogg', 80, 0)
 			m_type = 2
 

@@ -8,15 +8,16 @@
 	anchored = 0
 	can_buckle = 1
 	buckle_lying = 0
+	armor = list("melee" = 30, "bullet" = 30, "laser" = 30, "energy" = 0, "bomb" = 30, "bio" = 0, "rad" = 0)
 	var/keytype = null //item typepath, if non-null an item of this type is needed in your hands to drive this vehicle
 	var/next_vehicle_move = 0 //used for move delays
 	var/vehicle_move_delay = 2 //tick delay between movements, lower = faster, higher = slower
 	var/auto_door_open = TRUE
 	var/needs_gravity = 0//To allow non-space vehicles to move in no gravity or not, mostly for adminbus
-
 	//Pixels
 	var/generic_pixel_x = 0 //All dirs show this pixel_x for the driver
 	var/generic_pixel_y = 0 //All dirs shwo this pixel_y for the driver
+	var/spaceworthy = FALSE
 
 
 /obj/vehicle/New()
@@ -61,7 +62,7 @@
 	desc = "A small grey key."
 	icon = 'icons/obj/vehicles.dmi'
 	icon_state = "key"
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 
 
 //BUCKLE HOOKS
@@ -131,6 +132,8 @@
 
 
 /obj/vehicle/Bump(atom/movable/M)
+	if(!spaceworthy && isspaceturf(get_turf(src)))
+		return 0
 	. = ..()
 	if(auto_door_open)
 		if(istype(M, /obj/machinery/door) && buckled_mob)
@@ -144,7 +147,7 @@
 	if(has_gravity(src))
 		return 1
 
-	if(pulledby)
+	if(pulledby && pulledby != buckled_mob)	// no pulling the vehicle you're driving through space!
 		return 1
 
 	if(needs_gravity)
@@ -154,6 +157,7 @@
 
 /obj/vehicle/space
 	pressure_resistance = INFINITY
+	spaceworthy = TRUE
 
 /obj/vehicle/space/Process_Spacemove(direction)
 	return 1

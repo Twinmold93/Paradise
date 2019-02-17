@@ -15,7 +15,7 @@
 	melee_damage_upper = 3
 	attacktext = "claws"
 	attack_sound = 'sound/weapons/bladeslice.ogg'
-	projectilesound = 'sound/weapons/Gunshot.ogg'
+	projectilesound = 'sound/weapons/gunshots/gunshot.ogg'
 	projectiletype = /obj/item/projectile/hivebotbullet
 	faction = list("hivebot")
 	check_friendly_fire = 1
@@ -24,6 +24,8 @@
 	speak_emote = list("states")
 	gold_core_spawnable = CHEM_MOB_SPAWN_HOSTILE
 	loot = list(/obj/effect/decal/cleanable/blood/gibs/robot)
+	deathmessage = "blows apart!"
+	del_on_death = 1
 
 /mob/living/simple_animal/hostile/hivebot/range
 	name = "Hivebot"
@@ -45,15 +47,12 @@
 	maxHealth = 80
 	ranged = 1
 
-/mob/living/simple_animal/hostile/hivebot/death()
-	..()
-	visible_message("<b>[src]</b> blows apart!")
-	var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
-	ghostize()
-	qdel(src)
-	return
+/mob/living/simple_animal/hostile/hivebot/death(gibbed)
+	// Only execute the below if we successfully died
+	. = ..(gibbed)
+	if(!.)
+		return FALSE
+	do_sparks(3, 1, src)
 
 /mob/living/simple_animal/hostile/hivebot/tele//this still needs work
 	name = "Beacon"
@@ -77,15 +76,15 @@
 
 /mob/living/simple_animal/hostile/hivebot/tele/New()
 	..()
-	var/datum/effect/system/harmless_smoke_spread/smoke = new /datum/effect/system/harmless_smoke_spread()
+	var/datum/effect_system/smoke_spread/smoke = new
 	smoke.set_up(5, 0, src.loc)
 	smoke.start()
-	visible_message("\red <B>The [src] warps in!</B>")
-	playsound(src.loc, 'sound/effects/EMPulse.ogg', 25, 1)
+	visible_message("<span class='danger'>The [src] warps in!</span>")
+	playsound(src.loc, 'sound/effects/empulse.ogg', 25, 1)
 
 /mob/living/simple_animal/hostile/hivebot/tele/warpbots()
 	icon_state = "def_radar"
-	visible_message("\red The [src] turns on!")
+	visible_message("<span class='warning'>The [src] turns on!</span>")
 	while(bot_amt > 0)
 		bot_amt--
 		switch(bot_type)

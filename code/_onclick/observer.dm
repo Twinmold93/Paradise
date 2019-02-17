@@ -1,6 +1,7 @@
 /mob/dead/observer/DblClickOn(var/atom/A, var/params)
 	if(client.click_intercept)
-		client.click_intercept.InterceptClickOn(src, params, A)
+		// Not doing a click intercept here, because otherwise we double-tap with the `ClickOn` proc.
+		// But we return here since we don't want to do regular dblclick handling
 		return
 
 	if(can_reenter_corpse && mind && mind.current)
@@ -25,6 +26,21 @@
 		return
 
 	var/list/modifiers = params2list(params)
+	if(check_rights(R_ADMIN, 0)) // Admin click shortcuts
+		var/mob/M
+		if(modifiers["shift"] && modifiers["ctrl"])
+			client.debug_variables(A)
+			return
+		if(modifiers["ctrl"])
+			M = get_mob_in_atom_with_warning(A)
+			if(M)
+				client.holder.show_player_panel(M)
+			return
+		if(modifiers["shift"] && modifiers["middle"])
+			M = get_mob_in_atom_with_warning(A)
+			if(M)
+				admin_mob_info(M)
+			return
 	if(modifiers["shift"])
 		ShiftClickOn(A)
 		return

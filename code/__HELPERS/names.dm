@@ -1,13 +1,13 @@
 var/church_name = null
 /proc/church_name()
-	if (church_name)
+	if(church_name)
 		return church_name
 
 	var/name = ""
 
 	name += pick("Holy", "United", "First", "Second", "Last")
 
-	if (prob(20))
+	if(prob(20))
 		name += " Space"
 
 	name += " " + pick("Church", "Cathedral", "Body", "Worshippers", "Movement", "Witnesses")
@@ -17,23 +17,11 @@ var/church_name = null
 
 var/command_name = null
 /proc/command_name()
-	if (command_name)
-		return command_name
-
-	var/name = "Central Command"
-
-	command_name = name
-	return name
-
-/proc/change_command_name(var/name)
-
-	command_name = name
-
-	return name
+	return using_map.dock_name
 
 var/religion_name = null
 /proc/religion_name()
-	if (religion_name)
+	if(religion_name)
 		return religion_name
 
 	var/name = ""
@@ -44,20 +32,10 @@ var/religion_name = null
 	return capitalize(name)
 
 /proc/system_name()
-	return "Nyx"
+	return using_map.starsys_name
 
 /proc/station_name()
-	if (station_name)
-		return station_name
-
-	var/name = ""
-
-	if (config && config.server_name)
-		world.name = "[config.server_name]: [name]"
-	else
-		world.name = station_name
-
-	return station_name
+	return using_map.station_name
 
 /proc/new_station_name()
 	var/random = rand(1,5)
@@ -65,7 +43,7 @@ var/religion_name = null
 	var/new_station_name = ""
 
 	//Rare: Pre-Prefix
-	if (prob(10))
+	if(prob(10))
 		name = pick("Imperium", "Heretical", "Cuban", "Psychic", "Elegant", "Common", "Uncommon", "Rare", "Unique", "Houseruled", "Religious", "Atheist", "Traditional", "Houseruled", "Mad", "Super", "Ultra", "Secret", "Top Secret", "Deep", "Death", "Zybourne", "Central", "Main", "Government", "Uoi", "Fat", "Automated", "Experimental", "Augmented")
 		new_station_name = name + " "
 		name = ""
@@ -102,21 +80,9 @@ var/religion_name = null
 			new_station_name += pick("13","XIII","Thirteen")
 	return new_station_name
 
-
-/proc/world_name(var/name)
-
-	station_name = name
-
-	if (config && config.server_name)
-		world.name = "[config.server_name]: [name]"
-	else
-		world.name = name
-
-	return name
-
 var/syndicate_name = null
 /proc/syndicate_name()
-	if (syndicate_name)
+	if(syndicate_name)
 		return syndicate_name
 
 	var/name = ""
@@ -125,11 +91,11 @@ var/syndicate_name = null
 	name += pick("Clandestine", "Prima", "Blue", "Zero-G", "Max", "Blasto", "Waffle", "North", "Omni", "Newton", "Cyber", "Bonk", "Gene", "Gib")
 
 	// Suffix
-	if (prob(80))
+	if(prob(80))
 		name += " "
 
 		// Full
-		if (prob(60))
+		if(prob(60))
 			name += pick("Syndicate", "Consortium", "Collective", "Corporation", "Group", "Holdings", "Biotech", "Industries", "Systems", "Products", "Chemicals", "Enterprises", "Family", "Creations", "International", "Intergalactic", "Interplanetary", "Foundation", "Positronics", "Hive")
 		// Broken
 		else
@@ -175,7 +141,7 @@ var/syndicate_code_response//Code response for traitors.
 
 	var/safety[] = list(1,2,3)//Tells the proc which options to remove later on.
 	var/nouns[] = list("love","hate","anger","peace","pride","sympathy","bravery","loyalty","honesty","integrity","compassion","charity","success","courage","deceit","skill","beauty","brilliance","pain","misery","beliefs","dreams","justice","truth","faith","liberty","knowledge","thought","information","culture","trust","dedication","progress","education","hospitality","leisure","trouble","friendships", "relaxation")
-	var/drinks[] = list("vodka and tonic","gin fizz","bahama mama","manhattan","black Russian","whiskey soda","long island tea","margarita","Irish coffee"," manly dwarf","Irish cream","doctor's delight","Beepksy Smash","tequilla sunrise","brave bull","gargle blaster","bloody mary","whiskey cola","white Russian","vodka martini","martini","Cuba libre","kahlua","vodka","wine","moonshine")
+	var/drinks[] = list("vodka and tonic","gin fizz","bahama mama","manhattan","black Russian","whiskey soda","long island tea","margarita","Irish coffee"," manly dwarf","Irish cream","doctor's delight","Beepksy Smash","tequila sunrise","brave bull","gargle blaster","bloody mary","whiskey cola","white Russian","vodka martini","martini","Cuba libre","kahlua","vodka","wine","moonshine")
 	var/locations[] = teleportlocs.len ? teleportlocs : drinks//if null, defaults to drinks instead.
 
 	var/names[] = list()
@@ -198,11 +164,11 @@ var/syndicate_code_response//Code response for traitors.
 						if(names.len&&prob(70))
 							code_phrase += pick(names)
 						else
-							code_phrase += pick(pick(first_names_male,first_names_female))
+							code_phrase += pick(pick(GLOB.first_names_male,GLOB.first_names_female))
 							code_phrase += " "
-							code_phrase += pick(last_names)
+							code_phrase += pick(GLOB.last_names)
 					if(2)
-						code_phrase += pick(joblist)//Returns a job.
+						code_phrase += pick(GLOB.joblist)//Returns a job.
 				safety -= 1
 			if(2)
 				switch(rand(1,2))//Places or things.
@@ -216,9 +182,9 @@ var/syndicate_code_response//Code response for traitors.
 					if(1)
 						code_phrase += pick(nouns)
 					if(2)
-						code_phrase += pick(adjectives)
+						code_phrase += pick(GLOB.adjectives)
 					if(3)
-						code_phrase += pick(verbs)
+						code_phrase += pick(GLOB.verbs)
 		if(words==1)
 			code_phrase += "."
 		else
@@ -239,7 +205,7 @@ var/syndicate_code_response//Code response for traitors.
 	set name = "Generate Code Phrase"
 	set category = "Debug"
 
-	to_chat(world, "\red Code Phrase is: \black [generate_code_phrase()]")
+	to_chat(world, "<span class='warning'>Code Phrase is:</span> [generate_code_phrase()]")
 	return
 
 
@@ -253,9 +219,9 @@ var/syndicate_code_response//Code response for traitors.
 		if(1)
 			syndicate_code_phrase += pick("I'm looking for","Have you seen","Maybe you've seen","I'm trying to find","I'm tracking")
 			syndicate_code_phrase += " "
-			syndicate_code_phrase += pick(pick(first_names_male,first_names_female))
+			syndicate_code_phrase += pick(pick(GLOB.first_names_male,GLOB.first_names_female))
 			syndicate_code_phrase += " "
-			syndicate_code_phrase += pick(last_names)
+			syndicate_code_phrase += pick(GLOB.last_names)
 			syndicate_code_phrase += "."
 		if(2)
 			syndicate_code_phrase += pick("How do I get to","How do I find","Where is","Where do I find")
@@ -269,7 +235,7 @@ var/syndicate_code_response//Code response for traitors.
 			else
 				syndicate_code_phrase += pick("One")
 				syndicate_code_phrase += " "
-			syndicate_code_phrase += pick("vodka and tonic","gin fizz","bahama mama","manhattan","black Russian","whiskey soda","long island tea","margarita","Irish coffee"," manly dwarf","Irish cream","doctor's delight","Beepksy Smash","tequilla sunrise","brave bull","gargle blaster","bloody mary","whiskey cola","white Russian","vodka martini","martini","Cuba libre","kahlua","vodka","wine","moonshine")
+			syndicate_code_phrase += pick("vodka and tonic","gin fizz","bahama mama","manhattan","black Russian","whiskey soda","long island tea","margarita","Irish coffee"," manly dwarf","Irish cream","doctor's delight","Beepksy Smash","tequila sunrise","brave bull","gargle blaster","bloody mary","whiskey cola","white Russian","vodka martini","martini","Cuba libre","kahlua","vodka","wine","moonshine")
 			syndicate_code_phrase += "."
 		if(4)
 			syndicate_code_phrase += pick("I wish I was","My dad was","His mom was","Where do I find","The hero this station needs is","I'd fuck","I wouldn't trust","Someone caught","HoS caught","Someone found","I'd wrestle","I wanna kill")
@@ -279,7 +245,7 @@ var/syndicate_code_response//Code response for traitors.
 		if(5)
 			syndicate_code_phrase += pick("Do we have","Is there","Where is","Where's","Who's")
 			syndicate_code_phrase += " "
-			syndicate_code_phrase += "[pick(joblist)]"
+			syndicate_code_phrase += "[pick(GLOB.joblist)]"
 			syndicate_code_phrase += "?"
 
 	switch(choice)
@@ -303,12 +269,12 @@ var/syndicate_code_response//Code response for traitors.
 				syndicate_code_response += pick("Try asking","Ask","Talk to","Go see","Follow","Hunt down")
 				syndicate_code_response += " "
 				if(prob(50))
-					syndicate_code_response += pick(pick(first_names_male,first_names_female))
+					syndicate_code_response += pick(pick(GLOB.first_names_male,GLOB.first_names_female))
 					syndicate_code_response += " "
-					syndicate_code_response += pick(last_names)
+					syndicate_code_response += pick(GLOB.last_names)
 				else
 					syndicate_code_response += " the "
-					syndicate_code_response += "[pic(joblist)]"
+					syndicate_code_response += "[pic(GLOB.joblist)]"
 				syndicate_code_response += "."
 			else
 				syndicate_code_response += pick("*shrug*","*smile*","*blink*","*sigh*","*laugh*","*nod*","*giggle*")

@@ -349,10 +349,8 @@
 		holiday_master.holidays = list()
 	holiday_master.holidays[H.name] = H
 
-	station_name = null
-	station_name()
 	//update our hub status
 	world.update_status()
 
-	message_admins("\blue ADMIN: Event: [key_name(src)] force-set Holiday to \"[H]\"")
+	message_admins("<span class='notice'>ADMIN: Event: [key_name_admin(src)] force-set Holiday to \"[H]\"</span>")
 	log_admin("[key_name(src)] force-set Holiday to \"[H]\"")

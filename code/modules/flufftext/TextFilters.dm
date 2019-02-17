@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
-
 proc/Intoxicated(phrase)
 	phrase = html_decode(phrase)
 	var/leng=lentext(phrase)
@@ -33,7 +31,7 @@ proc/NewStutter(phrase,stunned)
 	if(stunned) i = split_phrase.len
 	for(,i > 0,i--) //Pick a few words to stutter on.
 
-		if (!unstuttered_words.len)
+		if(!unstuttered_words.len)
 			break
 		var/word = pick(unstuttered_words)
 		unstuttered_words -= word //Remove from unstuttered words so we don't stutter it again.

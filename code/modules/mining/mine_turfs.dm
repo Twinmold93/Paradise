@@ -37,7 +37,7 @@ var/global/list/rockTurfEdgeCache = list(
 	var/next_rock = 0
 	var/archaeo_overlay = ""
 	var/excav_overlay = ""
-	var/obj/item/weapon/last_find
+	var/obj/item/last_find
 	var/datum/artifact_find/artifact_find
 	//end xenaorch vars
 
@@ -45,10 +45,10 @@ var/global/list/rockTurfEdgeCache = list(
 	..()
 	switch(severity)
 		if(3.0)
-			if (prob(75))
+			if(prob(75))
 				src.gets_drilled(null, 1)
 		if(2.0)
-			if (prob(90))
+			if(prob(90))
 				src.gets_drilled(null, 1)
 		if(1.0)
 			src.gets_drilled(null, 1)
@@ -56,9 +56,9 @@ var/global/list/rockTurfEdgeCache = list(
 
 /turf/simulated/mineral/New()
 	..()
-	mineral_turfs += src
+	GLOB.mineral_turfs += src
 
-	if (mineralType && mineralAmt && spread && spreadChance)
+	if(mineralType && mineralAmt && spread && spreadChance)
 		for(var/dir in cardinal)
 			if(prob(spreadChance))
 				var/turf/T = get_step(src, dir)
@@ -79,7 +79,7 @@ var/global/list/rockTurfEdgeCache = list(
 /hook/startup/proc/add_mineral_edges()
 	var/watch = start_watch()
 	log_startup_progress("Reticulating splines...")
-	for(var/turf/simulated/mineral/M in mineral_turfs)
+	for(var/turf/simulated/mineral/M in GLOB.mineral_turfs)
 		M.add_edges()
 	log_startup_progress(" Splines reticulated in [stop_watch(watch)]s.")
 	return 1
@@ -88,19 +88,19 @@ var/global/list/rockTurfEdgeCache = list(
 	var/turf/T
 	if((istype(get_step(src, NORTH), /turf/simulated/floor)) || (istype(get_step(src, NORTH), /turf/space)))
 		T = get_step(src, NORTH)
-		if (T)
+		if(T)
 			T.overlays += rockTurfEdgeCache[SOUTH_EDGING]
 	if((istype(get_step(src, SOUTH), /turf/simulated/floor)) || (istype(get_step(src, SOUTH), /turf/space)))
 		T = get_step(src, SOUTH)
-		if (T)
+		if(T)
 			T.overlays += rockTurfEdgeCache[NORTH_EDGING]
 	if((istype(get_step(src, EAST), /turf/simulated/floor)) || (istype(get_step(src, EAST), /turf/space)))
 		T = get_step(src, EAST)
-		if (T)
+		if(T)
 			T.overlays += rockTurfEdgeCache[WEST_EDGING]
 	if((istype(get_step(src, WEST), /turf/simulated/floor)) || (istype(get_step(src, WEST), /turf/space)))
 		T = get_step(src, WEST)
-		if (T)
+		if(T)
 			T.overlays += rockTurfEdgeCache[EAST_EDGING]
 
 /turf/simulated/mineral/random
@@ -110,16 +110,15 @@ var/global/list/rockTurfEdgeCache = list(
 		"Uranium" = 5, "Diamond" = 1, "Gold" = 10,
 		"Silver" = 12, "Plasma" = 20, "Iron" = 40,
 		"Gibtonite" = 4, "Cave" = 2, "BScrystal" = 1,
-		/*, "Adamantine" =5*/)
-		//Currently, Adamantine won't spawn as it has no uses. -Durandan
+		"Titanium" = 11)
 	var/mineralChance = 13
 
 /turf/simulated/mineral/random/New()
 	..()
-	if (prob(mineralChance))
+	if(prob(mineralChance))
 		var/mName = pickweight(mineralSpawnChanceList) //temp mineral name
 
-		if (mName)
+		if(mName)
 			var/turf/simulated/mineral/M
 			switch(mName)
 				if("Uranium")
@@ -142,6 +141,8 @@ var/global/list/rockTurfEdgeCache = list(
 					M = new/turf/simulated/mineral/clown(src)
 				if("Tranquillite")
 					M = new/turf/simulated/mineral/mime(src)
+				if("Titanium")
+					M = new/turf/simulated/mineral/titanium(src)
 				if("BScrystal")
 					M = new/turf/simulated/mineral/bscrystal(src)
 			if(M)
@@ -155,9 +156,9 @@ var/global/list/rockTurfEdgeCache = list(
 	icon_state = "rock_highchance"
 	mineralChance = 25
 	mineralSpawnChanceList = list(
-		"Uranium" = 35, "Diamond" = 30,
-		"Gold" = 45, "Silver" = 50, "Plasma" = 50,
-		"BScrystal" = 20)
+		"Uranium" = 35, "Diamond" = 30, "Gold" = 45,
+		"Silver" = 50, "Plasma" = 50, "BScrystal" = 20,
+		"Titanium" = 45)
 
 
 /turf/simulated/mineral/random/high_chance_clown
@@ -177,7 +178,7 @@ var/global/list/rockTurfEdgeCache = list(
 	mineralSpawnChanceList = list(
 		"Uranium" = 2, "Diamond" = 1, "Gold" = 4,
 		"Silver" = 6, "Plasma" = 15, "Iron" = 40,
-		"Gibtonite" = 2, "BScrystal" = 1)
+		"Gibtonite" = 2, "BScrystal" = 1, "Titanium" = 4)
 
 /turf/simulated/mineral/random/low_chance/New()
 	icon_state = "rock"
@@ -186,7 +187,7 @@ var/global/list/rockTurfEdgeCache = list(
 /turf/simulated/mineral/iron
 	name = "iron deposit"
 	icon_state = "rock_Iron"
-	mineralType = /obj/item/weapon/ore/iron
+	mineralType = /obj/item/stack/ore/iron
 	mineralName = "Iron"
 	spreadChance = 20
 	spread = 1
@@ -194,7 +195,7 @@ var/global/list/rockTurfEdgeCache = list(
 
 /turf/simulated/mineral/uranium
 	name = "uranium deposit"
-	mineralType = /obj/item/weapon/ore/uranium
+	mineralType = /obj/item/stack/ore/uranium
 	mineralName = "Uranium"
 	spreadChance = 5
 	spread = 1
@@ -203,7 +204,7 @@ var/global/list/rockTurfEdgeCache = list(
 
 /turf/simulated/mineral/diamond
 	name = "diamond deposit"
-	mineralType = /obj/item/weapon/ore/diamond
+	mineralType = /obj/item/stack/ore/diamond
 	mineralName = "Diamond"
 	spreadChance = 0
 	spread = 1
@@ -212,7 +213,7 @@ var/global/list/rockTurfEdgeCache = list(
 
 /turf/simulated/mineral/gold
 	name = "gold deposit"
-	mineralType = /obj/item/weapon/ore/gold
+	mineralType = /obj/item/stack/ore/gold
 	mineralName = "Gold"
 	spreadChance = 5
 	spread = 1
@@ -221,17 +222,25 @@ var/global/list/rockTurfEdgeCache = list(
 
 /turf/simulated/mineral/silver
 	name = "silver deposit"
-	mineralType = /obj/item/weapon/ore/silver
+	mineralType = /obj/item/stack/ore/silver
 	mineralName = "Silver"
 	spreadChance = 5
 	spread = 1
 	hidden = 1
 	scan_state = "rock_Silver"
 
+/turf/simulated/mineral/titanium
+	name = "titanium deposit"
+	mineralType = /obj/item/stack/ore/titanium
+	spreadChance = 5
+	spread = 1
+	hidden = 1
+	scan_state = "rock_Titanium"
+
 /turf/simulated/mineral/plasma
 	name = "plasma deposit"
 	icon_state = "rock_Plasma"
-	mineralType = /obj/item/weapon/ore/plasma
+	mineralType = /obj/item/stack/ore/plasma
 	mineralName = "Plasma"
 	spreadChance = 8
 	spread = 1
@@ -241,7 +250,7 @@ var/global/list/rockTurfEdgeCache = list(
 /turf/simulated/mineral/clown
 	name = "bananium deposit"
 	icon_state = "rock_Clown"
-	mineralType = /obj/item/weapon/ore/bananium
+	mineralType = /obj/item/stack/ore/bananium
 	mineralName = "Bananium"
 	mineralAmt = 3
 	spreadChance = 0
@@ -251,7 +260,7 @@ var/global/list/rockTurfEdgeCache = list(
 /turf/simulated/mineral/mime
 	name = "tranquillite deposit"
 	icon_state = "rock_Mime"
-	mineralType = /obj/item/weapon/ore/tranquillite
+	mineralType = /obj/item/stack/ore/tranquillite
 	mineralAmt = 3
 	spreadChance = 0
 	spread = 0
@@ -260,7 +269,7 @@ var/global/list/rockTurfEdgeCache = list(
 /turf/simulated/mineral/bscrystal
 	name = "bluespace crystal deposit"
 	icon_state = "rock_BScrystal"
-	mineralType = /obj/item/weapon/ore/bluespace_crystal
+	mineralType = /obj/item/stack/ore/bluespace_crystal
 	mineralName = "Bluespace crystal"
 	mineralAmt = 1
 	spreadChance = 0
@@ -288,7 +297,7 @@ var/global/list/rockTurfEdgeCache = list(
 	..()
 
 /turf/simulated/mineral/gibtonite/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/device/mining_scanner) || istype(I, /obj/item/device/t_scanner/adv_mining_scanner) && stage == 1)
+	if(istype(I, /obj/item/mining_scanner) || istype(I, /obj/item/t_scanner/adv_mining_scanner) && stage == 1)
 		user.visible_message("<span class='notice'>You use [I] to locate where to cut off the chain reaction and attempt to stop it...</span>")
 		defuse()
 	..()
@@ -349,7 +358,7 @@ var/global/list/rockTurfEdgeCache = list(
 		mineralAmt = 0
 		explosion(bombturf,1,2,5, adminlog = 0)
 	if(stage == 2) //Gibtonite deposit is now benign and extractable. Depending on how close you were to it blowing up before defusing, you get better quality ore.
-		var/obj/item/weapon/twohanded/required/gibtonite/G = new /obj/item/weapon/twohanded/required/gibtonite/(src)
+		var/obj/item/twohanded/required/gibtonite/G = new /obj/item/twohanded/required/gibtonite/(src)
 		if(det_time <= 0)
 			G.quality = 3
 			G.icon_state = "Gibtonite ore 3"
@@ -365,15 +374,15 @@ var/global/list/rockTurfEdgeCache = list(
 
 ////////////////////////////////End Gibtonite
 
-/turf/simulated/mineral/attackby(var/obj/item/weapon/pickaxe/P as obj, mob/user as mob, params)
+/turf/simulated/mineral/attackby(var/obj/item/pickaxe/P as obj, mob/user as mob, params)
 
-	if (!user.IsAdvancedToolUser())
+	if(!user.IsAdvancedToolUser())
 		to_chat(usr, "<span class='warning'>You don't have the dexterity to do this!</span>")
 		return
 
-	if (istype(P, /obj/item/weapon/pickaxe))
+	if(istype(P, /obj/item/pickaxe))
 		var/turf/T = user.loc
-		if (!( istype(T, /turf) ))
+		if(!( istype(T, /turf) ))
 			return
 
 		if(last_act+P.digspeed > world.time)//prevents message spam
@@ -393,9 +402,9 @@ var/global/list/rockTurfEdgeCache = list(
 	return
 
 /turf/simulated/mineral/proc/gets_drilled()
-	if (mineralType && (src.mineralAmt > 0) && (src.mineralAmt < 11))
+	if(mineralType && (src.mineralAmt > 0) && (src.mineralAmt < 11))
 		var/i
-		for (i=0;i<mineralAmt;i++)
+		for(i=0;i<mineralAmt;i++)
 			new mineralType(src)
 		feedback_add_details("ore_mined","[mineralType]|[mineralAmt]")
 	var/turf/simulated/floor/plating/airless/asteroid/N = ChangeTurf(/turf/simulated/floor/plating/airless/asteroid)
@@ -409,7 +418,7 @@ var/global/list/rockTurfEdgeCache = list(
 	return
 
 /turf/simulated/mineral/attack_animal(mob/living/simple_animal/user as mob)
-	if(user.environment_smash >= 2)
+	if((user.environment_smash & ENVIRONMENT_SMASH_WALLS) || (user.environment_smash & ENVIRONMENT_SMASH_RWALLS))
 		gets_drilled()
 	..()
 
@@ -424,28 +433,26 @@ var/global/list/rockTurfEdgeCache = list(
 	. = ..()
 	if(istype(AM,/mob/living/carbon/human))
 		var/mob/living/carbon/human/H = AM
-		if((istype(H.l_hand,/obj/item/weapon/pickaxe)) && (!H.hand))
+		if((istype(H.l_hand,/obj/item/pickaxe)) && (!H.hand))
 			attackby(H.l_hand,H)
-		else if((istype(H.r_hand,/obj/item/weapon/pickaxe)) && H.hand)
+		else if((istype(H.r_hand,/obj/item/pickaxe)) && H.hand)
 			attackby(H.r_hand,H)
 
 	else if(istype(AM,/mob/living/silicon/robot))
 		var/mob/living/silicon/robot/R = AM
-		if(istype(R.module_active,/obj/item/weapon/pickaxe))
+		if(istype(R.module_active,/obj/item/pickaxe))
 			attackby(R.module_active,R)
 
 	else if(istype(AM,/obj/mecha))
 		var/obj/mecha/M = AM
-		if(istype(M.selected,/obj/item/mecha_parts/mecha_equipment/tool/drill))
+		if(istype(M.selected,/obj/item/mecha_parts/mecha_equipment/drill))
 			M.selected.action(src)
-	else
-		return
+
 
 /**********************Asteroid**************************/
 
 /turf/simulated/floor/plating/airless/asteroid
 	name = "Asteroid"
-	icon = 'icons/turf/floors.dmi'
 	icon_state = "asteroid"
 	icon_plating = "asteroid"
 	var/dug = 0       //0 = has not yet been dug, 1 = has already been dug
@@ -465,58 +472,66 @@ var/global/list/rockTurfEdgeCache = list(
 		if(3.0)
 			return
 		if(2.0)
-			if (prob(20))
+			if(prob(20))
 				src.gets_dug()
 		if(1.0)
 			src.gets_dug()
 	return
 
-/turf/simulated/floor/plating/airless/asteroid/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+/turf/simulated/floor/plating/airless/asteroid/attackby(obj/item/W, mob/user, params)
 	//note that this proc does not call ..()
 	if(!W || !user)
 		return 0
 
-	if ((istype(W, /obj/item/weapon/shovel)))
-		var/turf/T = user.loc
-		if (!( istype(T, /turf) ))
+	if((istype(W, /obj/item/shovel)))
+		var/turf/T = get_turf(user)
+		if(!istype(T))
 			return
 
-		if (dug)
+		if(dug)
+			to_chat(user, "<span class='warning'>This area has already been dug!</span>")
+			return
+
+		to_chat(user, "<span class='notice'>You start digging...</span>")
+		if(do_after(user, 20 * W.toolspeed, target = src))
+			to_chat(user, "<span class='notice'>You dig a hole.</span>")
+			gets_dug()
+			return
+
+	if((istype(W, /obj/item/pickaxe)))
+		var/obj/item/pickaxe/P = W
+		var/turf/T = get_turf(user)
+		if(!istype(T))
+			return
+
+		if(dug)
 			to_chat(user, "<span class='warning'>This area has already been dug!</span>")
 			return
 
 		to_chat(user, "<span class='notice'>You start digging...</span>")
 
-		sleep(20)
-		if ((user.loc == T && user.get_active_hand() == W))
+		if(do_after(user, P.digspeed, target = src))
 			to_chat(user, "<span class='notice'>You dig a hole.</span>")
 			gets_dug()
 			return
 
-	if ((istype(W, /obj/item/weapon/pickaxe)))
-		var/obj/item/weapon/pickaxe/P = W
-		var/turf/T = user.loc
-		if (!( istype(T, /turf) ))
-			return
-
-		if (dug)
-			to_chat(user, "<span class='warning'>This area has already been dug!</span>")
-			return
-
-		to_chat(user, "<span class='notice'>You start digging...</span>")
-
-		sleep(P.digspeed)
-		if ((user.loc == T && user.get_active_hand() == W))
-			to_chat(user, "<span class='notice'>You dig a hole.</span>")
-			gets_dug()
-			return
-
-	if(istype(W,/obj/item/weapon/storage/bag/ore))
-		var/obj/item/weapon/storage/bag/ore/S = W
+	if(istype(W,/obj/item/storage/bag/ore))
+		var/obj/item/storage/bag/ore/S = W
 		if(S.collection_mode == 1)
-			for(var/obj/item/weapon/ore/O in src.contents)
+			for(var/obj/item/stack/ore/O in src.contents)
 				O.attackby(W,user)
 				return
+
+	if(istype(W, /obj/item/stack/tile/plasteel) && isarea(loc))
+		var/area/A = loc
+		if(A.outdoors)
+			to_chat(user, "<span class='warning'>You must define a room as part of the station using blueprints or an equivalent item first.</span>")
+			return
+		playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+		make_plating()
+		icon_plating = "plating"
+		icon_state = "plating"
+		update_icon()
 
 /turf/simulated/floor/plating/airless/asteroid/gets_drilled()
 	if(!dug)
@@ -527,11 +542,7 @@ var/global/list/rockTurfEdgeCache = list(
 /turf/simulated/floor/plating/airless/asteroid/proc/gets_dug()
 	if(dug)
 		return
-	new/obj/item/weapon/ore/glass(src)
-	new/obj/item/weapon/ore/glass(src)
-	new/obj/item/weapon/ore/glass(src)
-	new/obj/item/weapon/ore/glass(src)
-	new/obj/item/weapon/ore/glass(src)
+	new/obj/item/stack/ore/glass(src, 5)
 	dug = 1
 	playsound(src, 'sound/effects/shovel_dig.ogg', 50, 1) //FUCK YO RUSTLE I GOT'S THE DIGS SOUND HERE
 	icon_plating = "asteroid_dug"
@@ -557,7 +568,7 @@ var/global/list/rockTurfEdgeCache = list(
 	return
 
 /turf/proc/fullUpdateMineralOverlays()
-	for (var/turf/t in range(1,src))
+	for(var/turf/t in range(1,src))
 		t.updateMineralOverlays()
 
 /turf/simulated/floor/plating/airless/asteroid/cave
@@ -625,7 +636,7 @@ var/global/list/rockTurfEdgeCache = list(
 
 /turf/simulated/floor/plating/airless/asteroid/cave/proc/SpawnFloor(var/turf/T)
 	for(var/turf/S in range(2,T))
-		if(istype(S, /turf/space) || istype(S.loc, /area/mine/explored))
+		if(istype(S, /turf/space) || istype(S.loc, /area/mine/dangerous/explored))
 			sanity = 0
 			break
 	if(!sanity)
@@ -638,7 +649,7 @@ var/global/list/rockTurfEdgeCache = list(
 
 /turf/simulated/floor/plating/airless/asteroid/cave/proc/SpawnMonster(var/turf/T)
 	if(prob(30))
-		if(istype(loc, /area/mine/explored))
+		if(istype(loc, /area/mine/dangerous/explored))
 			return
 		for(var/atom/A in range(15,T))//Lowers chance of mob clumps
 			if(istype(A, /mob/living/simple_animal/hostile/asteroid))

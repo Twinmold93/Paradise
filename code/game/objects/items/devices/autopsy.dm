@@ -1,19 +1,19 @@
-
-//moved these here from code/defines/obj/weapon.dm
-//please preference put stuff where it's easy to find - C
-
-/obj/item/weapon/autopsy_scanner
+/obj/item/autopsy_scanner
 	name = "autopsy scanner"
 	desc = "Extracts information on wounds."
 	icon = 'icons/obj/autopsy_scanner.dmi'
 	icon_state = ""
 	flags = CONDUCT
-	w_class = 1.0
-	origin_tech = "materials=1;biotech=1"
+	w_class = WEIGHT_CLASS_TINY
+	origin_tech = "magnets=1;biotech=1"
 	var/list/datum/autopsy_data_scanner/wdata = list()
-	var/list/datum/autopsy_data_scanner/chemtraces = list()
+	var/list/chemtraces = list()
 	var/target_name = null
 	var/timeofdeath = null
+
+/obj/item/autopsy_scanner/Destroy()
+	QDEL_LIST_ASSOC_VAL(wdata)
+	return ..()
 
 /datum/autopsy_data_scanner
 	var/weapon = null // this is the DEFINITE weapon type that was used
@@ -21,160 +21,135 @@
 									 // the wounds to those organs with this data's weapon type
 	var/organ_names = ""
 
+/datum/autopsy_data_scanner/Destroy()
+	QDEL_LIST_ASSOC_VAL(organs_scanned)
+	return ..()
+
 /datum/autopsy_data
 	var/weapon = null
-	var/pretend_weapon = null
 	var/damage = 0
 	var/hits = 0
 	var/time_inflicted = 0
 
-	proc/copy()
-		var/datum/autopsy_data/W = new()
-		W.weapon = weapon
-		W.pretend_weapon = pretend_weapon
-		W.damage = damage
-		W.hits = hits
-		W.time_inflicted = time_inflicted
-		return W
+/datum/autopsy_data/proc/copy()
+	var/datum/autopsy_data/W = new()
+	W.weapon = weapon
+	W.damage = damage
+	W.hits = hits
+	W.time_inflicted = time_inflicted
+	return W
 
-/obj/item/weapon/autopsy_scanner/proc/add_data(var/obj/item/organ/external/O)
-	if(!O.autopsy_data.len && !O.trace_chemicals.len) return
+/obj/item/autopsy_scanner/proc/add_data(obj/item/organ/O)
+	if(O.autopsy_data.len)
+		for(var/V in O.autopsy_data)
+			var/datum/autopsy_data/W = O.autopsy_data[V]
 
-	for(var/V in O.autopsy_data)
-		var/datum/autopsy_data/W = O.autopsy_data[V]
+			var/datum/autopsy_data_scanner/D = wdata[V]
+			if(!D)
+				D = new()
+				D.weapon = W.weapon
+				wdata[V] = D
 
-		if(!W.pretend_weapon)
-			/*
-			// the more hits, the more likely it is that we get the right weapon type
-			if(prob(50 + W.hits * 10 + W.damage))
-			*/
+			if(!D.organs_scanned[O.name])
+				if(D.organ_names == "")
+					D.organ_names = O.name
+				else
+					D.organ_names += ", [O.name]"
 
-			// Buffing this stuff up for now!
-			if(1)
-				W.pretend_weapon = W.weapon
-			else
-				W.pretend_weapon = pick("mechanical toolbox", "wirecutters", "revolver", "crowbar", "fire extinguisher", "tomato soup", "oxygen tank", "emergency oxygen tank", "laser", "bullet")
+			qdel(D.organs_scanned[O.name])
+			D.organs_scanned[O.name] = W.copy()
 
+	if(O.trace_chemicals.len)
+		for(var/V in O.trace_chemicals)
+			if(O.trace_chemicals[V] > 0 && !chemtraces.Find(V))
+				chemtraces += V
 
-		var/datum/autopsy_data_scanner/D = wdata[V]
-		if(!D)
-			D = new()
-			D.weapon = W.weapon
-			wdata[V] = D
+/obj/item/autopsy_scanner/attackby(obj/item/P, mob/user)
+	if(istype(P, /obj/item/pen))
+		var/dead_name = input("Insert name of deceased individual")
+		var/dead_rank = input("Insert rank of deceased individual")
+		var/dead_tod = input("Insert time of death")
+		var/dead_cause = input("Insert cause of death")
+		var/dead_chems = input("Insert any chemical traces")
+		var/dead_notes = input("Insert any relevant notes")
+		var/obj/item/paper/R = new(user.loc)
+		R.name = "Official Coroner's Report - [dead_name]"
+		R.info = "<b>Nanotrasen Science Station [using_map.station_short] - Coroner's Report</b><br><br><b>Name of Deceased:</b> [dead_name]</br><br><b>Rank of Deceased:</b> [dead_rank]<br><br><b>Time of Death:</b> [dead_tod]<br><br><b>Cause of Death:</b> [dead_cause]<br><br><b>Trace Chemicals:</b> [dead_chems]<br><br><b>Additional Coroner's Notes:</b> [dead_notes]<br><br><b>Coroner's Signature:</b> <span class=\"paper_field\">"
+		playsound(loc, 'sound/goonstation/machines/printer_thermal.ogg', 50, 1)
+		sleep(10)
+		user.put_in_hands(R)
+	else
+		return ..()
 
-		if(!D.organs_scanned[O.name])
-			if(D.organ_names == "")
-				D.organ_names = O.name
-			else
-				D.organ_names += ", [O.name]"
-
-		qdel(D.organs_scanned[O.name])
-		D.organs_scanned[O.name] = W.copy()
-
-	for(var/V in O.trace_chemicals)
-		if(O.trace_chemicals[V] > 0 && !chemtraces.Find(V))
-			chemtraces += V
-
-/obj/item/weapon/autopsy_scanner/verb/print_data()
-	set src in view(usr, 1)
-	set name = "Print Data"
-	if(usr.stat || !(istype(usr,/mob/living/carbon/human)))
-		to_chat(usr, "No.")
-		return
-
+/obj/item/autopsy_scanner/attack_self(mob/user)
 	var/scan_data = ""
 
 	if(timeofdeath)
-		scan_data += "<b>Time of death:</b> [worldtime2text(timeofdeath)]<br><br>"
+		scan_data += "<b>Time of death:</b> [station_time_timestamp("hh:mm:ss", timeofdeath)]<br><br>"
+	else
+		scan_data += "<b>Time of death:</b> Unknown / Still alive<br><br>"
 
-	var/n = 1
-	for(var/wdata_idx in wdata)
-		var/datum/autopsy_data_scanner/D = wdata[wdata_idx]
-		var/total_hits = 0
-		var/total_score = 0
-		var/list/weapon_chances = list() // maps weapon names to a score
-		var/age = 0
+	if(wdata.len)
+		var/n = 1
+		for(var/wdata_idx in wdata)
+			var/datum/autopsy_data_scanner/D = wdata[wdata_idx]
+			var/total_hits = 0
+			var/total_score = 0
+			var/age = 0
 
-		for(var/wound_idx in D.organs_scanned)
-			var/datum/autopsy_data/W = D.organs_scanned[wound_idx]
-			total_hits += W.hits
-
-			var/wname = W.pretend_weapon
-
-			if(wname in weapon_chances) weapon_chances[wname] += W.damage
-			else weapon_chances[wname] = max(W.damage, 1)
-			total_score+=W.damage
+			for(var/wound_idx in D.organs_scanned)
+				var/datum/autopsy_data/W = D.organs_scanned[wound_idx]
+				total_hits += W.hits
+				total_score+=W.damage
 
 
-			var/wound_age = W.time_inflicted
-			age = max(age, wound_age)
+				var/wound_age = W.time_inflicted
+				age = max(age, wound_age)
 
-		var/damage_desc
+			var/damage_desc
+			// total score happens to be the total damage
+			switch(total_score)
+				if(1 to 5)
+					damage_desc = "<font color='green'>negligible</font>"
+				if(5 to 15)
+					damage_desc = "<font color='green'>light</font>"
+				if(15 to 30)
+					damage_desc = "<font color='orange'>moderate</font>"
+				if(30 to 1000)
+					damage_desc = "<font color='red'>severe</font>"
+				else
+					damage_desc = "Unknown"
 
-		var/damaging_weapon = (total_score != 0)
+			var/damaging_weapon = (total_score != 0)
+			scan_data += "<b>Weapon #[n]</b><br>"
+			if(damaging_weapon)
+				scan_data += "Severity: [damage_desc]<br>"
+				scan_data += "Hits by weapon: [total_hits]<br>"
+			scan_data += "Approximate time of wound infliction: [station_time_timestamp("hh:mm", age)]<br>"
+			scan_data += "Affected limbs: [D.organ_names]<br>"
+			scan_data += "Weapon: [D.weapon]<br>"
+			scan_data += "<br>"
 
-		// total score happens to be the total damage
-		switch(total_score)
-			if(0)
-				damage_desc = "Unknown"
-			if(1 to 5)
-				damage_desc = "<font color='green'>negligible</font>"
-			if(5 to 15)
-				damage_desc = "<font color='green'>light</font>"
-			if(15 to 30)
-				damage_desc = "<font color='orange'>moderate</font>"
-			if(30 to 1000)
-				damage_desc = "<font color='red'>severe</font>"
-
-		if(!total_score) total_score = D.organs_scanned.len
-
-		scan_data += "<b>Weapon #[n]</b><br>"
-		if(damaging_weapon)
-			scan_data += "Severity: [damage_desc]<br>"
-			scan_data += "Hits by weapon: [total_hits]<br>"
-		scan_data += "Approximate time of wound infliction: [worldtime2text(age)]<br>"
-		scan_data += "Affected limbs: [D.organ_names]<br>"
-		scan_data += "Possible weapons:<br>"
-		for(var/weapon_name in weapon_chances)
-			scan_data += "\t[100*weapon_chances[weapon_name]/total_score]% [weapon_name]<br>"
-
-		scan_data += "<br>"
-
-		n++
+			n++
 
 	if(chemtraces.len)
 		scan_data += "<b>Trace Chemicals: </b><br>"
 		for(var/chemID in chemtraces)
 			scan_data += chemID
 			scan_data += "<br>"
+	user.visible_message("<span class='warning'>[src] rattles and prints out a sheet of paper.</span>")
 
-	for(var/mob/O in viewers(usr))
-		O.show_message("\red \the [src] rattles and prints out a sheet of paper.", 1)
-
-	playsound(loc, "sound/goonstation/machines/printer_thermal.ogg", 50, 1)
+	playsound(loc, 'sound/goonstation/machines/printer_thermal.ogg', 50, 1)
 	sleep(10)
 
-	var/obj/item/weapon/paper/P = new(usr.loc)
+	var/obj/item/paper/P = new(user.loc)
 	P.name = "Autopsy Data ([target_name])"
 	P.info = "<tt>[scan_data]</tt>"
 	P.overlays += "paper_words"
 
-	if(istype(usr,/mob/living/carbon))
-		// place the item in the usr's hand if possible
-		if(!usr.r_hand)
-			P.loc = usr
-			usr.r_hand = P
-			P.layer = 20
-		else if(!usr.l_hand)
-			P.loc = usr
-			usr.l_hand = P
-			P.layer = 20
+	user.put_in_hands(P)
 
-	if(istype(usr,/mob/living/carbon/human))
-		usr:update_inv_l_hand()
-		usr:update_inv_r_hand()
-
-/obj/item/weapon/autopsy_scanner/attack(mob/living/carbon/human/M as mob, mob/living/carbon/user as mob)
+/obj/item/autopsy_scanner/attack(mob/living/carbon/human/M, mob/living/carbon/user)
 	if(!istype(M))
 		return
 
@@ -183,23 +158,18 @@
 
 	if(target_name != M.name)
 		target_name = M.name
-		src.wdata = list()
-		src.chemtraces = list()
-		src.timeofdeath = null
-		to_chat(user, "\red A new patient has been registered.. Purging data for previous patient.")
+		wdata.Cut()
+		chemtraces.Cut()
+		timeofdeath = null
+		to_chat(user, "<span class='warning'>A new patient has been registered. Purging data for previous patient.</span>")
 
-	src.timeofdeath = M.timeofdeath
+	timeofdeath = M.timeofdeath
 
 	var/obj/item/organ/external/S = M.get_organ(user.zone_sel.selecting)
 	if(!S)
-		to_chat(usr, "<b>You can't scan this body part.</b>")
+		to_chat(user, "<span class='warning'>You can't scan this body part.</span>")
 		return
-	if(!S.open)
-		to_chat(usr, "<b>You have to cut the limb open first!</b>")
-		return
-	for(var/mob/O in viewers(M))
-		O.show_message("\red [user.name] scans the wounds on [M.name]'s [S.name] with \the [src.name]", 1)
+	M.visible_message("<span class='warning'>[user] scans the wounds on [M]'s [S] with [src]</span>")
 
-	src.add_data(S)
-
+	add_data(S)
 	return 1

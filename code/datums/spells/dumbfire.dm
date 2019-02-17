@@ -12,7 +12,7 @@
 	var/proj_trail_icon = 'icons/obj/wizard.dmi'
 	var/proj_trail_icon_state = "trail"
 
-	var/proj_type = "/obj/effect/proc_holder/spell" //IMPORTANT use only subtypes of this
+	var/proj_type = /obj/effect/proc_holder/spell //IMPORTANT use only subtypes of this
 
 	var/proj_insubstantial = 0 //if it can pass through dense objects or not
 	var/proj_trigger_range = 1 //the range from target at which the projectile triggers cast(target)
@@ -28,25 +28,20 @@
 		if(new_turf.density)
 			break
 		T = new_turf
-	perform(list(T))
+	perform(list(T), user = user)
 
 /obj/effect/proc_holder/spell/dumbfire/cast(list/targets, mob/user = usr)
 
 	for(var/turf/target in targets)
 		spawn(0)
 			var/obj/effect/proc_holder/spell/targeted/projectile
-			if(istext(proj_type))
-				var/projectile_type = text2path(proj_type)
-				projectile = new projectile_type(user)
-			if(istype(proj_type,/obj/effect/proc_holder/spell))
-				projectile = new /obj/effect/proc_holder/spell/targeted/trigger(user)
-				projectile:linked_spells += proj_type
+			projectile = new proj_type(user)
 			projectile.icon = proj_icon
 			projectile.icon_state = proj_icon_state
 			projectile.dir = get_dir(projectile, target)
 			projectile.name = proj_name
 
-			var/current_loc = usr.loc
+			var/current_loc = user.loc
 
 			projectile.loc = current_loc
 
@@ -63,7 +58,7 @@
 					projectile.cast(current_loc)
 					break
 
-				var/mob/living/L = locate(/mob/living) in range(projectile, proj_trigger_range) - usr
+				var/mob/living/L = locate(/mob/living) in range(projectile, proj_trigger_range) - user
 				if(L && L.stat != DEAD)
 					projectile.cast(L.loc)
 					break

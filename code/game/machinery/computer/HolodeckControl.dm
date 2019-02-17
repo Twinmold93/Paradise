@@ -26,39 +26,41 @@
 	dat += "<B>Holodeck Control System</B><BR>"
 	dat += "<HR>Current Loaded Programs:<BR>"
 
-	dat += "<A href='?src=\ref[src];emptycourt=1'>((Empty Court)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];boxingcourt=1'>((Boxing Court)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];basketball=1'>((Basketball Court)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];thunderdomecourt=1'>((Thunderdome Court)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];beach=1'>((Beach)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];desert=1'>((Desert)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];space=1'>((Space)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];picnicarea=1'>((Picnic Area)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];snowfield=1'>((Snow Field)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];theatre=1'>((Theatre)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];meetinghall=1'>((Meeting Hall)</font>)</A><BR>"
-	dat += "<A href='?src=\ref[src];knightarena=1'>((Knight Arena)</font>)</A><BR>"
-//		dat += "<A href='?src=\ref[src];turnoff=1'>((Shutdown System)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];emptycourt=1'>((Empty Court)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];boxingcourt=1'>((Boxing Court)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];basketball=1'>((Basketball Court)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];thunderdomecourt=1'>((Thunderdome Court)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];beach=1'>((Beach)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];desert=1'>((Desert)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];space=1'>((Space)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];picnicarea=1'>((Picnic Area)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];snowfield=1'>((Snow Field)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];theatre=1'>((Theatre)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];meetinghall=1'>((Meeting Hall)</font>)</A><BR>"
+	dat += "<A href='?src=[UID()];knightarena=1'>((Knight Arena)</font>)</A><BR>"
+//		dat += "<A href='?src=[UID()];turnoff=1'>((Shutdown System)</font>)</A><BR>"
 
 	dat += "Please ensure that only holographic weapons are used in the holodeck if a combat simulation has been loaded.<BR>"
 
 	if(emagged)
-/*			dat += "<A href='?src=\ref[src];burntest=1'>(<font color=red>Begin Atmospheric Burn Simulation</font>)</A><BR>"
+/*			dat += "<A href='?src=[UID()];burntest=1'>(<font color=red>Begin Atmospheric Burn Simulation</font>)</A><BR>"
 		dat += "Ensure the holodeck is empty before testing.<BR>"
 		dat += "<BR>"*/
-		dat += "<A href='?src=\ref[src];wildlifecarp=1'>(<font color=red>Begin Wildlife Simulation</font>)</A><BR>"
+		dat += "<A href='?src=[UID()];wildlifecarp=1'>(<font color=red>Begin Wildlife Simulation</font>)</A><BR>"
 		dat += "Ensure the holodeck is empty before testing.<BR>"
 		dat += "<BR>"
 		if(issilicon(user))
-			dat += "<A href='?src=\ref[src];AIoverride=1'>(<font color=green>Re-Enable Safety Protocols?</font>)</A><BR>"
+			dat += "<A href='?src=[UID()];AIoverride=1'>(<font color=green>Re-Enable Safety Protocols?</font>)</A><BR>"
 		dat += "Safety Protocols are <font color=red> DISABLED </font><BR>"
 	else
 		if(issilicon(user))
-			dat += "<A href='?src=\ref[src];AIoverride=1'>(<font color=red>Override Safety Protocols?</font>)</A><BR>"
+			dat += "<A href='?src=[UID()];AIoverride=1'>(<font color=red>Override Safety Protocols?</font>)</A><BR>"
 		dat += "<BR>"
 		dat += "Safety Protocols are <font color=green> ENABLED </font><BR>"
 
-	user << browse(dat, "window=computer;size=400x500")
+	var/datum/browser/popup = new(user, "holodeck_computer", name, 400, 500)
+	popup.set_content(dat)
+	popup.open(0)
 	onclose(user, "computer")
 	return
 
@@ -157,14 +159,14 @@
 	updateUsrDialog()
 	return
 
-/obj/machinery/computer/HolodeckControl/attackby(var/obj/item/weapon/D as obj, var/mob/user as mob, params)
+/obj/machinery/computer/HolodeckControl/attackby(var/obj/item/D as obj, var/mob/user as mob, params)
 	return
 
 /obj/machinery/computer/HolodeckControl/emag_act(user as mob)
 	if(!emagged)
 		playsound(src.loc, 'sound/effects/sparks4.ogg', 75, 1)
 		emagged = 1
-		to_chat(user, "\blue You vastly increase projector power and override the safety and security protocols.")
+		to_chat(user, "<span class='notice'>You vastly increase projector power and override the safety and security protocols.</span>")
 		to_chat(user, "Warning.  Automatic shutoff and derezing protocols have been corrupted.  Please call Nanotrasen maintenance and do not use the simulator.")
 		log_game("[key_name(usr)] emagged the Holodeck Control Computer")
 		src.updateUsrDialog()
@@ -215,9 +217,7 @@
 
 			for(var/turf/T in linkedholodeck)
 				if(prob(30))
-					var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-					s.set_up(2, 1, T)
-					s.start()
+					do_sparks(2, 1, T)
 				T.ex_act(3)
 				T.hotspot_expose(1000,500,1)
 
@@ -255,9 +255,7 @@
 				if(L.name=="Atmospheric Test Start")
 					spawn(20)
 						var/turf/T = get_turf(L)
-						var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-						s.set_up(2, 1, T)
-						s.start()
+						do_sparks(2, 1, T)
 						if(T)
 							T.temperature = 5000
 							T.hotspot_expose(50000,50000,1)*/
@@ -277,7 +275,7 @@
 		if(world.time < (last_change + 15))//To prevent super-spam clicking, reduced process size and annoyance -Sieve
 			return
 		for(var/mob/M in range(3,src))
-			M.show_message("\b ERROR. Recalibrating projetion apparatus.")
+			M.show_message("<b>ERROR. Recalibrating projection apparatus.</b>")
 			last_change = world.time
 			return
 
@@ -296,7 +294,7 @@
 	holographic_items = A.copy_contents_to(linkedholodeck , 1)
 
 	if(emagged)
-		for(var/obj/item/weapon/holo/H in linkedholodeck)
+		for(var/obj/item/holo/H in linkedholodeck)
 			H.damtype = BRUTE
 
 	spawn(30)
@@ -304,9 +302,7 @@
 /*			if(L.name=="Atmospheric Test Start")
 				spawn(20)
 					var/turf/T = get_turf(L)
-					var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-					s.set_up(2, 1, T)
-					s.start()
+					do_sparks(2, 1, T)
 					if(T)
 						T.temperature = 5000
 						T.hotspot_expose(50000,50000,1)*/
@@ -330,7 +326,7 @@
 // Holographic Items!
 /turf/simulated/floor/holofloor/
 	thermal_conductivity = 0
-
+	icon_state = "plating"
 /turf/simulated/floor/holofloor/grass
 	name = "Lush Grass"
 	icon_state = "grass1"
@@ -346,35 +342,20 @@
 	if(!(icon_state in list("grass1", "grass2", "grass3", "grass4", "sand")))
 		icon_state = "grass[pick("1","2","3","4")]"
 
-/turf/simulated/floor/holofloor/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+/turf/simulated/floor/holofloor/attackby(obj/item/W as obj, mob/user as mob, params)
 	return
 	// HOLOFLOOR DOES NOT GIVE A FUCK
 
 /obj/structure/table/holotable
-	name = "table"
-
-/obj/structure/table/holotable/attack_alien(mob/user as mob)
-	return attack_hand(user)
-
-/obj/structure/table/holotable/attack_animal(mob/living/simple_animal/user as mob)
-	return attack_hand(user)
-
-/obj/structure/table/holotable/attack_hand(mob/user as mob)
-	return // HOLOTABLE DOES NOT GIVE A FUCK
-
-/obj/structure/table/holotable/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
-	if (istype(W, /obj/item/weapon/grab))
-		return ..()
-
-	if (istype(W, /obj/item/weapon/wrench))
-		to_chat(user, "<span class='warning'>It's a holotable! There are no bolts!</span>")
-		return
+	can_deconstruct = FALSE
+	canSmoothWith = list(/obj/structure/table/holotable)
 
 /obj/structure/table/holotable/wood
-	name = "table"
+	name = "wooden table"
 	desc = "A square piece of wood standing on four wooden legs. It can not move."
-	icon = 'icons/obj/structures.dmi'
+	icon = 'icons/obj/smooth_structures/wood_table.dmi'
 	icon_state = "wood_table"
+	canSmoothWith = list(/obj/structure/table/holotable/wood)
 
 /obj/item/clothing/gloves/boxing/hologlove
 	name = "boxing gloves"
@@ -394,26 +375,12 @@
 	flags = ON_BORDER
 
 /obj/structure/rack/holorack
-	name = "rack"
+	can_deconstruct = FALSE
 
-/obj/structure/rack/holorack/attack_alien(mob/user as mob)
-	return attack_hand(user)
-
-/obj/structure/rack/holorack/attack_animal(mob/living/simple_animal/user as mob)
-	return attack_hand(user)
-
-/obj/structure/rack/holorack/attack_hand(mob/user as mob)
-	return // HOLORACK DOES NOT GIVE A FUCK
-
-/obj/structure/rack/holorack/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
-	if (istype(W, /obj/item/weapon/wrench))
-		to_chat(user, "<span class='warning'>It's a holorack! There are no bolts!</span>")
-		return
-
-/obj/item/weapon/holo
+/obj/item/holo
 	damtype = STAMINA
 
-/obj/item/weapon/holo/claymore
+/obj/item/holo/claymore
 	name = "claymore"
 	desc = "What are you standing around staring at this for? Get to killing!"
 	icon_state = "claymore"
@@ -421,58 +388,61 @@
 	hitsound = 'sound/weapons/bladeslice.ogg'
 	force = 40
 	throwforce = 10
-	w_class = 4
+	w_class = WEIGHT_CLASS_BULKY
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
+	block_chance = 50
 
-/obj/item/weapon/holo/claymore/blue
+/obj/item/holo/claymore/blue
 	icon_state = "claymoreblue"
 	item_state = "claymoreblue"
 
-/obj/item/weapon/holo/claymore/red
+/obj/item/holo/claymore/red
 	icon_state = "claymorered"
 	item_state = "claymorered"
 
-/obj/item/weapon/holo/claymore/IsShield()
-	return 1
-
-/obj/item/weapon/holo/esword
-	desc = "May the force be within you. Sorta"
+/obj/item/holo/esword
+	name = "Holographic Energy Sword"
+	desc = "This looks like a real energy sword!"
 	icon_state = "sword0"
+	hitsound = "swing_hit"
 	force = 3.0
 	throw_speed = 1
 	throw_range = 5
 	throwforce = 0
-	w_class = 2.0
-	flags = NOSHIELD
+	w_class = WEIGHT_CLASS_SMALL
+	armour_penetration = 50
+	block_chance = 50
 	var/active = 0
 
-/obj/item/weapon/holo/esword/green/New()
+/obj/item/holo/esword/green/New()
 	item_color = "green"
 
-/obj/item/weapon/holo/esword/red/New()
+/obj/item/holo/esword/red/New()
 	item_color = "red"
 
-/obj/item/weapon/holo/esword/IsShield()
+/obj/item/holo/esword/hit_reaction(mob/living/carbon/human/owner, attack_text, final_block_chance)
 	if(active)
-		return 1
+		return ..()
 	return 0
 
-/obj/item/weapon/holo/esword/New()
+/obj/item/holo/esword/New()
 	item_color = pick("red","blue","green","purple")
 
-/obj/item/weapon/holo/esword/attack_self(mob/living/user as mob)
+/obj/item/holo/esword/attack_self(mob/living/user as mob)
 	active = !active
-	if (active)
+	if(active)
 		force = 30
 		icon_state = "sword[item_color]"
-		w_class = 4
-		playsound(user, 'sound/weapons/saberon.ogg', 50, 1)
+		hitsound = "sound/weapons/blade1.ogg"
+		w_class = WEIGHT_CLASS_BULKY
+		playsound(user, 'sound/weapons/saberon.ogg', 20, 1)
 		to_chat(user, "<span class='notice'>[src] is now active.</span>")
 	else
 		force = 3
 		icon_state = "sword0"
-		w_class = 2
-		playsound(user, 'sound/weapons/saberoff.ogg', 50, 1)
+		hitsound = "swing_hit"
+		w_class = WEIGHT_CLASS_SMALL
+		playsound(user, 'sound/weapons/saberoff.ogg', 20, 1)
 		to_chat(user, "<span class='notice'>[src] can now be concealed.</span>")
 	if(istype(user,/mob/living/carbon/human))
 		var/mob/living/carbon/human/H = user
@@ -482,13 +452,13 @@
 	return
 
 //BASKETBALL OBJECTS
-/obj/item/weapon/beach_ball/holoball
+/obj/item/beach_ball/holoball
 	icon = 'icons/obj/basketball.dmi'
 	icon_state = "basketball"
 	name = "basketball"
 	item_state = "basketball"
 	desc = "Here's your chance, do your dance at the Space Jam."
-	w_class = 4 //Stops people from hiding it in their bags/pockets
+	w_class = WEIGHT_CLASS_BULKY //Stops people from hiding it in their bags/pockets
 
 /obj/structure/holohoop
 	name = "basketball hoop"
@@ -497,11 +467,11 @@
 	icon_state = "hoop"
 	anchored = 1
 	density = 1
-	throwpass = 1
+	pass_flags = LETPASSTHROW
 
-/obj/structure/holohoop/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
-	if (istype(W, /obj/item/weapon/grab) && get_dist(src,user)<2)
-		var/obj/item/weapon/grab/G = W
+/obj/structure/holohoop/attackby(obj/item/W as obj, mob/user as mob, params)
+	if(istype(W, /obj/item/grab) && get_dist(src,user)<2)
+		var/obj/item/grab/G = W
 		if(G.state<2)
 			to_chat(user, "<span class='warning'>You need a better grip to do that!</span>")
 			return
@@ -510,13 +480,13 @@
 		visible_message("<span class='warning'>[G.assailant] dunks [G.affecting] into the [src]!</span>")
 		qdel(W)
 		return
-	else if (istype(W, /obj/item) && get_dist(src,user)<2)
+	else if(istype(W, /obj/item) && get_dist(src,user)<2)
 		user.drop_item(src)
 		visible_message("<span class='notice'>[user] dunks [W] into the [src]!</span>")
 		return
 
-/obj/structure/holohoop/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
-	if (istype(mover,/obj/item) && mover.throwing)
+/obj/structure/holohoop/CanPass(atom/movable/mover, turf/target, height=0)
+	if(istype(mover,/obj/item) && mover.throwing)
 		var/obj/item/I = mover
 		if(istype(I, /obj/item/projectile))
 			return
@@ -527,7 +497,7 @@
 			visible_message("<span class='alert'>\The [I] bounces off of \the [src]'s rim!</span>")
 		return 0
 	else
-		return ..(mover, target, height, air_group)
+		return ..(mover, target, height)
 
 /obj/machinery/readybutton
 	name = "Ready Declaration Device"
@@ -539,21 +509,21 @@
 	var/eventstarted = 0
 
 	anchored = 1.0
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 2
 	active_power_usage = 6
 	power_channel = ENVIRON
 
 /obj/machinery/readybutton/attack_ai(mob/user as mob)
-	to_chat(user, "The station AI is not to interact with these devices")
+	to_chat(user, "The station AI is not to interact with these devices.")
 	return
 
-/obj/machinery/readybutton/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+/obj/machinery/readybutton/attackby(obj/item/W as obj, mob/user as mob, params)
 	to_chat(user, "The device is a solid button, there's nothing you can do with it!")
 
 /obj/machinery/readybutton/attack_hand(mob/user as mob)
-	if(user.stat || stat & (NOPOWER|BROKEN))
-		to_chat(user, "This device is not powered.")
+	if(user.stat || stat & (BROKEN))
+		to_chat(user, "This device is not functioning.")
 		return
 
 	currentarea = get_area(src.loc)
@@ -572,7 +542,7 @@
 	var/numready = 0
 	for(var/obj/machinery/readybutton/button in currentarea)
 		numbuttons++
-		if (button.ready)
+		if(button.ready)
 			numready++
 
 	if(numbuttons == numready)

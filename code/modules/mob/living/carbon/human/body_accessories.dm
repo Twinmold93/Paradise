@@ -97,36 +97,46 @@ var/global/list/body_accessory_by_species = list("None" = null)
 	animated_icon_state = "null"
 
 /datum/body_accessory/tail/try_restrictions(var/mob/living/carbon/human/H)
-	if(!H.wear_suit || !(H.wear_suit.flags_inv & HIDETAIL) && !istype(H.wear_suit, /obj/item/clothing/suit/space))
+	if(!H.wear_suit || !(H.wear_suit.flags_inv & HIDETAIL))
 		return 1
 	return 0
+
+
+/datum/body_accessory/tail/wingler_tail // Jay wingler fluff tail
+	name = "Striped Tail"
+
+	icon_state = "winglertail"
+	animated_icon_state = "winglertail_a"
+	allowed_species = list("Tajaran")
 
 
 //Vulpkanin
 /datum/body_accessory/tail/vulpkanin_2
 	name = "Vulpkanin Alt 1 (Bushy)"
-
 	icon_state = "vulptail2"
 	animated_icon_state = "vulptail2_a"
 	allowed_species = list("Vulpkanin")
 
 /datum/body_accessory/tail/vulpkanin_3
 	name = "Vulpkanin Alt 2 (Straight)"
-
 	icon_state = "vulptail3"
 	animated_icon_state = "vulptail3_a"
 	allowed_species = list("Vulpkanin")
 
 /datum/body_accessory/tail/vulpkanin_4
 	name = "Vulpkanin Alt 3 (Tiny)"
-
 	icon_state = "vulptail4"
 	animated_icon_state = "vulptail4_a"
 	allowed_species = list("Vulpkanin")
 
 /datum/body_accessory/tail/vulpkanin_5
 	name = "Vulpkanin Alt 4 (Short)"
-
 	icon_state = "vulptail5"
 	animated_icon_state = "vulptail5_a"
+	allowed_species = list("Vulpkanin")
+
+/datum/body_accessory/tail/vulpkanin_6
+	name = "Vulpkanin Alt 5 (Straight Bushy)"
+	icon_state = "vulptail6"
+	animated_icon_state = "vulptail6_a"
 	allowed_species = list("Vulpkanin")

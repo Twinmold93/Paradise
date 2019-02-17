@@ -13,21 +13,21 @@
 	universal_speak = 1		// Tell the humans spooky things about the afterlife
 	speak_emote = list("mumbles", "moans", "whispers", "laments", "screeches")
 
-	allow_spin = 0			// No spinning. Spinning breaks our floating animation and broken floating animations make ghosts SUPER ANGRY.
+	allow_spin = 0			// No spinning. Spinning breaks our floating animation.
 	no_spin_thrown = 1
+	del_on_death = TRUE
 
 	var/obj/item/possessed_item
 
-
-/mob/living/simple_animal/possessed_object/examine()
-	possessed_item.examine()
+/mob/living/simple_animal/possessed_object/examine(mob/user)
+	possessed_item.examine(user)
 	if(health > (maxHealth / 30))
 		to_chat(usr, "<span class='warning'>[src] appears to be floating without any support!</span>")
 	else
 		to_chat(usr, "<span class='warning'>[src] appears to be having trouble staying afloat!</span>")
 
 
-/mob/living/simple_animal/possessed_object/do_attack_animation(atom/A)
+/mob/living/simple_animal/possessed_object/do_attack_animation(atom/A, visual_effect_icon, used_item, no_effect, end_pixel_y)
 	..()
 	animate_ghostly_presence(src, -1, 20, 1) // Restart the floating animation after the attack animation, as it will be cancelled.
 
@@ -40,72 +40,66 @@
 	var/response = alert(src, "End your possession of this object? (It will not stop you from respawning later)","Are you sure you want to ghost?","Ghost","Stay in body")
 	if(response != "Ghost")
 		return
-	resting = 1
+	StartResting()
 	var/mob/dead/observer/ghost = ghostize(1)
 	ghost.timeofdeath = world.time
 	death(0) // Turn back into a regular object.
 
-
 /mob/living/simple_animal/possessed_object/death(gibbed)
-	..()
+	if(can_die())
+		ghostize(GHOST_CAN_REENTER)
+		// if gibbed, the item goes with the ghost
+		if(!gibbed && possessed_item.loc == src)
+			// Put the normal item back once the EVIL SPIRIT has been vanquished from it. If it's not already in place
+			possessed_item.forceMove(loc)
+	return ..()
 
-	if(gibbed) // Leave no trace.
-		var/mob/dead/observer/ghost = ghostize(1)
-		ghost.timeofdeath = world.time
-		qdel(src)
-		return
-
-	possessed_item.forceMove(loc) // Put the normal item back once the EVIL SPIRIT has been vanquished from it.
-	qdel(src)
-
-
-/mob/living/simple_animal/possessed_object/Life()
+/mob/living/simple_animal/possessed_object/Life(seconds, times_fired)
 	..()
 
 	if(!possessed_item) // If we're a donut and someone's eaten us, for instance.
 		death(1)
 
-	if(possessed_item.loc != src)
-		forceMove(possessed_item.loc)
-		possessed_item.forceMove(src)
+	if( possessed_item.loc != src )
+		if ( isturf(possessed_item.loc) ) // If we've, say, placed the possessed item on the table move onto the table ourselves instead and put it back inside of us.
+			forceMove(possessed_item.loc)
+			possessed_item.forceMove(src)
+		else // If we're inside a toolbox or something, we are inside the item rather than the item inside us. This is so people can see the item in the toolbox.
+			forceMove( possessed_item )
 
 	if(l_hand) // Incase object interactions put things directly into our hands. (Like cameras, or gun magizines)
 		drop_l_hand()
 	if(r_hand)
 		drop_r_hand()
 
+/mob/living/simple_animal/possessed_object/Login()
+	..()
+	to_chat(src, "<span class='shadowling'><b>Your spirit has entered [src] and possessed it.</b><br>You are able to do most things a humanoid would be able to do with a [src] in their hands.<br>If you want to end your ghostly possession, use the '<b>ghost</b>' verb, it won't penalize your ability to respawn.</span>")
+
+
 /mob/living/simple_animal/possessed_object/New(var/atom/loc as obj)
 	..()
 
-	if (!istype(loc, /obj/item)) // Some silly motherfucker spawned us directly via the game panel.
+	if(!istype(loc, /obj/item)) // Some silly motherfucker spawned us directly via the game panel.
 		message_admins("<span class='adminnotice'>Posessed object improperly spawned, deleting.</span>") // So silly admins with debug off will see the message too and not spam these things.
-		log_debug("[src] spawned manually, no object to assign attributes to.")
-		qdel()
+		log_runtime(EXCEPTION("[src] spawned manually, no object to assign attributes to."), src)
+		qdel(src)
 
 	var/turf/possessed_loc = get_turf(loc)
 	if(!istype(possessed_loc)) // Will this ever happen? Who goddamn knows.
 		message_admins("<span class='adminnotice'>Posessed object could not find turf, deleting.</span>") // So silly admins with debug off will see the message too and not spam these things.
-		log_debug("[src] attempted to find a turf to spawn on, and could not.")
-		qdel()
+		log_runtime(EXCEPTION("[src] attempted to find a turf to spawn on, and could not."), src)
+		qdel(src)
 
 	possessed_item = loc
-	forceMove(possessed_loc)
+	forceMove( possessed_loc )
 	possessed_item.forceMove(src) // We'll keep the actual item inside of us until we die.
 
-	zone_sel = new /obj/screen/zone_sel(src) // Create a new zone selection item so the human attacks have something to reference.
+	zone_sel = new /obj/screen/zone_sel(src) // Create a new zone selection item so the human attacks have something to reference. Horrifying and ugly hack, do not look directly at this.
 
-	name = possessed_item.name // Take on all the attributes of the item we've possessed.
-	real_name = name
-	desc = possessed_item.desc
-	icon = possessed_item.icon
-	icon_living = possessed_item.icon_state
-	icon_state = possessed_item.icon_state
-	dir = possessed_item.dir
-	color = possessed_item.color
-	overlays = possessed_item.overlays
-	opacity = possessed_item.opacity
+	update_icon(1)
 
-	visible_message("<span class='warning'>[src] rises into the air and begins to float!</span>") // Inform those around us that shit's gettin' spooky.
+	visible_message("<span class='shadowling'>[src] rises into the air and begins to float!</span>") // Inform those around us that shit's gettin' spooky.
 	animate_ghostly_presence(src, -1, 20, 1)
 
 
@@ -118,8 +112,8 @@
 
 
 /mob/living/simple_animal/possessed_object/get_access() // If we've possessed an ID card we've got access to lots of fun things!
-	if(istype(possessed_item, /obj/item/weapon/card/id))
-		var/obj/item/weapon/card/id/possessed_id = possessed_item
+	if(istype(possessed_item, /obj/item/card/id))
+		var/obj/item/card/id/possessed_id = possessed_item
 		. = possessed_id.access
 
 
@@ -138,17 +132,26 @@
 	else
 		..()
 
-	if(possessed_item.loc != src) // If we've, say, placed the possessed item on the table move onto the table ourselves instead and put it back inside of us.
-		forceMove(possessed_item.loc)
-		possessed_item.forceMove(src)
+	if( possessed_item.loc != src )
+		if ( isturf(possessed_item.loc) ) // If we've, say, placed the possessed item on the table move onto the table ourselves instead and put it back inside of us.
+			forceMove(possessed_item.loc)
+			possessed_item.forceMove(src)
+		else // If we're inside a toolbox or something, we are inside the item rather than the item inside us. This is so people can see the item in the toolbox.
+			forceMove( possessed_item )
 
-	name = possessed_item.name // Update our status
+	update_icon()
+
+/mob/living/simple_animal/possessed_object/proc/update_icon(update_pixel_xy = 0)
+	name = possessed_item.name // Take on all the attributes of the item we've possessed.
 	real_name = name
 	desc = possessed_item.desc
 	icon = possessed_item.icon
 	icon_living = possessed_item.icon_state
 	icon_state = possessed_item.icon_state
 	dir = possessed_item.dir
+	if(update_pixel_xy)
+		pixel_x = possessed_item.pixel_x
+		pixel_y = possessed_item.pixel_y
 	color = possessed_item.color
 	overlays = possessed_item.overlays
-	opacity = possessed_item.opacity
+	set_opacity(possessed_item.opacity)

@@ -6,7 +6,7 @@
 	name="Space Pod Core"
 	icon_state = "core"
 	flags = CONDUCT
-	origin_tech = "programming=2;materials=3;bluespace=2;engineering=3"
+	origin_tech = "programming=2;materials=2;biotech=2;engineering=2"
 
 /obj/item/pod_parts/pod_frame
 	name = "Space Pod Frame"
@@ -30,7 +30,7 @@
 	var/turf/T
 	var/obj/item/pod_parts/pod_frame/linked
 	var/obj/item/pod_parts/pod_frame/pointer
-	var/connectedparts =  list()
+	var/list/connectedparts =  list()
 	neededparts -= src
 	//log_admin("Starting with [src]")
 	linked = src
@@ -44,7 +44,8 @@
 				connectedparts += pointer
 			linked = pointer
 			pointer = null
-	//log_admin("Parts left: [neededparts.len]") //len not working
+	if(connectedparts.len < 4)
+		return 0
 	for(var/i = 1; i <=4; i++)
 		var/obj/item/pod_parts/pod_frame/F = connectedparts[i]
 		if(F.type in neededparts) //if one of the items can be founded in neededparts
@@ -54,7 +55,7 @@
 			return 0
 	return connectedparts
 
-/obj/item/pod_parts/pod_frame/attackby(var/obj/O, mob/user)
+/obj/item/pod_parts/pod_frame/attackby(var/obj/item/O, mob/user)
 	if(istype(O, /obj/item/stack/rods))
 		var/obj/item/stack/rods/R = O
 		var/list/linkedparts = find_square()
@@ -70,12 +71,12 @@
 				//log_admin("Repositioning")
 				pod.loc = F.loc
 			qdel(F)
-		playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
-	if(istype(O, /obj/item/weapon/wrench))
+		playsound(get_turf(src), O.usesound, 50, 1)
+	if(istype(O, /obj/item/wrench))
 		to_chat(user, "<span class='notice'>You [!anchored ? "secure \the [src] in place."  : "remove the securing bolts."]</span>")
 		anchored = !anchored
 		density = anchored
-		playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
+		playsound(get_turf(src), O.usesound, 50, 1)
 
 /obj/item/pod_parts/pod_frame/verb/rotate()
 	set name = "Rotate Frame"

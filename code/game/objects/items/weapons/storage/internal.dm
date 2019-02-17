@@ -1,23 +1,23 @@
 //A storage item intended to be used by other items to provide storage functionality.
 //Types that use this should consider overriding emp_act() and hear_talk(), unless they shield their contents somehow.
-/obj/item/weapon/storage/internal
+/obj/item/storage/internal
 	var/obj/item/master_item
 
-/obj/item/weapon/storage/internal/New(obj/item/MI)
+/obj/item/storage/internal/New(obj/item/MI)
 	master_item = MI
 	loc = master_item
 	name = master_item.name
 	verbs -= /obj/item/verb/verb_pickup	//make sure this is never picked up.
 	..()
 
-/obj/item/weapon/storage/internal/Destroy()
+/obj/item/storage/internal/Destroy()
 	master_item = null
 	return ..()
 
-/obj/item/weapon/storage/internal/attack_hand()
+/obj/item/storage/internal/attack_hand()
 	return		//make sure this is never picked up
 
-/obj/item/weapon/storage/internal/mob_can_equip()
+/obj/item/storage/internal/mob_can_equip()
 	return 0	//make sure this is never picked up
 
 //Helper procs to cleanly implement internal storages - storage items that provide inventory slots for other items.
@@ -29,25 +29,25 @@
 //items that use internal storage have the option of calling this to emulate default storage MouseDrop behaviour.
 //returns 1 if the master item's parent's MouseDrop() should be called, 0 otherwise. It's strange, but no other way of
 //doing it without the ability to call another proc's parent, really.
-/obj/item/weapon/storage/internal/proc/handle_mousedrop(mob/user as mob, obj/over_object as obj)
-	if (ishuman(user)) //so monkeys can take off their backpacks -- Urist
+/obj/item/storage/internal/proc/handle_mousedrop(mob/user as mob, obj/over_object as obj)
+	if(ishuman(user)) //so monkeys can take off their backpacks -- Urist
 
-		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
+		if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 			return 0
 
 		if(over_object == user && Adjacent(user)) // this must come before the screen objects only block
 			src.open(user)
 			return 0
 
-		if (!( istype(over_object, /obj/screen) ))
+		if(!( istype(over_object, /obj/screen) ))
 			return 1
 
 		//makes sure master_item is equipped before putting it in hand, so that we can't drag it into our hand from miles away.
 		//there's got to be a better way of doing this...
-		if (!(master_item.loc == user) || (master_item.loc && master_item.loc.loc == user))
+		if(!(master_item.loc == user) || (master_item.loc && master_item.loc.loc == user))
 			return 0
 
-		if (!( user.restrained() ) && !( user.stat ))
+		if(!( user.restrained() ) && !( user.stat ))
 			switch(over_object.name)
 				if("r_hand")
 					user.unEquip(master_item)
@@ -62,7 +62,7 @@
 //items that use internal storage have the option of calling this to emulate default storage attack_hand behaviour.
 //returns 1 if the master item's parent's attack_hand() should be called, 0 otherwise.
 //It's strange, but no other way of doing it without the ability to call another proc's parent, really.
-/obj/item/weapon/storage/internal/proc/handle_attack_hand(mob/user as mob)
+/obj/item/storage/internal/proc/handle_attack_hand(mob/user as mob)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -76,14 +76,14 @@
 			return 0
 
 	src.add_fingerprint(user)
-	if (master_item.loc == user)
+	if(master_item.loc == user)
 		src.open(user)
 		return 0
 
 	for(var/mob/M in range(1, master_item.loc))
-		if (M.s_active == src)
+		if(M.s_active == src)
 			src.close(M)
 	return 1
 
-/obj/item/weapon/storage/internal/Adjacent(var/atom/neighbor)
+/obj/item/storage/internal/Adjacent(var/atom/neighbor)
 	return master_item.Adjacent(neighbor)

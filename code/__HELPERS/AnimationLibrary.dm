@@ -7,7 +7,7 @@
 /proc/animate_fade_grayscale(var/atom/A, var/time = 5)
 	if(!istype(A) && !istype(A, /client))
 		return
-	A.color = MATRIX_DEFAULT
+	A.color = null
 	animate(A, color = MATRIX_GREYSCALE, time = time, easing = SINE_EASING)
 
 /proc/animate_melt_pixel(var/atom/A)
@@ -64,7 +64,7 @@
 		return
 	var/matrix/M = matrix()
 	var/do_loops = 15
-	while (do_loops > 0)
+	while(do_loops > 0)
 		do_loops--
 		animate(A, transform = M, pixel_z = A.pixel_z + 12, alpha = A.alpha - 17, time = 1, loop = 1, easing = LINEAR_EASING)
 		M.Scale(1.2,1.2)

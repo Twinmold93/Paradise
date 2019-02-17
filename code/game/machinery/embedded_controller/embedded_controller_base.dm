@@ -4,7 +4,7 @@
 	name = "Embedded Controller"
 	anchored = 1
 
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 10
 
 	var/on = 1
@@ -27,8 +27,8 @@
 	src.updateDialog()
 
 /obj/machinery/embedded_controller/attack_ghost(mob/user as mob)
-	src.ui_interact(user)	
-	
+	src.ui_interact(user)
+
 /obj/machinery/embedded_controller/attack_ai(mob/user as mob)
 	src.ui_interact(user)
 
@@ -54,8 +54,15 @@
 	var/datum/radio_frequency/radio_connection
 	unacidable = 1
 
-/obj/machinery/embedded_controller/radio/initialize()
+/obj/machinery/embedded_controller/radio/Initialize()
+	..()
 	set_frequency(frequency)
+
+/obj/machinery/embedded_controller/radio/Destroy()
+	if(radio_controller)
+		radio_controller.remove_object(src, frequency)
+	radio_connection = null
+	return ..()
 
 /obj/machinery/embedded_controller/radio/update_icon()
 	if(on && program)

@@ -26,7 +26,7 @@ var/list/wireColours = list("red", "blue", "green", "black", "orange", "brown", 
 	var/window_x = 370
 	var/window_y = 470
 
-/datum/wires/New(var/atom/holder)
+/datum/wires/New(atom/holder)
 	..()
 	src.holder = holder
 	if(!istype(holder, holder_type))
@@ -68,105 +68,136 @@ var/list/wireColours = list("red", "blue", "green", "black", "orange", "brown", 
 		src.wires[colour] = index
 		//wires = shuffle(wires)
 
+/datum/wires/proc/get_status()
+	return list()
 
-/datum/wires/proc/Interact(var/mob/living/user)
+/datum/wires/proc/Interact(mob/user)
+	if(user && istype(user) && holder && CanUse(user))
+		ui_interact(user)
 
-	var/html = null
-	if(holder && CanUse(user))
-		html = GetInteractWindow()
-	if(html)
-		user.set_machine(holder)
-	else
-		user.unset_machine()
-		// No content means no window.
-		user << browse(null, "window=wires")
-		return
-	var/datum/browser/popup = new(user, "wires", holder.name, window_x, window_y)
-	popup.set_content(html)
-	popup.set_title_image(user.browse_rsc_icon(holder.icon, holder.icon_state))
-	popup.open()
+/datum/wires/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
+	if(!ui)
+		ui = new(user, src, ui_key, "wires.tmpl", holder.name, window_x, window_y)
+		ui.open()
 
-/datum/wires/proc/GetInteractWindow()
-	var/html = "<div class='block'>"
-	html += "<h3>Exposed Wires</h3>"
-	html += "<table[table_options]>"
+/datum/wires/ui_data(mob/user, ui_key = "main", datum/topic_state/state = physical_state)
+	var/data[0]
+	var/list/replace_colours = null
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		var/obj/item/organ/internal/eyes/eyes = H.get_int_organ(/obj/item/organ/internal/eyes)
+		if(eyes && H.disabilities & COLOURBLIND)
+			replace_colours = eyes.replace_colours
 
+
+	var/list/W[0]
 	for(var/colour in wires)
-		html += "<tr>"
-		html += "<td[row_options1]><font color='[colour]'>[capitalize(colour)]</font></td>"
-		html += "<td[row_options2]>"
-		html += "<A href='?src=\ref[src];action=1;cut=[colour]'>[IsColourCut(colour) ? "Mend" :  "Cut"]</A>"
-		html += " <A href='?src=\ref[src];action=1;pulse=[colour]'>Pulse</A>"
-		html += " <A href='?src=\ref[src];action=1;attach=[colour]'>[IsAttached(colour) ? "Detach" : "Attach"] Signaller</A></td></tr>"
-	html += "</table>"
-	html += "</div>"
+		var/new_colour = colour
+		var/colour_name = colour
+		if(colour in replace_colours)
+			new_colour = replace_colours[colour]
+			if(new_colour in LIST_REPLACE_RENAME)
+				colour_name = LIST_REPLACE_RENAME[new_colour]
+			else
+				colour_name = new_colour
+		else
+			new_colour = colour
+			colour_name = new_colour
+		W[++W.len] = list("colour_name" = capitalize(colour_name), "seen_colour" = capitalize(new_colour),"colour" = capitalize(colour), "cut" = IsColourCut(colour), "index" = can_see_wire_index(user) ? GetWireName(GetIndex(colour)) : null, "attached" = IsAttached(colour))
 
-	return html
+	if(W.len > 0)
+		data["wires"] = W
+
+	var/list/status = get_status()
+	if(replace_colours)
+		var/i
+		for(i=1, i<=status.len, i++)
+			for(var/colour in replace_colours)
+				var/new_colour = replace_colours[colour]
+				if(new_colour in LIST_REPLACE_RENAME)
+					new_colour = LIST_REPLACE_RENAME[new_colour]
+				if(findtext(status[i],colour))
+					status[i] = replacetext(status[i],colour,new_colour)
+					break
+	data["status_len"] = status.len
+	data["status"] = status
+
+	return data
+
+/datum/wires/nano_host()
+	return holder
+
+/datum/wires/proc/can_see_wire_index(mob/user)
+	if(user.can_admin_interact())
+		return TRUE
+	else if(istype(user.get_active_hand(), /obj/item/multitool))
+		var/obj/item/multitool/M = user.get_active_hand()
+		if(M.shows_wire_information)
+			return TRUE
+
+	return FALSE
 
 /datum/wires/Topic(href, href_list)
-	..()
-	if(in_range(holder, usr) && isliving(usr))
-
-		var/mob/living/L = usr
-		if(CanUse(L) && href_list["action"])
-			var/obj/item/I = L.get_active_hand()
-			holder.add_hiddenprint(L)
-			if(href_list["cut"]) // Toggles the cut/mend status
-				if(istype(I, /obj/item/weapon/wirecutters))
-					playsound(holder, 'sound/items/Wirecutter.ogg', 20, 1)
-					var/colour = href_list["cut"]
+	if(..())
+		return 1
+	var/mob/L = usr
+	if(CanUse(L) && href_list["action"])
+		var/obj/item/I = L.get_active_hand()
+		var/colour = lowertext(href_list["wire"])
+		holder.add_hiddenprint(L)
+		switch(href_list["action"])
+			if("cut") // Toggles the cut/mend status
+				if(istype(I, /obj/item/wirecutters) || L.can_admin_interact())
+					if(istype(I))
+						playsound(holder, I.usesound, 20, 1)
 					CutWireColour(colour)
 				else
 					to_chat(L, "<span class='error'>You need wirecutters!</span>")
-
-			else if(href_list["pulse"])
-				if(istype(I, /obj/item/device/multitool))
+			if("pulse")
+				if(istype(I, /obj/item/multitool) || L.can_admin_interact())
 					playsound(holder, 'sound/weapons/empty.ogg', 20, 1)
-					var/colour = href_list["pulse"]
 					PulseColour(colour)
 				else
 					to_chat(L, "<span class='error'>You need a multitool!</span>")
-
-			else if(href_list["attach"])
-				var/colour = href_list["attach"]
-				// Detach
+			if("attach")
 				if(IsAttached(colour))
 					var/obj/item/O = Detach(colour)
 					if(O)
 						L.put_in_hands(O)
-
-				// Attach
 				else
-					if(istype(I, /obj/item/device/assembly/signaler))
-						L.drop_item()
-						Attach(colour, I)
+					if(istype(I, /obj/item/assembly/signaler))
+						if(L.drop_item())
+							Attach(colour, I)
+						else
+							to_chat(L, "<span class='warning'>[L.get_active_hand()] is stuck to your hand!</span>")
 					else
 						to_chat(L, "<span class='error'>You need a remote signaller!</span>")
 
-
-
-
-		// Update Window
-			Interact(usr)
-
-	if(href_list["close"])
-		usr << browse(null, "window=wires")
-		usr.unset_machine(holder)
+	SSnanoui.update_uis(src)
+	return 1
 
 //
 // Overridable Procs
 //
 
 // Called when wires cut/mended.
-/datum/wires/proc/UpdateCut(var/index, var/mended)
-	return
+/datum/wires/proc/UpdateCut(index, mended)
+	if(holder)
+		SSnanoui.update_uis(holder)
 
 // Called when wire pulsed. Add code here.
-/datum/wires/proc/UpdatePulsed(var/index)
-	return
+/datum/wires/proc/UpdatePulsed(index)
+	if(holder)
+		SSnanoui.update_uis(holder)
 
-/datum/wires/proc/CanUse(var/mob/living/L)
+/datum/wires/proc/CanUse(mob/L)
 	return 1
+
+/datum/wires/CanUseTopic(mob/user, datum/topic_state/state)
+	if(!CanUse(user))
+		return STATUS_CLOSE
+	return ..()
 
 // Example of use:
 /*
@@ -194,47 +225,50 @@ var/const/POWER = 8
 // Helper Procs
 //
 
-/datum/wires/proc/PulseColour(var/colour)
+/datum/wires/proc/PulseColour(colour)
 	PulseIndex(GetIndex(colour))
 
-/datum/wires/proc/PulseIndex(var/index)
+/datum/wires/proc/PulseIndex(index)
 	if(IsIndexCut(index))
 		return
 	UpdatePulsed(index)
 
-/datum/wires/proc/GetIndex(var/colour)
+/datum/wires/proc/GetIndex(colour)
 	if(wires[colour])
 		var/index = wires[colour]
 		return index
 	else
 		CRASH("[colour] is not a key in wires.")
 
+/datum/wires/proc/GetWireName(index)
+	return
+
 //
 // Is Index/Colour Cut procs
 //
 
-/datum/wires/proc/IsColourCut(var/colour)
+/datum/wires/proc/IsColourCut(colour)
 	var/index = GetIndex(colour)
 	return IsIndexCut(index)
 
-/datum/wires/proc/IsIndexCut(var/index)
+/datum/wires/proc/IsIndexCut(index)
 	return (index & wires_status)
 
 //
 // Signaller Procs
 //
 
-/datum/wires/proc/IsAttached(var/colour)
+/datum/wires/proc/IsAttached(colour)
 	if(signallers[colour])
 		return 1
 	return 0
 
-/datum/wires/proc/GetAttached(var/colour)
+/datum/wires/proc/GetAttached(colour)
 	if(signallers[colour])
 		return signallers[colour]
 	return null
 
-/datum/wires/proc/Attach(var/colour, var/obj/item/device/assembly/signaler/S)
+/datum/wires/proc/Attach(colour, obj/item/assembly/signaler/S)
 	if(colour && S)
 		if(!IsAttached(colour))
 			signallers[colour] = S
@@ -242,9 +276,9 @@ var/const/POWER = 8
 			S.connected = src
 			return S
 
-/datum/wires/proc/Detach(var/colour)
+/datum/wires/proc/Detach(colour)
 	if(colour)
-		var/obj/item/device/assembly/signaler/S = GetAttached(colour)
+		var/obj/item/assembly/signaler/S = GetAttached(colour)
 		if(S)
 			signallers -= colour
 			S.connected = null
@@ -252,7 +286,7 @@ var/const/POWER = 8
 			return S
 
 
-/datum/wires/proc/Pulse(var/obj/item/device/assembly/signaler/S)
+/datum/wires/proc/Pulse(obj/item/assembly/signaler/S)
 
 	for(var/colour in signallers)
 		if(S == signallers[colour])
@@ -264,11 +298,11 @@ var/const/POWER = 8
 // Cut Wire Colour/Index procs
 //
 
-/datum/wires/proc/CutWireColour(var/colour)
+/datum/wires/proc/CutWireColour(colour)
 	var/index = GetIndex(colour)
 	CutWireIndex(index)
 
-/datum/wires/proc/CutWireIndex(var/index)
+/datum/wires/proc/CutWireIndex(index)
 	if(IsIndexCut(index))
 		wires_status &= ~index
 		UpdateCut(index, 1)

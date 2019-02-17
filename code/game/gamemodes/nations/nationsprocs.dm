@@ -4,7 +4,7 @@
 	set desc = "Click to rename your nation. You are only able to do this once."
 
 	var/datum/game_mode/nations/mode = get_nations_mode()
-	if (!mode) return 1
+	if(!mode) return 1
 
 	if(!mode.kickoff) return 1
 
@@ -27,7 +27,7 @@
 	set desc = "Click to set a rank for Leaders and Members."
 
 	var/datum/game_mode/nations/mode = get_nations_mode()
-	if (!mode) return 1
+	if(!mode) return 1
 
 	if(!mode.kickoff) return 1
 
@@ -53,7 +53,7 @@
 	set desc = "Click to pick a Heir. Note that the Heir has the ability to take over your role at ANY TIME. Choose carefully."
 
 	var/datum/game_mode/nations/mode = get_nations_mode()
-	if (!mode) return 1
+	if(!mode) return 1
 
 	if(!mode.kickoff) return 1
 
@@ -80,7 +80,7 @@
 	set desc = "Click to replace your current nation's leader with yourself."
 
 	var/datum/game_mode/nations/mode = get_nations_mode()
-	if (!mode) return 1
+	if(!mode) return 1
 
 	if(!mode.kickoff) return 1
 
@@ -106,7 +106,7 @@
 
 /datum/nations/proc/update_nation_id()
 	for(var/mob/living/carbon/human/M in membership)
-		for(var/obj/item/weapon/card/id/I in M.contents)
+		for(var/obj/item/card/id/I in M.contents)
 			if(I.registered_name == M.real_name)
 				if(M == current_leader)
 					I.name = "[I.registered_name]'s ID Card ([current_name] [leader_rank])"

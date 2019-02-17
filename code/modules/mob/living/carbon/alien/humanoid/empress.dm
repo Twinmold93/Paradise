@@ -5,7 +5,7 @@
 	health = 700
 	icon_state = "alienq_s"
 	status_flags = CANPARALYSE
-	move_delay_add = 3
+	mob_size = MOB_SIZE_LARGE
 	large = 1
 	ventcrawler = 0
 
@@ -30,12 +30,10 @@
 		overlays += I
 
 /mob/living/carbon/alien/humanoid/empress/New()
-	var/datum/reagents/R = new/datum/reagents(100)
-	reagents = R
-	R.my_atom = src
+	create_reagents(100)
 
 	//there should only be one queen
-	for(var/mob/living/carbon/alien/humanoid/empress/E in living_mob_list)
+	for(var/mob/living/carbon/alien/humanoid/empress/E in GLOB.living_mob_list)
 		if(E == src)		continue
 		if(E.stat == DEAD)	continue
 		if(E.client)
@@ -43,11 +41,11 @@
 			break
 
 	real_name = src.name
-	internal_organs += new /obj/item/organ/internal/xenos/plasmavessel/queen
-	internal_organs += new /obj/item/organ/internal/xenos/acidgland
-	internal_organs += new /obj/item/organ/internal/xenos/eggsac
-	internal_organs += new /obj/item/organ/internal/xenos/resinspinner
-	internal_organs += new /obj/item/organ/internal/xenos/neurotoxin
+	alien_organs += new /obj/item/organ/internal/xenos/plasmavessel/queen
+	alien_organs += new /obj/item/organ/internal/xenos/acidgland
+	alien_organs += new /obj/item/organ/internal/xenos/eggsac
+	alien_organs += new /obj/item/organ/internal/xenos/resinspinner
+	alien_organs += new /obj/item/organ/internal/xenos/neurotoxin
 	..()
 
 /mob/living/carbon/alien/humanoid/empress
@@ -56,8 +54,8 @@
 
 		..() //-Yvarov
 
-		if (src.healths)
-			if (src.stat != 2)
+		if(src.healths)
+			if(src.stat != 2)
 				switch(health)
 					if(250 to INFINITY)
 						src.healths.icon_state = "health0"
@@ -86,6 +84,6 @@
 	if(powerc(250,1))//Can't plant eggs on spess tiles. That's silly.
 		adjustPlasma(-250)
 		for(var/mob/O in viewers(src, null))
-			O.show_message(text("\green <B>[src] has laid an egg!</B>"), 1)
+			O.show_message(text("<span class=notice'><B>[src] has laid an egg!</B></span>"), 1)
 		new /obj/structure/alien/egg(loc)
 	return

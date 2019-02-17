@@ -1,4 +1,5 @@
 /datum/disease/kuru
+	form = "Disease"
 	name = "Space Kuru"
 	max_stages = 4
 	stage_prob = 5
@@ -10,6 +11,9 @@
 	desc = "Uncontrollable laughing."
 	severity = BIOHAZARD
 	spread_flags = NON_CONTAGIOUS
+	disease_flags = CAN_CARRY
+	bypasses_immunity = TRUE //Kuru is a prion disorder, not a virus
+	virus_heal_resistant = TRUE
 
 /datum/disease/kuru/stage_act()
 	..()
@@ -20,7 +24,7 @@
 			if(prob(50))
 				affected_mob.Jitter(25)
 		if(2)
-			if (prob(50))
+			if(prob(50))
 				affected_mob.visible_message("<span class='danger'>[affected_mob] laughs uncontrollably!</span>")
 				affected_mob.Stun(10)
 				affected_mob.Weaken(10)

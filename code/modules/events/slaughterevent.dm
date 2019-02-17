@@ -16,13 +16,13 @@
 		var/datum/mind/player_mind = new /datum/mind(key_of_slaughter)
 		player_mind.active = 1
 		var/list/spawn_locs = list()
-		for(var/obj/effect/landmark/L in landmarks_list)
+		for(var/obj/effect/landmark/L in GLOB.landmarks_list)
 			if(isturf(L.loc))
 				switch(L.name)
 					if("revenantspawn")
 						spawn_locs += L.loc
 		if(!spawn_locs) //If we can't find any revenant spawns, try the carp spawns
-			for(var/obj/effect/landmark/L in landmarks_list)
+			for(var/obj/effect/landmark/L in GLOB.landmarks_list)
 				if(isturf(L.loc))
 					switch(L.name)
 						if("carpspawn")
@@ -36,9 +36,9 @@
 		S.holder = holder
 		player_mind.transfer_to(S)
 		player_mind.assigned_role = "Slaughter Demon"
-		player_mind.special_role = "Slaughter Demon"
-		message_admins("[key_of_slaughter] has been made into a Slaughter Demon by an event.")
-		log_game("[key_of_slaughter] was spawned as a Slaughter Demon by an event.")
+		player_mind.special_role = SPECIAL_ROLE_SLAUGHTER_DEMON
+		message_admins("[key_name_admin(S)] has been made into a Slaughter Demon by an event.")
+		log_game("[key_name_admin(S)] was spawned as a Slaughter Demon by an event.")
 		return 1
 
 /datum/event/spawn_slaughter/start()

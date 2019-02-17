@@ -34,13 +34,17 @@
 	maxHealth = 40
 	melee_damage_lower = 2
 	melee_damage_upper = 4
+	obj_damage = 20
+	environment_smash = ENVIRONMENT_SMASH_STRUCTURES
 	attacktext = "hits"
 	attack_sound = 'sound/weapons/genhit1.ogg'
 	speak_emote = list("pulses")
-	var/obj/effect/blob/factory/factory = null
+	var/obj/structure/blob/factory/factory = null
 	var/list/human_overlays = list()
 	var/is_zombie = 0
 	gold_core_spawnable = CHEM_MOB_SPAWN_HOSTILE
+	pressure_resistance = 100    //100 kPa difference required to push
+	throw_pressure_limit = 120  //120 kPa difference required to throw
 
 /mob/living/simple_animal/hostile/blob/blobspore/fire_act(datum/gas_mixture/air, exposed_temperature, exposed_volume)
 	..()
@@ -48,17 +52,17 @@
 
 
 /mob/living/simple_animal/hostile/blob/blobspore/CanPass(atom/movable/mover, turf/target, height=0)
-	if(istype(mover, /obj/effect/blob))
+	if(istype(mover, /obj/structure/blob))
 		return 1
 	return ..()
 
-/mob/living/simple_animal/hostile/blob/blobspore/New(loc, var/obj/effect/blob/factory/linked_node)
+/mob/living/simple_animal/hostile/blob/blobspore/New(loc, var/obj/structure/blob/factory/linked_node)
 	if(istype(linked_node))
 		factory = linked_node
 		factory.spores += src
 	..()
 
-/mob/living/simple_animal/hostile/blob/blobspore/Life()
+/mob/living/simple_animal/hostile/blob/blobspore/Life(seconds, times_fired)
 
 	if(!is_zombie && isturf(src.loc))
 		for(var/mob/living/carbon/human/H in oview(src,1)) //Only for corpse right next to/on same tile
@@ -88,13 +92,17 @@
 	human_overlays = H.overlays
 	update_icons()
 	H.loc = src
+	pressure_resistance = 20  //5 kPa difference required to push lowered
+	throw_pressure_limit = 30  //15 kPa difference required to throw lowered
 	loc.visible_message("<span class='warning'>The corpse of [H.name] suddenly rises!</span>")
 
-/mob/living/simple_animal/hostile/blob/blobspore/death()
-	..()
-
+/mob/living/simple_animal/hostile/blob/blobspore/death(gibbed)
+	// Only execute the below if we successfuly died
+	. = ..()
+	if(!.)
+		return FALSE
 	// On death, create a small smoke of harmful gas (s-Acid)
-	var/datum/effect/system/chem_smoke_spread/S = new
+	var/datum/effect_system/smoke_spread/chem/S = new
 	var/turf/location = get_turf(src)
 
 	// Create the reagents to put into the air
@@ -103,13 +111,12 @@
 	if(overmind && overmind.blob_reagent_datum)
 		reagents.add_reagent(overmind.blob_reagent_datum.id, 8)
 	else
-		reagents.add_reagent("spores", 8)
+		reagents.add_reagent("spore", 8)
 
 	// Attach the smoke spreader and setup/start it.
 	S.attach(location)
 	S.set_up(reagents, 1, 1, location, 15, 1) // only 1-2 smoke cloud
 	S.start()
-
 	qdel(src)
 
 /mob/living/simple_animal/hostile/blob/blobspore/Destroy()
@@ -156,19 +163,26 @@
 	maxHealth = 240
 	melee_damage_lower = 20
 	melee_damage_upper = 20
+	obj_damage = 60
 	attacktext = "hits"
 	attack_sound = 'sound/effects/blobattack.ogg'
 	speak_emote = list("gurgles")
 	minbodytemp = 0
 	maxbodytemp = 360
 	force_threshold = 10
-	environment_smash = 3
+	mob_size = MOB_SIZE_LARGE
+	environment_smash = ENVIRONMENT_SMASH_RWALLS
 	gold_core_spawnable = CHEM_MOB_SPAWN_HOSTILE
+	pressure_resistance = 100    //100 kPa difference required to push
+	throw_pressure_limit = 120  //120 kPa difference required to throw
 
 
 /mob/living/simple_animal/hostile/blob/blobbernaut/blob_act()
 	return
 
-/mob/living/simple_animal/hostile/blob/blobbernaut/death()
-	..()
+/mob/living/simple_animal/hostile/blob/blobbernaut/death(gibbed)
+	// Only execute the below if we successfully died
+	. = ..()
+	if(!.)
+		return FALSE
 	flick("blobbernaut_death", src)

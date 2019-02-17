@@ -3,6 +3,7 @@
 	pressure_resistance = 8
 	var/climbable
 	var/mob/climber
+	var/broken = FALSE
 
 /obj/structure/blob_act()
 	if(prob(50))
@@ -31,8 +32,8 @@
 	..()
 	if(smooth)
 		if(ticker && ticker.current_state == GAME_STATE_PLAYING)
-			smooth_icon(src)
-			smooth_icon_neighbors(src)
+			queue_smooth(src)
+			queue_smooth_neighbors(src)
 		icon_state = ""
 	if(climbable)
 		verbs += /obj/structure/proc/climb_on
@@ -45,7 +46,7 @@
 	if(smooth)
 		var/turf/T = get_turf(src)
 		spawn(0)
-			smooth_icon_neighbors(T)
+			queue_smooth_neighbors(T)
 	return ..()
 
 /obj/structure/proc/climb_on()
@@ -63,43 +64,38 @@
 	if(C == user)
 		do_climb(user)
 
+/obj/structure/proc/density_check()
+	for(var/obj/O in orange(0, src))
+		if(O.density && !istype(O, /obj/machinery/door/window)) //Ignores windoors, as those already block climbing, otherwise a windoor on the opposite side of a table would prevent climbing.
+			return O
+	var/turf/T = get_turf(src)
+	if(T.density)
+		return T
+	return null
 
 /obj/structure/proc/do_climb(var/mob/living/user)
-
-	if (!can_touch(user) || !climbable)
+	if(!can_touch(user) || !climbable)
+		return
+	var/blocking_object = density_check()
+	if(blocking_object)
+		to_chat(user, "<span class='warning'>You cannot climb [src], as it is blocked by \a [blocking_object]!</span>")
 		return
 
-	for(var/obj/O in range(0, src))
-		if(O.density == 1 && O != src && !istype(O, /obj/machinery/door/window)) //Ignores windoors, as those already block climbing, otherwise a windoor on the opposite side of a table would prevent climbing.
-			to_chat(user, "\red You cannot climb [src], as it is blocked by \a [O]!")
-			return
-	for(var/turf/T in range(0, src))
-		if(T.density == 1)
-			to_chat(user, "\red You cannot climb [src], as it is blocked by \a [T]!")
-			return
 	var/turf/T = src.loc
 	if(!T || !istype(T)) return
 
-	var/obj/machinery/door/poddoor/shutters/S = locate() in T.contents
-	if(S && S.density) return
-
 	usr.visible_message("<span class='warning'>[user] starts climbing onto \the [src]!</span>")
 	climber = user
-	if(!do_after(user,50, target = src))
+	if(!do_after(user, 50, target = src))
 		climber = null
 		return
 
-	if (!can_touch(user) || !climbable)
-		climber = null
-		return
-
-	S = locate() in T.contents
-	if(S && S.density)
+	if(!can_touch(user) || !climbable)
 		climber = null
 		return
 
 	usr.loc = get_turf(src)
-	if (get_turf(user) == get_turf(src))
+	if(get_turf(user) == get_turf(src))
 		usr.visible_message("<span class='warning'>[user] climbs onto \the [src]!</span>")
 
 	climber = null
@@ -111,14 +107,14 @@
 		if(M.lying) return //No spamming this on people.
 
 		M.Weaken(5)
-		to_chat(M, "\red You topple as \the [src] moves under you!")
+		to_chat(M, "<span class='warning'>You topple as \the [src] moves under you!</span>")
 
 		if(prob(25))
 
 			var/damage = rand(15,30)
 			var/mob/living/carbon/human/H = M
 			if(!istype(H))
-				to_chat(H, "\red You land heavily!")
+				to_chat(H, "<span class='warning'>You land heavily!</span>")
 				M.adjustBruteLoss(damage)
 				return
 
@@ -137,30 +133,50 @@
 					affecting = H.get_organ("head")
 
 			if(affecting)
-				to_chat(M, "\red You land heavily on your [affecting.name]!")
-				affecting.take_damage(damage, 0)
+				to_chat(M, "<span class='warning'>You land heavily on your [affecting.name]!</span>")
+				affecting.receive_damage(damage, 0)
 				if(affecting.parent)
 					affecting.parent.add_autopsy_data("Misadventure", damage)
 			else
-				to_chat(H, "\red You land heavily!")
+				to_chat(H, "<span class='warning'>You land heavily!</span>")
 				H.adjustBruteLoss(damage)
 
 			H.UpdateDamageIcon()
-			H.updatehealth()
 	return
 
 /obj/structure/proc/can_touch(var/mob/user)
-	if (!user)
+	if(!user)
 		return 0
 	if(!Adjacent(user))
 		return 0
-	if (user.restrained() || user.buckled)
+	if(user.restrained() || user.buckled)
 		to_chat(user, "<span class='notice'>You need your hands and legs free for this.</span>")
 		return 0
-	if (user.stat || user.paralysis || user.sleeping || user.lying || user.weakened)
+	if(user.stat || user.paralysis || user.sleeping || user.lying || user.weakened)
 		return 0
-	if (issilicon(user))
+	if(issilicon(user))
 		to_chat(user, "<span class='notice'>You need hands for this.</span>")
 		return 0
 	return 1
 
+/obj/structure/examine(mob/user)
+	..()
+	if(!(resistance_flags & INDESTRUCTIBLE))
+		if(burn_state == ON_FIRE)
+			to_chat(user, "<span class='warning'>It's on fire!</span>")
+		if(broken)
+			to_chat(user, "<span class='notice'>It appears to be broken.</span>")
+		var/examine_status = examine_status(user)
+		if(examine_status)
+			to_chat(user, examine_status)
+
+/obj/structure/proc/examine_status(mob/user) //An overridable proc, mostly for falsewalls.
+	var/healthpercent = (obj_integrity/max_integrity) * 100
+	switch(healthpercent)
+		if(50 to 99)
+			return  "It looks slightly damaged."
+		if(25 to 50)
+			return  "It appears heavily damaged."
+		if(0 to 25)
+			if(!broken)
+				return  "<span class='warning'>It's falling apart!</span>"

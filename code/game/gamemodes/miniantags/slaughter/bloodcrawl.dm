@@ -9,8 +9,8 @@
 		if(C.l_hand || C.r_hand)
 			to_chat(C, "<span class='warning'>You may not hold items while blood crawling!</span>")
 			return 0
-		var/obj/item/weapon/bloodcrawl/B1 = new(C)
-		var/obj/item/weapon/bloodcrawl/B2 = new(C)
+		var/obj/item/bloodcrawl/B1 = new(C)
+		var/obj/item/bloodcrawl/B2 = new(C)
 		B1.icon_state = "bloodhand_left"
 		B2.icon_state = "bloodhand_right"
 		C.put_in_hands(B1)
@@ -59,8 +59,15 @@
 			sleep(6)
 			if(animation)
 				qdel(animation)
-			for(var/i = 3; i > 0; i--)
-				playsound(get_turf(src),'sound/misc/Demon_consume.ogg', 100, 1)
+			var/sound
+			if(istype(src, /mob/living/simple_animal/slaughter))
+				var/mob/living/simple_animal/slaughter/SD = src
+				sound = SD.feast_sound
+			else
+				sound = 'sound/misc/demon_consume.ogg'
+
+			for(var/i in 1 to 3)
+				playsound(get_turf(src), sound, 100, 1)
 				sleep(30)
 			if(kidnapped)
 				to_chat(src, "<B>You devour [kidnapped]. Your health is fully restored.</B>")
@@ -84,12 +91,12 @@
 				to_chat(src, "<span class='danger'>You happily devour... nothing? Your meal vanished at some point!</span>")
 		else
 			sleep(6)
-			if (animation)
+			if(animation)
 				qdel(animation)
 		notransform = 0
 	return 1
 
-/obj/item/weapon/bloodcrawl
+/obj/item/bloodcrawl
 	name = "blood crawl"
 	desc = "You are unable to hold anything while in this form."
 	icon = 'icons/effects/blood.dmi'
@@ -125,12 +132,11 @@
 	playsound(get_turf(src), 'sound/misc/exit_blood.ogg', 100, 1, -1)
 
 	flick("jauntup",animation)
-	qdel(holder)
-	holder = null
+	QDEL_NULL(holder)
 
 	if(iscarbon(src))
 		var/mob/living/carbon/C = src
-		for(var/obj/item/weapon/bloodcrawl/BC in C)
+		for(var/obj/item/bloodcrawl/BC in C)
 			C.flags = null
 			C.unEquip(BC)
 			qdel(BC)
@@ -148,10 +154,10 @@
 	name = "odd blood"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "nothing"
-	var/canmove = 1
 	density = 0
 	anchored = 1
 	invisibility = 60
+	burn_state = LAVA_PROOF
 
 /obj/effect/dummy/slaughter/relaymove(mob/user, direction)
 	forceMove(get_step(src,direction))

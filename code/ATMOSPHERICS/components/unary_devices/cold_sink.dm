@@ -2,7 +2,7 @@
 	icon = 'icons/obj/atmospherics/cold_sink.dmi'
 	icon_state = "on_cool"
 	density = 1
-	use_power = 1
+	use_power = IDLE_POWER_USE
 
 	name = "cold sink"
 	desc = "Cools gas when connected to pipe network"
@@ -22,10 +22,11 @@
 
 	return
 
-/obj/machinery/atmospherics/unary/cold_sink/process()
-	if(!..() || !on)
+/obj/machinery/atmospherics/unary/cold_sink/process_atmos()
+	..()
+	if(!on)
 		return 0
-	
+
 	var/air_heat_capacity = air_contents.heat_capacity()
 	var/combined_heat_capacity = current_heat_capacity + air_heat_capacity
 	var/old_temperature = air_contents.temperature

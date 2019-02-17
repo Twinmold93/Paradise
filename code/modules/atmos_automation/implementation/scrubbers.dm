@@ -25,7 +25,7 @@
 		return 0
 
 	GetText()
-		return "Set Scrubber <a href=\"?src=\ref[src];set_scrubber=1\">[fmtString(scrubber)]</a> mode to <a href=\"?src=\ref[src];set_mode=1\">[mode?"Scrubbing":"Syphoning"]</a>."
+		return "Set Scrubber <a href=\"?src=[UID()];set_scrubber=1\">[fmtString(scrubber)]</a> mode to <a href=\"?src=[UID()];set_mode=1\">[mode?"Scrubbing":"Syphoning"]</a>."
 
 	Topic(href,href_list)
 		if(..()) return
@@ -35,7 +35,7 @@
 			return 1
 		if(href_list["set_scrubber"])
 			var/list/injector_names=list()
-			for(var/obj/machinery/atmospherics/unary/vent_scrubber/S in machines)
+			for(var/obj/machinery/atmospherics/unary/vent_scrubber/S in GLOB.machines)
 				if(!isnull(S.id_tag) && S.frequency == parent.frequency)
 					injector_names|=S.id_tag
 			scrubber = input("Select a scrubber:", "Scrubbers", scrubber) as null|anything in injector_names
@@ -67,7 +67,7 @@
 			parent.send_signal(list ("tag" = scrubber, "sigtype"="command", "power"=state),filter = RADIO_FROM_AIRALARM)
 
 	GetText()
-		return  "Set Scrubber <a href=\"?src=\ref[src];set_scrubber=1\">[fmtString(scrubber)]</a> power to <a href=\"?src=\ref[src];set_power=1\">[state ? "on" : "off"]</a>."
+		return  "Set Scrubber <a href=\"?src=[UID()];set_scrubber=1\">[fmtString(scrubber)]</a> power to <a href=\"?src=[UID()];set_power=1\">[state ? "on" : "off"]</a>."
 
 	Topic(href,href_list)
 		if(..()) return
@@ -77,7 +77,7 @@
 			return 1
 		if(href_list["set_scrubber"])
 			var/list/injector_names=list()
-			for(var/obj/machinery/atmospherics/unary/vent_scrubber/S in machines)
+			for(var/obj/machinery/atmospherics/unary/vent_scrubber/S in GLOB.machines)
 				if(!isnull(S.id_tag) && S.frequency == parent.frequency)
 					injector_names|=S.id_tag
 			scrubber = input("Select a scrubber:", "Scrubbers", scrubber) as null|anything in injector_names
@@ -129,9 +129,9 @@ var/global/list/gas_labels=list(
 			parent.send_signal(data,filter = RADIO_FROM_AIRALARM)
 
 	GetText()
-		var/txt = "Set Scrubber <a href=\"?src=\ref[src];set_scrubber=1\">[fmtString(scrubber)]</a> to scrub "
+		var/txt = "Set Scrubber <a href=\"?src=[UID()];set_scrubber=1\">[fmtString(scrubber)]</a> to scrub "
 		for(var/gas in gasses)
-			txt += " [gas_labels[gas]] (<a href=\"?src=\ref[src];tog_gas=[gas]\">[gasses[gas] ? "on" : "off"]</a>),"
+			txt += " [gas_labels[gas]] (<a href=\"?src=[UID()];tog_gas=[gas]\">[gasses[gas] ? "on" : "off"]</a>),"
 		return txt
 
 	Topic(href,href_list)
@@ -145,7 +145,7 @@ var/global/list/gas_labels=list(
 			return 1
 		if(href_list["set_scrubber"])
 			var/list/injector_names=list()
-			for(var/obj/machinery/atmospherics/unary/vent_scrubber/S in machines)
+			for(var/obj/machinery/atmospherics/unary/vent_scrubber/S in GLOB.machines)
 				if(!isnull(S.id_tag) && S.frequency == parent.frequency)
 					injector_names|=S.id_tag
 			scrubber = input("Select a scrubber:", "Scrubbers", scrubber) as null|anything in injector_names

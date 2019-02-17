@@ -2,7 +2,7 @@
 	icon = 'icons/obj/atmospherics/cold_sink.dmi'
 	icon_state = "intact_off"
 	density = 1
-	use_power = 1
+	use_power = IDLE_POWER_USE
 
 	name = "heat reservoir"
 	desc = "Heats gas when connected to pipe network"
@@ -22,8 +22,9 @@
 
 	return
 
-/obj/machinery/atmospherics/unary/heat_reservoir/process()
-	if(!..() || !on)
+/obj/machinery/atmospherics/unary/heat_reservoir/process_atmos()
+	..()
+	if(!on)
 		return 0
 	var/air_heat_capacity = air_contents.heat_capacity()
 	var/combined_heat_capacity = current_heat_capacity + air_heat_capacity

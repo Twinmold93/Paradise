@@ -11,9 +11,9 @@
 		client.click_intercept.InterceptClickOn(src, params, A)
 		return
 
-	if(world.time <= next_click)
+	if(next_click > world.time)
 		return
-	next_click = world.time + 1
+	changeNext_click(1)
 
 
 	var/list/modifiers = params2list(params)
@@ -39,7 +39,7 @@
 		CtrlClickOn(A)
 		return
 
-	if(stat || lockcharge || weakened || stunned || paralysis)
+	if(incapacitated())
 		return
 
 	if(next_move >= world.time)
@@ -81,10 +81,7 @@
 
 	// cyborgs are prohibited from using storage items so we can I think safely remove (A.loc in contents)
 	if(A == loc || (A in loc) || (A in contents))
-		// No adjacency checks
-		var/resolved = A.attackby(W,src,params, params)
-		if(!resolved && A && W)
-			W.afterattack(A,src,1,params)
+		W.melee_attack_chain(src, A, params)
 		return
 
 	if(!isturf(loc))
@@ -93,9 +90,7 @@
 	// cyborgs are prohibited from using storage items so we can I think safely remove (A.loc && isturf(A.loc.loc))
 	if(isturf(A) || isturf(A.loc))
 		if(A.Adjacent(src)) // see adjacent.dm
-			var/resolved = A.attackby(W, src, params, params)
-			if(!resolved && A && W)
-				W.afterattack(A, src, 1, params)
+			W.melee_attack_chain(src, A, params)
 			return
 		else
 			W.afterattack(A, src, 0, params)
@@ -139,7 +134,9 @@
 /obj/machinery/door/airlock/BorgAltShiftClick()  // Enables emergency override on doors! Forwards to AI code.
 	AIAltShiftClick()
 
-/atom/proc/BorgShiftClick()
+/atom/proc/BorgShiftClick(var/mob/user)
+	if(user.client && user.client.eye == user)
+		user.examinate(src)
 	return
 
 /obj/machinery/door/airlock/BorgShiftClick()  // Opens and closes doors! Forwards to AI code.
@@ -166,6 +163,12 @@
 
 /obj/machinery/turretid/BorgAltClick() //turret lethal on/off. Forwards to AI code.
 	AIAltClick()
+
+/obj/machinery/ai_slipper/BorgCtrlClick() //Turns liquid dispenser on or off
+	ToggleOn()
+
+/obj/machinery/ai_slipper/BorgAltClick() //Dispenses liquid if on
+	Activate()
 
 /*
 	As with AI, these are not used in click code,

@@ -1,110 +1,84 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
-
-/obj/item/weapon/airlock_electronics
+/obj/item/airlock_electronics
 	name = "airlock electronics"
 	icon = 'icons/obj/doors/door_assembly.dmi'
 	icon_state = "door_electronics"
-	w_class = 2.0 //It should be tiny! -Agouri
+	w_class = WEIGHT_CLASS_SMALL
 	materials = list(MAT_METAL=50, MAT_GLASS=50)
-
+	origin_tech = "engineering=2;programming=1"
 	req_access = list(access_engine)
-
+	toolspeed = 1
+	usesound = 'sound/items/deconstruct.ogg'
 	var/list/conf_access = null
 	var/one_access = 0 //if set to 1, door would receive req_one_access instead of req_access
-	var/last_configurator = null
-	var/locked = 1
+	var/const/max_brain_damage = 60 // Maximum brain damage a mob can have until it can't use the electronics
 
-	attack_self(mob/user as mob)
-		if (!ishuman(user) && !istype(user,/mob/living/silicon/robot))
-			return ..(user)
+/obj/item/airlock_electronics/attack_self(mob/user)
+	if(!ishuman(user) && !isrobot(user))
+		return ..()
 
+	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.getBrainLoss() >= 60)
+		if(H.getBrainLoss() >= max_brain_damage)
+			to_chat(user, "<span class='warning'>You forget how to use \the [src].</span>")
 			return
 
-		var/t1 = text("<B>Access control</B><br>\n")
+	var/t1 = text("<B>Access control</B><br>\n")
 
+	t1 += "Access requirement is set to "
+	t1 += one_access ? "<a style='color: green' href='?src=[UID()];one_access=1'>ONE</a><hr>" : "<a style='color: red' href='?src=[UID()];one_access=1'>ALL</a><hr>"
 
-		if (last_configurator)
-			t1 += "Operator: [last_configurator]<br>"
+	t1 += conf_access == null ? "<font color=red>All</font><br>" : "<a href='?src=[UID()];access=all'>All</a><br>"
 
-		if (locked)
-			t1 += "<a href='?src=\ref[src];login=1'>Swipe ID</a><hr>"
+	t1 += "<br>"
+
+	var/list/accesses = get_all_accesses()
+	for(var/acc in accesses)
+		var/aname = get_access_desc(acc)
+
+		if(!conf_access || !conf_access.len || !(acc in conf_access))
+			t1 += "<a href='?src=[UID()];access=[acc]'>[aname]</a><br>"
+		else if(one_access)
+			t1 += "<a style='color: green' href='?src=[UID()];access=[acc]'>[aname]</a><br>"
 		else
-			t1 += "<a href='?src=\ref[src];logout=1'>Block</a><hr>"
+			t1 += "<a style='color: red' href='?src=[UID()];access=[acc]'>[aname]</a><br>"
 
-			t1 += "Access requirement is set to "
-			t1 += one_access ? "<a style='color: green' href='?src=\ref[src];one_access=1'>ONE</a><hr>" : "<a style='color: red' href='?src=\ref[src];one_access=1'>ALL</a><hr>"
+	t1 += "<p><a href='?src=[UID()];close=1'>Close</a></p>\n"
 
-			t1 += conf_access == null ? "<font color=red>All</font><br>" : "<a href='?src=\ref[src];access=all'>All</a><br>"
+	var/datum/browser/popup = new(user, "airlock_electronics", name, 400, 400)
+	popup.set_content(t1)
+	popup.open(0)
+	onclose(user, "airlock")
 
-			t1 += "<br>"
+/obj/item/airlock_electronics/Topic(href, href_list)
+	..()
 
-			var/list/accesses = get_all_accesses()
-			for (var/acc in accesses)
-				var/aname = get_access_desc(acc)
+	if(usr.incapacitated() || (!ishuman(usr) && !isrobot(usr)))
+		return 1
 
-				if (!conf_access || !conf_access.len || !(acc in conf_access))
-					t1 += "<a href='?src=\ref[src];access=[acc]'>[aname]</a><br>"
-				else if(one_access)
-					t1 += "<a style='color: green' href='?src=\ref[src];access=[acc]'>[aname]</a><br>"
-				else
-					t1 += "<a style='color: red' href='?src=\ref[src];access=[acc]'>[aname]</a><br>"
+	if(href_list["close"])
+		usr << browse(null, "window=airlock_electronics")
+		return
 
-		t1 += text("<p><a href='?src=\ref[];close=1'>Close</a></p>\n", src)
+	if(href_list["one_access"])
+		one_access = !one_access
 
-		user << browse(t1, "window=airlock_electronics")
-		onclose(user, "airlock")
+	if(href_list["access"])
+		toggle_access(href_list["access"])
 
-	Topic(href, href_list)
-		..()
-		if (usr.stat || usr.restrained() || (!ishuman(usr) && !istype(usr,/mob/living/silicon)))
-			return
-		if (href_list["close"])
-			usr << browse(null, "window=airlock")
-			return
+	attack_self(usr)
 
-		if (href_list["login"])
-			if(istype(usr,/mob/living/silicon))
-				src.locked = 0
-				src.last_configurator = usr.name
-			else
-				var/obj/item/I = usr.get_active_hand()
-				if (istype(I, /obj/item/device/pda))
-					var/obj/item/device/pda/pda = I
-					I = pda.id
-				if (I && src.check_access(I))
-					src.locked = 0
-					src.last_configurator = I:registered_name
+/obj/item/airlock_electronics/proc/toggle_access(access)
+	if(access == "all")
+		conf_access = null
+	else
+		var/req = text2num(access)
 
-		if (locked)
-			return
+		if(conf_access == null)
+			conf_access = list()
 
-		if (href_list["logout"])
-			locked = 1
-
-		if (href_list["one_access"])
-			one_access = !one_access
-
-		if (href_list["access"])
-			toggle_access(href_list["access"])
-
-		attack_self(usr)
-
-	proc
-		toggle_access(var/acc)
-			if (acc == "all")
+		if(!(req in conf_access))
+			conf_access += req
+		else
+			conf_access -= req
+			if(!conf_access.len)
 				conf_access = null
-			else
-				var/req = text2num(acc)
-
-				if (conf_access == null)
-					conf_access = list()
-
-				if (!(req in conf_access))
-					conf_access += req
-				else
-					conf_access -= req
-					if (!conf_access.len)
-						conf_access = null
-

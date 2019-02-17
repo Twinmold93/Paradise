@@ -1,9 +1,11 @@
 /mob/living/simple_animal/pet
 	icon = 'icons/mob/pets.dmi'
 	can_collar = 1
+	mob_size = MOB_SIZE_SMALL
+	blood_volume = BLOOD_VOLUME_NORMAL
 
 /mob/living/simple_animal/pet/attackby(var/obj/item/O as obj, var/mob/user as mob, params)
-	if(istype(O, /obj/item/weapon/newspaper))
+	if(istype(O, /obj/item/newspaper))
 		if(!stat)
 			user.visible_message("[user] baps [name] on the nose with the rolled up [O].")
 			spawn(0)
@@ -17,8 +19,8 @@
 	..()
 	regenerate_icons()
 
-/mob/living/simple_animal/pet/death()
-	..()
+/mob/living/simple_animal/pet/death(gibbed)
+	. = ..()
 	regenerate_icons()
 
 /mob/living/simple_animal/pet/regenerate_icons(cut_overlays = 1)

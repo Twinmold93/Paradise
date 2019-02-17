@@ -18,46 +18,53 @@
 	anchored = 1
 	density = 1
 	opacity = 1
+	burn_state = FLAMMABLE
+	burntime = 30
 	var/health = 50
 	var/tmp/busy = 0
-	var/list/valid_types = list(/obj/item/weapon/book, \
-								/obj/item/weapon/tome, \
-								/obj/item/weapon/spellbook, \
-								/obj/item/weapon/storage/bible)
+	var/list/allowed_books = list(/obj/item/book, /obj/item/spellbook, /obj/item/storage/bible, /obj/item/tome) //Things allowed in the bookcase
 
-/obj/structure/bookcase/initialize()
+/obj/structure/bookcase/Initialize()
+	..()
 	for(var/obj/item/I in loc)
-		if(is_type_in_list(I, valid_types))
+		if(is_type_in_list(I, allowed_books))
 			I.forceMove(src)
 	update_icon()
 
-/obj/structure/bookcase/attackby(obj/O as obj, mob/user as mob, params)
+/obj/structure/bookcase/attackby(obj/item/O as obj, mob/user as mob, params)
 	if(busy) //So that you can't mess with it while deconstructing
 		return 1
-	if(is_type_in_list(O, valid_types))
-		user.drop_item()
+	if(is_type_in_list(O, allowed_books))
+		if(!user.drop_item())
+			return
 		O.forceMove(src)
 		update_icon()
 		return 1
-	else if(istype(O, /obj/item/weapon/wrench))
+	else if(istype(O, /obj/item/storage/bag/books))
+		var/obj/item/storage/bag/books/B = O
+		for(var/obj/item/T in B.contents)
+			if(istype(T, /obj/item/book) || istype(T, /obj/item/spellbook) || istype(T, /obj/item/tome) || istype(T, /obj/item/storage/bible))
+				B.remove_from_storage(T, src)
+		to_chat(user, "<span class='notice'>You empty [O] into [src].</span>")
+		update_icon()
+		return 1
+	else if(istype(O, /obj/item/wrench))
 		user.visible_message("<span class='warning'>[user] starts disassembling \the [src].</span>", \
 		"<span class='notice'>You start disassembling \the [src].</span>")
-		playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
+		playsound(get_turf(src), O.usesound, 50, 1)
 		busy = 1
 
-		if(do_after(user,50, target = src))
-			playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 75, 1)
+		if(do_after(user, 50 * O.toolspeed, target = src))
+			playsound(get_turf(src), O.usesound, 75, 1)
 			user.visible_message("<span class='warning'>[user] disassembles \the [src].</span>", \
 			"<span class='notice'>You disassemble \the [src].</span>")
 			busy = 0
-			for(var/i = 1 to 5)
-				new /obj/item/stack/sheet/wood(get_turf(src))
 			density = 0
 			qdel(src)
 		else
 			busy = 0
 		return 1
-	else if(istype(O, /obj/item/weapon/pen))
+	else if(istype(O, /obj/item/pen))
 		var/newname = stripped_input(user, "What would you like to title this [name]?")
 		if(newname)
 			name = ("bookcase ([sanitize(newname)])")
@@ -69,17 +76,14 @@
 			if("brute")
 				health -= O.force * 0.75
 			else
-		if (health <= 0)
-			visible_message("<span class=warning>The bookcase is smashed apart!</span>")
-			new /obj/item/stack/sheet/wood(get_turf(src))
-			new /obj/item/stack/sheet/wood(get_turf(src))
-			new /obj/item/stack/sheet/wood(get_turf(src))
+		if(health <= 0)
+			visible_message("<span class='warning'>The bookcase is smashed apart!</span>")
 			qdel(src)
 		return ..()
 
 /obj/structure/bookcase/attack_hand(var/mob/user as mob)
 	if(contents.len)
-		var/obj/item/weapon/book/choice = input("Which book would you like to remove from \the [src]?") in contents as obj|null
+		var/obj/item/book/choice = input("Which book would you like to remove from [src]?") as null|anything in contents
 		if(choice)
 			if(user.incapacitated() || user.lying || !Adjacent(user))
 				return
@@ -109,10 +113,10 @@
 	return
 
 /obj/structure/bookcase/Destroy()
-	for(var/i = 1 to 3)
+	for(var/i in 1 to 5)
 		new /obj/item/stack/sheet/wood(get_turf(src))
 	for(var/obj/item/I in contents)
-		if(is_type_in_list(I, valid_types))
+		if(is_type_in_list(I, allowed_books))
 			I.forceMove(get_turf(src))
 	return ..()
 
@@ -128,7 +132,7 @@
 
 	New()
 		..()
-		new /obj/item/weapon/book/manual/medical_cloning(src)
+		new /obj/item/book/manual/medical_cloning(src)
 		update_icon()
 
 
@@ -137,12 +141,12 @@
 
 	New()
 		..()
-		new /obj/item/weapon/book/manual/engineering_construction(src)
-		new /obj/item/weapon/book/manual/engineering_particle_accelerator(src)
-		new /obj/item/weapon/book/manual/engineering_hacking(src)
-		new /obj/item/weapon/book/manual/engineering_guide(src)
-		new /obj/item/weapon/book/manual/engineering_singularity_safety(src)
-		new /obj/item/weapon/book/manual/robotics_cyborgs(src)
+		new /obj/item/book/manual/engineering_construction(src)
+		new /obj/item/book/manual/engineering_particle_accelerator(src)
+		new /obj/item/book/manual/engineering_hacking(src)
+		new /obj/item/book/manual/engineering_guide(src)
+		new /obj/item/book/manual/engineering_singularity_safety(src)
+		new /obj/item/book/manual/robotics_cyborgs(src)
 		update_icon()
 
 /obj/structure/bookcase/manuals/research_and_development
@@ -150,21 +154,23 @@
 
 	New()
 		..()
-		new /obj/item/weapon/book/manual/research_and_development(src)
+		new /obj/item/book/manual/research_and_development(src)
 		update_icon()
 
 
 /*
  * Book
  */
-/obj/item/weapon/book
+/obj/item/book
 	name = "book"
 	icon = 'icons/obj/library.dmi'
 	icon_state ="book"
 	throw_speed = 1
 	throw_range = 5
-	w_class = 3		 //upped to three because books are, y'know, pretty big. (and you could hide them inside eachother recursively forever)
-	attack_verb = list("bashed", "whacked", "educated")
+	force = 2
+	w_class = WEIGHT_CLASS_NORMAL		 //upped to three because books are, y'know, pretty big. (and you could hide them inside eachother recursively forever)
+	attack_verb = list("bashed", "whacked")
+	burn_state = FLAMMABLE
 
 	var/dat			 // Actual page content
 	var/due_date = 0 // Game time in 1/10th seconds
@@ -175,7 +181,7 @@
 	var/forbidden = 0     // Prevent ordering of this book. (0=no, 1=yes, 2=emag only)
 	var/obj/item/store	// What's in the book?
 
-/obj/item/weapon/book/attack_self(var/mob/user as mob)
+/obj/item/book/attack_self(var/mob/user as mob)
 	if(carved)
 		if(store)
 			to_chat(user, "<span class='notice'>[store] falls out of [title]!</span>")
@@ -193,10 +199,10 @@
 	else
 		to_chat(user, "This book is completely blank!")
 
-/obj/item/weapon/book/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+/obj/item/book/attackby(obj/item/W as obj, mob/user as mob, params)
 	if(carved)
 		if(!store)
-			if(W.w_class < 3)
+			if(W.w_class < WEIGHT_CLASS_NORMAL)
 				user.drop_item()
 				W.forceMove(src)
 				store = W
@@ -208,7 +214,7 @@
 		else
 			to_chat(user, "<span class='notice'>There's already something in [title]!</span>")
 			return 1
-	if(istype(W, /obj/item/weapon/pen))
+	if(istype(W, /obj/item/pen))
 		if(unique)
 			to_chat(user, "These pages don't seem to take the ink well. Looks like you can't modify it.")
 			return 1
@@ -223,7 +229,7 @@
 					src.name = newtitle
 					src.title = newtitle
 			if("Contents")
-				var/content = strip_html(input(usr, "Write your book's contents (HTML NOT allowed):"), MAX_BOOK_MESSAGE_LEN) as message|null
+				var/content = strip_html(input(usr, "Write your book's contents (HTML NOT allowed):") as message|null, MAX_BOOK_MESSAGE_LEN)
 				if(!content)
 					to_chat(usr, "The content is invalid.")
 					return 1
@@ -237,8 +243,8 @@
 				else
 					src.author = newauthor
 		return 1
-	else if(istype(W, /obj/item/weapon/barcodescanner))
-		var/obj/item/weapon/barcodescanner/scanner = W
+	else if(istype(W, /obj/item/barcodescanner))
+		var/obj/item/barcodescanner/scanner = W
 		if(!scanner.computer)
 			to_chat(user, "[W]'s screen flashes: 'No associated computer found!'")
 		else
@@ -260,37 +266,45 @@
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. No active check-out record found for current title.'")
 				if(3)
 					scanner.book = src
-					for(var/obj/item/weapon/book in scanner.computer.inventory)
+					for(var/obj/item/book in scanner.computer.inventory)
 						if(book == src)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title already present in inventory, aborting to avoid duplicate entry.'")
 							return 1
 					scanner.computer.inventory.Add(src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
 		return 1
-	else if(istype(W, /obj/item/weapon/kitchen/knife) || iswirecutter(W))
+	else if(istype(W, /obj/item/kitchen/knife) || iswirecutter(W))
 		if(carved)
 			return 1
 		to_chat(user, "<span class='notice'>You begin to carve out [title].</span>")
-		if(do_after(user, 30, target = src))
+		if(do_after(user, 30 * W.toolspeed, target = src))
 			to_chat(user, "<span class='notice'>You carve out the pages from [title]! You didn't want to read it anyway.</span>")
 			carved = 1
 			return 1
 	else
 		return ..()
 
+/obj/item/book/attack(mob/M, mob/living/user)
+	if(user.a_intent == INTENT_HELP)
+		force = 0
+		attack_verb = list("educated")
+	else
+		force = initial(force)
+		attack_verb = list("bashed", "whacked")
+	..()
 
 /*
  * Barcode Scanner
  */
-/obj/item/weapon/barcodescanner
+/obj/item/barcodescanner
 	name = "barcode scanner"
 	icon = 'icons/obj/library.dmi'
 	icon_state ="scanner"
 	throw_speed = 1
 	throw_range = 5
-	w_class = 1.0
+	w_class = WEIGHT_CLASS_TINY
 	var/obj/machinery/computer/library/checkout/computer // Associated computer - Modes 1 to 3 use this
-	var/obj/item/weapon/book/book	 //  Currently scanned book
+	var/obj/item/book/book	 //  Currently scanned book
 	var/mode = 0 					// 0 - Scan only, 1 - Scan and Set Buffer, 2 - Scan and Attempt to Check In, 3 - Scan and Attempt to Add to Inventory
 
 	attack_self(mob/user as mob)

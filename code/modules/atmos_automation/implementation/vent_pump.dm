@@ -27,7 +27,7 @@
 		return 0
 
 	GetText()
-		return "Set <a href=\"?src=\ref[src];toggle_type=1\">[vent_type ? "Dual-Port" : "Unary"]</a> vent pump <a href=\"?src=\ref[src];set_vent_pump=1\">[fmtString(vent_pump)]</a> mode to <a href=\"?src=\ref[src];set_mode=1\">[mode]</a>."
+		return "Set <a href=\"?src=[UID()];toggle_type=1\">[vent_type ? "Dual-Port" : "Unary"]</a> vent pump <a href=\"?src=[UID()];set_vent_pump=1\">[fmtString(vent_pump)]</a> mode to <a href=\"?src=[UID()];set_mode=1\">[mode]</a>."
 
 	Topic(href,href_list)
 		if(..())
@@ -41,7 +41,7 @@
 		if(href_list["set_vent_pump"])
 			var/list/injector_names = list()
 			if(!vent_type)
-				for(var/obj/machinery/atmospherics/unary/vent_pump/I in machines)
+				for(var/obj/machinery/atmospherics/unary/vent_pump/I in GLOB.machines)
 					if(!isnull(I.id_tag) && I.frequency == parent.frequency)
 						injector_names |= I.id_tag
 			else
@@ -84,7 +84,7 @@
 			parent.send_signal(list ("tag" = vent_pump, "power" = state), filter = (mode ? RADIO_ATMOSIA : RADIO_FROM_AIRALARM))
 
 	GetText()
-		return "Set <a href=\"?src=\ref[src];toggle_mode=1\">[mode ? "Dual-Port" : "Unary"]</a> vent pump <a href=\"?src=\ref[src];set_vent_pump=1\">[fmtString(vent_pump)]</a> power to <a href=\"?src=\ref[src];set_power=1\">[state ? "on" : "off"]</a>."
+		return "Set <a href=\"?src=[UID()];toggle_mode=1\">[mode ? "Dual-Port" : "Unary"]</a> vent pump <a href=\"?src=[UID()];set_vent_pump=1\">[fmtString(vent_pump)]</a> power to <a href=\"?src=[UID()];set_power=1\">[state ? "on" : "off"]</a>."
 
 	Topic(href,href_list)
 		if(..())
@@ -98,7 +98,7 @@
 		if(href_list["set_vent_pump"])
 			var/list/injector_names=list()
 			if(!mode)
-				for(var/obj/machinery/atmospherics/unary/vent_pump/I in machines)
+				for(var/obj/machinery/atmospherics/unary/vent_pump/I in GLOB.machines)
 					if(!isnull(I.id_tag) && I.frequency == parent.frequency)
 						injector_names|=I.id_tag
 			else
@@ -168,15 +168,15 @@
 
 	GetText()
 		if(mode)//DP vent
-			return {"Set <a href=\"?src=\ref[src];swap_modes=1\">dual-port</a> vent pump <a href=\"?src=\ref[src];set_vent_pump=1\">[fmtString(vent_pump)]</a>
-				pressure bounds: internal outwards: <a href=\"?src=\ref[src];set_intpressure_out=1">[fmtString(intpressureout)]</a>
-				internal inwards: <a href=\"?src=\ref[src];set_intpressure_in=1">[fmtString(intpressurein)]</a>
-				external: <a href=\"?src=\ref[src];set_external=1">[fmtString(extpressure)]</a>
+			return {"Set <a href=\"?src=[UID()];swap_modes=1\">dual-port</a> vent pump <a href=\"?src=[UID()];set_vent_pump=1\">[fmtString(vent_pump)]</a>
+				pressure bounds: internal outwards: <a href=\"?src=[UID()];set_intpressure_out=1">[fmtString(intpressureout)]</a>
+				internal inwards: <a href=\"?src=[UID()];set_intpressure_in=1">[fmtString(intpressurein)]</a>
+				external: <a href=\"?src=[UID()];set_external=1">[fmtString(extpressure)]</a>
 			"}//well that was a lot to type
 		else
-			return {"Set <a href=\"?src=\ref[src];swap_modes=1\">unary</a> vent pump <a href=\"?src=\ref[src];set_vent_pump=1\">[fmtString(vent_pump)]</a>
-				pressure bounds: internal: <a href=\"?src=\ref[src];set_intpressure_out=1">[fmtString(intpressureout)]</a>
-				external: <a href=\"?src=\ref[src];set_external=1">[fmtString(extpressure)]</a>
+			return {"Set <a href=\"?src=[UID()];swap_modes=1\">unary</a> vent pump <a href=\"?src=[UID()];set_vent_pump=1\">[fmtString(vent_pump)]</a>
+				pressure bounds: internal: <a href=\"?src=[UID()];set_intpressure_out=1">[fmtString(intpressureout)]</a>
+				external: <a href=\"?src=[UID()];set_external=1">[fmtString(extpressure)]</a>
 			"}//copy paste FTW
 
 	Topic(href, href_list)
@@ -190,7 +190,7 @@
 					if(!isnull(I.id_tag) && I.frequency == parent.frequency)
 						injector_names|=I.id_tag
 			else
-				for(var/obj/machinery/atmospherics/unary/vent_pump/I in machines)
+				for(var/obj/machinery/atmospherics/unary/vent_pump/I in GLOB.machines)
 					if(!isnull(I.id_tag) && I.frequency == parent.frequency)
 						injector_names|=I.id_tag
 			vent_pump = input("Select a vent:", "Vent Pumps", vent_pump) as null|anything in injector_names
@@ -260,15 +260,15 @@ checks bitflags
 
 	GetText()
 		if(mode)
-			return {"Set <a href=\"?src=\ref[src];swap_modes=1\">dual-port</a> vent pump <a href=\"?src=\ref[src];set_vent_pump=1\">[fmtString(vent_pump)]</a> pressure checks to:
-				external <a href=\"?src=\ref[src];togglecheck=1\">[checks&1 ? "Enabled" : "Disabled"]</a>
-				internal inwards <a href=\"?src=\ref[src];togglecheck=2\">[checks&2 ? "Enabled" : "Disabled"]</a>
-				internal outwards <a href=\"?src=\ref[src];togglecheck=4\">[checks&4 ? "Enabled" : "Disabled"]</a>
+			return {"Set <a href=\"?src=[UID()];swap_modes=1\">dual-port</a> vent pump <a href=\"?src=[UID()];set_vent_pump=1\">[fmtString(vent_pump)]</a> pressure checks to:
+				external <a href=\"?src=[UID()];togglecheck=1\">[checks&1 ? "Enabled" : "Disabled"]</a>
+				internal inwards <a href=\"?src=[UID()];togglecheck=2\">[checks&2 ? "Enabled" : "Disabled"]</a>
+				internal outwards <a href=\"?src=[UID()];togglecheck=4\">[checks&4 ? "Enabled" : "Disabled"]</a>
 			"}
 		else
-			return {"Set <a href=\"?src=\ref[src];swap_modes=1\">unary</a> vent pump <a href=\"?src=\ref[src];set_vent_pump=1\">[fmtString(vent_pump)]</a> pressure checks to:
-				external: <a href=\"?src=\ref[src];togglecheck=1\">[checks&1 ? "Enabled" : "Disabled"]</a>,
-				internal: <a href=\"?src=\ref[src];togglecheck=2\">[checks&2 ? "Enabled" : "Disabled"]</a>
+			return {"Set <a href=\"?src=[UID()];swap_modes=1\">unary</a> vent pump <a href=\"?src=[UID()];set_vent_pump=1\">[fmtString(vent_pump)]</a> pressure checks to:
+				external: <a href=\"?src=[UID()];togglecheck=1\">[checks&1 ? "Enabled" : "Disabled"]</a>,
+				internal: <a href=\"?src=[UID()];togglecheck=2\">[checks&2 ? "Enabled" : "Disabled"]</a>
 			"}
 
 	Topic(href, href_list)
@@ -282,7 +282,7 @@ checks bitflags
 					if(!isnull(I.id_tag) && I.frequency == parent.frequency)
 						injector_names|=I.id_tag
 			else
-				for(var/obj/machinery/atmospherics/unary/vent_pump/I in machines)
+				for(var/obj/machinery/atmospherics/unary/vent_pump/I in GLOB.machines)
 					if(!isnull(I.id_tag) && I.frequency == parent.frequency)
 						injector_names|=I.id_tag
 			vent_pump = input("Select a vent:", "Vent Pumps", vent_pump) as null|anything in injector_names

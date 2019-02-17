@@ -1,9 +1,9 @@
-/obj/item/weapon/gun/projectile/automatic/spikethrower
+/obj/item/gun/projectile/automatic/spikethrower
 	name = "\improper Vox spike thrower"
 	desc = "A vicious alien projectile weapon. Parts of it quiver gelatinously, as though the thing is insectile and alive."
 	icon_state = "spikethrower"
 	item_state = "spikethrower"
-	w_class = 2
+	w_class = WEIGHT_CLASS_SMALL
 	fire_sound_text = "a strange noise"
 	mag_type = /obj/item/ammo_box/magazine/internal/spikethrower
 	burst_size = 2
@@ -11,20 +11,20 @@
 	can_suppress = 0
 	var/charge_tick = 0
 	var/charge_delay = 15
-	restricted_species = list("Vox", "Vox Armalis")
+	restricted_species = list(/datum/species/vox)
 
-/obj/item/weapon/gun/projectile/automatic/spikethrower/New()
+/obj/item/gun/projectile/automatic/spikethrower/New()
 	..()
 	processing_objects.Add(src)
 
-/obj/item/weapon/gun/projectile/automatic/spikethrower/Destroy()
+/obj/item/gun/projectile/automatic/spikethrower/Destroy()
 	processing_objects.Remove(src)
 	return ..()
 
-/obj/item/weapon/gun/projectile/automatic/spikethrower/update_icon()
+/obj/item/gun/projectile/automatic/spikethrower/update_icon()
 	return
 
-/obj/item/weapon/gun/projectile/automatic/spikethrower/process()
+/obj/item/gun/projectile/automatic/spikethrower/process()
 	charge_tick++
 	if(charge_tick < charge_delay || !magazine)
 		return
@@ -33,10 +33,10 @@
 	magazine.give_round(S)
 	return 1
 
-/obj/item/weapon/gun/projectile/automatic/spikethrower/attack_self()
+/obj/item/gun/projectile/automatic/spikethrower/attack_self()
 	return
 
-/obj/item/weapon/gun/projectile/automatic/spikethrower/process_chamber(eject_casing = 0, empty_chamber = 1)
+/obj/item/gun/projectile/automatic/spikethrower/process_chamber(eject_casing = 0, empty_chamber = 1)
 	..()
 
 /obj/item/ammo_box/magazine/internal/spikethrower
@@ -49,10 +49,8 @@
 	name = "alloy spike"
 	desc = "A broadhead spike made out of a weird silvery metal."
 	projectile_type = /obj/item/projectile/bullet/spike
-	sharp = 1
-	edge = 0
 	throwforce = 5
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	caliber = "spike"
 	icon_state = "bolt"
 	fire_sound = 'sound/weapons/bladeslice.ogg'
@@ -68,11 +66,11 @@
 /obj/item/projectile/bullet/spike/on_hit(atom/target, blocked = 0)
 	if((blocked != 100) && istype(target, /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = target
-		H.drip(500)
+		H.bleed(50)
 	..()
 
 //This gun only functions for armalis. The on-sprite is too huge to render properly on other sprites.
-/obj/item/weapon/gun/energy/noisecannon
+/obj/item/gun/energy/noisecannon
 	name = "alien heavy cannon"
 	desc = "It's some kind of enormous alien weapon, as long as a man is tall."
 	icon_state = "noisecannon"
@@ -80,10 +78,10 @@
 	recoil = 1
 	force = 10
 	ammo_type = list(/obj/item/ammo_casing/energy/sonic)
-	cell_type = "/obj/item/weapon/stock_parts/cell/super"
-	restricted_species = list("Vox Armalis")
+	cell_type = /obj/item/stock_parts/cell/super
+	restricted_species = list(/datum/species/vox/armalis)
 
-/obj/item/weapon/gun/energy/noisecannon/update_icon()
+/obj/item/gun/energy/noisecannon/update_icon()
 	return
 
 //Casing
@@ -101,6 +99,5 @@
 	flag = "bullet"
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 
-	embed = 0
 	weaken = 5
 	stun = 5

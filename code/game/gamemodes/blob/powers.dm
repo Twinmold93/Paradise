@@ -27,39 +27,56 @@
 		for(var/i = 1; i <= blob_nodes.len; i++)
 			nodes["Blob Node #[i]"] = blob_nodes[i]
 		var/node_name = input(src, "Choose a node to jump to.", "Node Jump") in nodes
-		var/obj/effect/blob/node/chosen_node = nodes[node_name]
+		var/obj/structure/blob/node/chosen_node = nodes[node_name]
 		if(chosen_node)
 			src.loc = chosen_node.loc
 
 /mob/camera/blob/verb/create_shield_power()
 	set category = "Blob"
-	set name = "Create Shield Blob (10)"
-	set desc = "Create a shield blob."
+	set name = "Create/Upgrade Shield Blob (15)"
+	set desc = "Create/Upgrade a shield blob. Using this on an existing shield blob turns it into a reflective blob, capable of reflecting most energy projectiles but making it much weaker than usual to brute attacks."
 
 	var/turf/T = get_turf(src)
 	create_shield(T)
 
 /mob/camera/blob/proc/create_shield(var/turf/T)
 
-	var/obj/effect/blob/B = (locate(/obj/effect/blob) in T)
+	var/obj/structure/blob/B = locate(/obj/structure/blob) in T
+	var/obj/structure/blob/shield/S = locate(/obj/structure/blob/shield) in T
+	
+	if(!S)
+		if(!B)//We are on a blob
+			to_chat(src, "There is no blob here!")
+			return
 
-	if(!B)//We are on a blob
-		to_chat(src, "There is no blob here!")
-		return
+		else if(!istype(B, /obj/structure/blob/normal))
+			to_chat(src, "Unable to use this blob, find a normal one.")
+			return
 
-	if(!istype(B, /obj/effect/blob/normal))
-		to_chat(src, "Unable to use this blob, find a normal one.")
-		return
+		else if(!can_buy(15))
+			return
 
-	if(!can_buy(10))
-		return
+		B.color = blob_reagent_datum.color
+		B.change_to(/obj/structure/blob/shield)
+	else
+	
+		if(istype(S, /obj/structure/blob/shield/reflective))
+			to_chat(src, "<span class='warning'>There's already a reflector blob here!</span>")
+			return
 
-	B.color = blob_reagent_datum.color
-	B.change_to(/obj/effect/blob/shield)
 
+		else if(S.health < S.maxHealth * 0.5)
+			to_chat(src, "<span class='warning'>This shield blob is too damaged to be modified properly!</span>")
+			return
+	
+		else if (!can_buy(15))
+			return
+		
+		to_chat(src, "<span class='warning'>You secrete a reflective ooze over the shield blob, allowing it to reflect energy projectiles at the cost of reduced intregrity.</span>")
+		
+		S.change_to(/obj/structure/blob/shield/reflective)
+		S.color = blob_reagent_datum.color
 	return
-
-
 
 /mob/camera/blob/verb/create_resource()
 	set category = "Blob"
@@ -72,17 +89,17 @@
 	if(!T)
 		return
 
-	var/obj/effect/blob/B = (locate(/obj/effect/blob) in T)
+	var/obj/structure/blob/B = (locate(/obj/structure/blob) in T)
 
 	if(!B)//We are on a blob
 		to_chat(src, "There is no blob here!")
 		return
 
-	if(!istype(B, /obj/effect/blob/normal))
+	if(!istype(B, /obj/structure/blob/normal))
 		to_chat(src, "Unable to use this blob, find a normal one.")
 		return
 
-	for(var/obj/effect/blob/resource/blob in orange(4, T))
+	for(var/obj/structure/blob/resource/blob in orange(4, T))
 		to_chat(src, "There is a resource blob nearby, move more than 4 tiles away from it!")
 		return
 
@@ -90,8 +107,8 @@
 		return
 
 	B.color = blob_reagent_datum.color
-	B.change_to(/obj/effect/blob/resource)
-	var/obj/effect/blob/resource/R = locate() in T
+	B.change_to(/obj/structure/blob/resource)
+	var/obj/structure/blob/resource/R = locate() in T
 	if(R)
 		R.overmind = src
 
@@ -108,25 +125,25 @@
 	if(!T)
 		return
 
-	var/obj/effect/blob/B = (locate(/obj/effect/blob) in T)
+	var/obj/structure/blob/B = (locate(/obj/structure/blob) in T)
 
 	if(!B)//We are on a blob
 		to_chat(src, "There is no blob here!")
 		return
 
-	if(!istype(B, /obj/effect/blob/normal))
+	if(!istype(B, /obj/structure/blob/normal))
 		to_chat(src, "Unable to use this blob, find a normal one.")
 		return
 
-	for(var/obj/effect/blob/node/blob in orange(5, T))
+	for(var/obj/structure/blob/node/blob in orange(5, T))
 		to_chat(src, "There is another node nearby, move more than 5 tiles away from it!")
 		return
 
 	if(!can_buy(60))
 		return
 
-	B.change_to(/obj/effect/blob/node)
-	var/obj/effect/blob/node/R = locate() in T
+	B.change_to(/obj/structure/blob/node)
+	var/obj/structure/blob/node/R = locate() in T
 	if(R)
 		R.adjustcolors(blob_reagent_datum.color)
 		R.overmind = src
@@ -144,25 +161,25 @@
 	if(!T)
 		return
 
-	var/obj/effect/blob/B = locate(/obj/effect/blob) in T
+	var/obj/structure/blob/B = locate(/obj/structure/blob) in T
 	if(!B)
 		to_chat(src, "You must be on a blob!")
 		return
 
-	if(!istype(B, /obj/effect/blob/normal))
+	if(!istype(B, /obj/structure/blob/normal))
 		to_chat(src, "Unable to use this blob, find a normal one.")
 		return
 
-	for(var/obj/effect/blob/factory/blob in orange(7, T))
+	for(var/obj/structure/blob/factory/blob in orange(7, T))
 		to_chat(src, "There is a factory blob nearby, move more than 7 tiles away from it!")
 		return
 
 	if(!can_buy(60))
 		return
 
-	B.change_to(/obj/effect/blob/factory)
+	B.change_to(/obj/structure/blob/factory)
 	B.color = blob_reagent_datum.color
-	var/obj/effect/blob/factory/R = locate() in T
+	var/obj/structure/blob/factory/R = locate() in T
 	if(R)
 		R.overmind = src
 	return
@@ -178,12 +195,12 @@
 	if(!T)
 		return
 
-	var/obj/effect/blob/B = locate(/obj/effect/blob) in T
+	var/obj/structure/blob/B = locate(/obj/structure/blob) in T
 	if(!B)
 		to_chat(src, "You must be on a blob!")
 		return
 
-	if(!istype(B, /obj/effect/blob/factory))
+	if(!istype(B, /obj/structure/blob/factory))
 		to_chat(src, "Unable to use this blob, find a factory blob.")
 		return
 
@@ -210,7 +227,7 @@
 	if(!T)
 		return
 
-	var/obj/effect/blob/node/B = locate(/obj/effect/blob/node) in T
+	var/obj/structure/blob/node/B = locate(/obj/structure/blob/node) in T
 	if(!B)
 		to_chat(src, "You must be on a blob node!")
 		return
@@ -234,12 +251,12 @@
 	if(!T)
 		return
 
-	var/obj/effect/blob/B = locate(/obj/effect/blob) in T
+	var/obj/structure/blob/B = locate(/obj/structure/blob) in T
 	if(!B)
 		to_chat(src, "You must be on a blob!")
 		return
 
-	if(istype(B, /obj/effect/blob/core))
+	if(istype(B, /obj/structure/blob/core))
 		to_chat(src, "Unable to remove this blob.")
 		return
 
@@ -261,12 +278,12 @@
 
 	if(!can_attack())
 		return
-	var/obj/effect/blob/B = locate() in T
+	var/obj/structure/blob/B = locate() in T
 	if(B)
 		to_chat(src, "There is a blob here!")
 		return
 
-	var/obj/effect/blob/OB = locate() in circlerange(T, 1)
+	var/obj/structure/blob/OB = locate() in circlerange(T, 1)
 	if(!OB)
 		to_chat(src, "There is no blob adjacent to you.")
 		return
@@ -304,7 +321,7 @@
 	if(!surrounding_turfs.len)
 		return
 
-	for(var/mob/living/simple_animal/hostile/blob/blobspore/BS in living_mob_list)
+	for(var/mob/living/simple_animal/hostile/blob/blobspore/BS in GLOB.living_mob_list)
 		if(isturf(BS.loc) && get_dist(BS, T) <= 35)
 			BS.LoseTarget()
 			BS.Goto(pick(surrounding_turfs), BS.move_to_delay)
@@ -319,7 +336,7 @@
 	if(!blob_nodes || !blob_nodes.len)
 		to_chat(src, "<span class='warning'>A node is required to birth your offspring...</span>")
 		return
-	var/obj/effect/blob/node/N = locate(/obj/effect/blob) in blob_nodes
+	var/obj/structure/blob/node/N = locate(/obj/structure/blob) in blob_nodes
 	if(!N)
 		to_chat(src, "<span class='warning'>A node is required to birth your offspring...</span>")
 		return
@@ -328,12 +345,12 @@
 		return
 
 	verbs -= /mob/camera/blob/verb/split_consciousness //we've used our split_consciousness
-	new /obj/effect/blob/core/ (get_turf(N), 200, null, blob_core.point_rate, "offspring")
+	new /obj/structure/blob/core/ (get_turf(N), 200, null, blob_core.point_rate, "offspring")
 	qdel(N)
 
 	if(ticker && ticker.mode.name == "blob")
 		var/datum/game_mode/blob/BL = ticker.mode
-		BL.blobwincount = initial(BL.blobwincount) * 2
+		BL.blobwincount += initial(BL.blobwincount)
 
 
 /mob/camera/blob/verb/blob_broadcast()
@@ -362,17 +379,17 @@
 	if(!T)
 		return
 
-	var/obj/effect/blob/B = (locate(/obj/effect/blob) in T)
+	var/obj/structure/blob/B = (locate(/obj/structure/blob) in T)
 
 	if(!B)//We are on a blob
 		to_chat(src, "There is no blob here!")
 		return
 
-	if(!istype(B, /obj/effect/blob/normal))
+	if(!istype(B, /obj/structure/blob/normal))
 		to_chat(src, "Unable to use this blob, find a normal one.")
 		return
 
-	for(var/obj/effect/blob/storage/blob in orange(3, T))
+	for(var/obj/structure/blob/storage/blob in orange(3, T))
 		to_chat(src, "There is a storage blob nearby, move more than 4 tiles away from it!")
 		return
 
@@ -380,8 +397,8 @@
 		return
 
 	B.color = blob_reagent_datum.color
-	B.change_to(/obj/effect/blob/storage)
-	var/obj/effect/blob/storage/R = locate() in T
+	B.change_to(/obj/structure/blob/storage)
+	var/obj/structure/blob/storage/R = locate() in T
 	if(R)
 		R.overmind = src
 		R.update_max_blob_points(50)
@@ -400,7 +417,7 @@
 	var/datum/reagent/blob/B = pick((subtypesof(/datum/reagent/blob) - blob_reagent_datum.type))
 	blob_reagent_datum = new B
 
-	for(var/obj/effect/blob/BL in blobs)
+	for(var/obj/structure/blob/BL in blobs)
 		BL.adjustcolors(blob_reagent_datum.color)
 
 	for(var/mob/living/simple_animal/hostile/blob/BLO)

@@ -41,10 +41,22 @@
 	hud_icons = list(ID_HUD)
 
 /datum/atom_hud/data/human/security/advanced
-	hud_icons = list(ID_HUD, IMPTRACK_HUD, IMPLOYAL_HUD, IMPCHEM_HUD, WANTED_HUD)
+	hud_icons = list(ID_HUD, IMPTRACK_HUD, IMPMINDSHIELD_HUD, IMPCHEM_HUD, WANTED_HUD)
 
 /datum/atom_hud/data/diagnostic
-	hud_icons = list (DIAG_HUD, DIAG_STAT_HUD, DIAG_BATT_HUD, DIAG_MECH_HUD, DIAG_BOT_HUD)
+	hud_icons = list (DIAG_HUD, DIAG_STAT_HUD, DIAG_BATT_HUD, DIAG_MECH_HUD, DIAG_BOT_HUD, DIAG_TRACK_HUD)
+
+/datum/atom_hud/data/diagnostic/advanced
+	hud_icons = list (DIAG_HUD, DIAG_STAT_HUD, DIAG_BATT_HUD, DIAG_MECH_HUD, DIAG_BOT_HUD, DIAG_TRACK_HUD, DIAG_PATH_HUD)
+
+/datum/atom_hud/data/bot_path
+	hud_icons = list(DIAG_PATH_HUD)
+
+/datum/atom_hud/abductor
+	hud_icons = list(GLAND_HUD)
+
+/datum/atom_hud/data/hydroponic
+	hud_icons = list (PLANT_NUTRIENT_HUD, PLANT_WATER_HUD, PLANT_STATUS_HUD, PLANT_HEALTH_HUD, PLANT_TOXIN_HUD, PLANT_PEST_HUD, PLANT_WEED_HUD)
 
 /* MED/SEC/DIAG HUD HOOKS */
 
@@ -60,33 +72,70 @@
 
 //called when a carbon changes virus
 /mob/living/carbon/proc/check_virus()
-	for(var/datum/disease/D in viruses)
+	for(var/thing in viruses)
+		var/datum/disease/D = thing
 		if((!(D.visibility_flags & HIDDEN_SCANNER)) && (D.severity != NONTHREAT))
 			return 1
 	return 0
 
-//helper for getting the appropriate health status
-/proc/RoundHealth(health)
-	switch(health)
+//helper for getting the appropriate health status UPDATED BY PUCKABOO2 TO INCLUDE NEGATIVES.
+/proc/RoundHealth(mob/living/M)
+	if(M.stat == DEAD || (M.status_flags & FAKEDEATH))
+		return "health-100" //what's our health? it doesn't matter, we're dead, or faking
+	var/maxi_health = M.maxHealth
+	if(iscarbon(M) && M.health < 0)
+		maxi_health = 100 //so crit shows up right for aliens and other high-health carbon mobs; noncarbons don't have crit.
+	var/resulthealth = (M.health / maxi_health) * 100
+
+	switch(resulthealth)
 		if(100 to INFINITY)
 			return "health100"
-		if(70 to 100)
+		if(95 to 100)
+			return "health95" //For telling patients to eat a warm donk pocket and go on with their shift.
+		if(90 to 95)
+			return "health90"
+		if(80 to 90)
 			return "health80"
-		if(50 to 70)
+		if(70 to 80)
+			return "health70"
+		if(60 to 70)
 			return "health60"
-		if(30 to 50)
+		if(50 to 60)
+			return "health50"
+		if(40 to 50)
 			return "health40"
-		if(18 to 30)
-			return "health25"
-		if(5 to 18)
+		if(30 to 40)
+			return "health30"
+		if(20 to 30)
+			return "health20"
+		if(10 to 20)
 			return "health10"
-		if(1 to 5)
-			return "health1"
-		if(-99 to 0)
+		if(0 to 10)
 			return "health0"
+		if(-10 to 0)
+			return "health-0" //The health bar will turn a brilliant red and flash as usual, but deducted health will be black.
+		if(-20 to -10)
+			return "health-10"
+		if(-30 to -20)
+			return "health-20"
+		if(-40 to -30)
+			return "health-30"
+		if(-50 to -40)
+			return "health-40"
+		if(-60 to -50)
+			return "health-50"
+		if(-70 to -60)
+			return "health-60"
+		if(-80 to -70)
+			return "health-70" //Doc?
+		if(-90 to -80)
+			return "health-80" //Hey, doc?
+		if(-100 to -90)
+			return "health-90" //HURRY UP, DOC!
 		else
-			return "health-100"
+			return "health-100" //doc u had 1 job
 	return "0"
+
 
 ///HOOKS
 
@@ -96,35 +145,39 @@
 	B.update_suit_sensors(src)
 
 
-//called when a carbon changes health
-/mob/living/carbon/proc/med_hud_set_health()
+//called when a living mob changes health
+/mob/living/proc/med_hud_set_health()
 	var/image/holder = hud_list[HEALTH_HUD]
-	if(stat == 2)
-		holder.icon_state = "hudhealth-100"
-	else
-		holder.icon_state = "hud[RoundHealth(health)]"
+	holder.icon_state = "hud[RoundHealth(src)]"
+
 
 //called when a carbon changes stat, virus or XENO_HOST
-/mob/living/carbon/proc/med_hud_set_status()
+/mob/living/proc/med_hud_set_status()
 	var/image/holder = hud_list[STATUS_HUD]
-	//var/image/holder2 = hud_list[STATUS_HUD_OOC]
-	if(stat == 2)
+	if(stat == DEAD)
 		holder.icon_state = "huddead"
-		//holder2.icon_state = "huddead"
+	else
+		holder.icon_state = "hudhealthy"
+
+//called when a carbon changes stat, virus or XENO_HOST
+/mob/living/carbon/med_hud_set_status()
+	var/image/holder = hud_list[STATUS_HUD]
+	var/mob/living/simple_animal/borer/B = has_brain_worms()
+	if(stat == DEAD || (status_flags & FAKEDEATH))
+		if(timeofdeath)
+			var/tdelta = round(world.time - timeofdeath)
+			if(tdelta < (DEFIB_TIME_LIMIT * 10))
+				holder.icon_state = "huddefib"
+				return
+		holder.icon_state = "huddead"
 	else if(status_flags & XENO_HOST)
 		holder.icon_state = "hudxeno"
 	else if(check_virus())
 		holder.icon_state = "hudill"
-	else if(has_brain_worms())
-		var/mob/living/simple_animal/borer/B = has_brain_worms()
-		if(B.controlling)
-			holder.icon_state = "hudbrainworm"
-		else
-			holder.icon_state = "hudhealthy"
-			//holder2.icon_state = "hudhealthy"
+	else if(B && B.controlling)
+		holder.icon_state = "hudbrainworm"
 	else
 		holder.icon_state = "hudhealthy"
-		//holder2.icon_state = "hudhealthy"
 
 
 
@@ -145,30 +198,33 @@
 
 /mob/living/carbon/human/proc/sec_hud_set_implants()
 	var/image/holder
-	for(var/i in list(IMPTRACK_HUD, IMPLOYAL_HUD, IMPCHEM_HUD))
+	for(var/i in list(IMPTRACK_HUD, IMPMINDSHIELD_HUD, IMPCHEM_HUD))
 		holder = hud_list[i]
 		holder.icon_state = null
-	for(var/obj/item/weapon/implant/I in src)
+	for(var/obj/item/implant/I in src)
 		if(I.implanted)
-			if(istype(I,/obj/item/weapon/implant/tracking))
+			if(istype(I,/obj/item/implant/tracking))
 				holder = hud_list[IMPTRACK_HUD]
 				holder.icon_state = "hud_imp_tracking"
-			else if(istype(I,/obj/item/weapon/implant/loyalty))
-				holder = hud_list[IMPLOYAL_HUD]
+			else if(istype(I,/obj/item/implant/mindshield))
+				holder = hud_list[IMPMINDSHIELD_HUD]
 				holder.icon_state = "hud_imp_loyal"
-			else if(istype(I,/obj/item/weapon/implant/chem))
+			else if(istype(I,/obj/item/implant/chem))
 				holder = hud_list[IMPCHEM_HUD]
 				holder.icon_state = "hud_imp_chem"
 
 
 /mob/living/carbon/human/proc/sec_hud_set_security_status()
 	var/image/holder = hud_list[WANTED_HUD]
-	var/perpname = get_face_name(get_id_name(""))
+	var/perpname = get_visible_name(TRUE) //gets the name of the perp, works if they have an id or if their face is uncovered
 	if(!ticker) return //wait till the game starts or the monkeys runtime....
 	if(perpname)
 		var/datum/data/record/R = find_record("name", perpname, data_core.security)
 		if(R)
 			switch(R.fields["criminal"])
+				if("*Execute*")
+					holder.icon_state = "hudexecute"
+					return
 				if("*Arrest*")
 					holder.icon_state = "hudwanted"
 					return
@@ -227,7 +283,7 @@
 //Borgie battery tracking!
 /mob/living/silicon/robot/proc/diag_hud_set_borgcell()
 	var/image/holder = hud_list[DIAG_BATT_HUD]
-	if (cell)
+	if(cell)
 		var/chargelvl = (cell.charge/cell.maxcharge)
 		holder.icon_state = "hudbatt[RoundDiagBar(chargelvl)]"
 	else
@@ -243,7 +299,7 @@
 
 /obj/mecha/proc/diag_hud_set_mechcell()
 	var/image/holder = hud_list[DIAG_BATT_HUD]
-	if (cell)
+	if(cell)
 		var/chargelvl = cell.charge/cell.maxcharge
 		holder.icon_state = "hudbatt[RoundDiagBar(chargelvl)]"
 	else
@@ -255,6 +311,17 @@
 	holder.icon_state = null
 	if(internal_damage)
 		holder.icon_state = "hudwarn"
+
+/obj/mecha/proc/diag_hud_set_mechtracking() //Shows tracking beacons on the mech
+	var/image/holder = hud_list[DIAG_TRACK_HUD]
+	var/new_icon_state //This var exists so that the holder's icon state is set only once in the event of multiple mech beacons.
+	for(var/obj/item/mecha_parts/mecha_tracking/T in trackers)
+		if(T.ai_beacon) //Beacon with AI uplink
+			new_icon_state = "hudtrackingai"
+			break //Immediately terminate upon finding an AI beacon to ensure it is always shown over the normal one, as mechs can have several trackers.
+		else
+			new_icon_state = "hudtracking"
+	holder.icon_state = new_icon_state
 
 /*~~~~~~~~~
 	Bots!
@@ -294,3 +361,81 @@
 			holder.icon_state = "hudmove"
 		else
 			holder.icon_state = ""
+
+/*~~~~~~~~~~~~~~
+	PLANT HUD
+~~~~~~~~~~~~~~~*/
+/proc/RoundPlantBar(value)
+	switch(value * 100)
+		if(1 to 10)
+			return "10"
+		if(10 to 20)
+			return "20"
+		if(20 to 30)
+			return "30"
+		if(30 to 40)
+			return "40"
+		if(40 to 50)
+			return "50"
+		if(50 to 60)
+			return "60"
+		if(60 to 70)
+			return "70"
+		if(70 to 80)
+			return "80"
+		if(80 to 90)
+			return "90"
+		if(90 to INFINITY)
+			return "max"
+		else
+			return "zero"
+	return "zero"
+
+/obj/machinery/hydroponics/proc/plant_hud_set_nutrient()
+	var/image/holder = hud_list[PLANT_NUTRIENT_HUD]
+	holder.icon_state = "hudnutrient[RoundPlantBar(nutrilevel/maxnutri)]"
+
+/obj/machinery/hydroponics/proc/plant_hud_set_water()
+	var/image/holder = hud_list[PLANT_WATER_HUD]
+	holder.icon_state = "hudwater[RoundPlantBar(waterlevel/maxwater)]"
+
+/obj/machinery/hydroponics/proc/plant_hud_set_status()
+	var/image/holder = hud_list[PLANT_STATUS_HUD]
+	if(!myseed)
+		holder.icon_state = ""
+		return
+	if(harvest)
+		holder.icon_state = "hudharvest"
+		return
+	if(dead)
+		holder.icon_state = "huddead"
+		return
+	holder.icon_state = ""
+
+/obj/machinery/hydroponics/proc/plant_hud_set_health()
+	var/image/holder = hud_list[PLANT_HEALTH_HUD]
+	if(!myseed)
+		holder.icon_state = ""
+		return
+	holder.icon_state = "hudplanthealth[RoundPlantBar(plant_health/myseed.endurance)]"
+
+/obj/machinery/hydroponics/proc/plant_hud_set_toxin()
+	var/image/holder = hud_list[PLANT_TOXIN_HUD]
+	if(toxic < 10)	// You don't want to see these icons if the value is small
+		holder.icon_state = ""
+		return
+	holder.icon_state = "hudtoxin[RoundPlantBar(toxic/100)]"
+
+/obj/machinery/hydroponics/proc/plant_hud_set_pest()
+	var/image/holder = hud_list[PLANT_PEST_HUD]
+	if(pestlevel < 1)	// You don't want to see these icons if the value is small
+		holder.icon_state = ""
+		return
+	holder.icon_state = "hudpest[RoundPlantBar(pestlevel/10)]"
+
+/obj/machinery/hydroponics/proc/plant_hud_set_weed()
+	var/image/holder = hud_list[PLANT_WEED_HUD]
+	if(weedlevel < 1)	// You don't want to see these icons if the value is small
+		holder.icon_state = ""
+		return
+	holder.icon_state = "hudweed[RoundPlantBar(weedlevel/10)]"

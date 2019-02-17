@@ -22,7 +22,6 @@
 /obj/structure/transit_tube_pod/Destroy()
 	for(var/atom/movable/AM in contents)
 		AM.forceMove(get_turf(src))
-
 	return ..()
 
 /obj/structure/transit_tube_pod/Process_Spacemove()
@@ -147,7 +146,7 @@
 		if(!(locate(/obj/structure/transit_tube) in loc))
 			mob.loc = loc
 			mob.client.Move(get_step(loc, direction), direction)
-			mob.reset_view(null)
+			mob.reset_perspective(null)
 
 			//if(moving && istype(loc, /turf/space))
 				// Todo: If you get out of a moving pod in space, you should move as well.
@@ -161,7 +160,7 @@
 							if(station.icon_state == "open")
 								mob.loc = loc
 								mob.client.Move(get_step(loc, direction), direction)
-								mob.reset_view(null)
+								mob.reset_perspective(null)
 
 							else
 								station.open_animation()

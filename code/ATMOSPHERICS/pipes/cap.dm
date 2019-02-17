@@ -25,11 +25,12 @@
 /obj/machinery/atmospherics/pipe/cap/pipeline_expansion()
 	return list(node)
 
-/obj/machinery/atmospherics/pipe/cap/process()
+/obj/machinery/atmospherics/pipe/cap/process_atmos()
 	if(!parent)
 		..()
 	else
 		. = PROCESS_KILL
+
 /obj/machinery/atmospherics/pipe/cap/Destroy()
 	. = ..()
 	if(node)
@@ -60,14 +61,14 @@
 	alpha = 255
 
 	overlays.Cut()
-	overlays += icon_manager.get_atmos_icon("pipe", , pipe_color, "cap" + icon_connect_type)
+	overlays += GLOB.pipe_icon_manager.get_atmos_icon("pipe", , pipe_color, "cap" + icon_connect_type)
 
-/obj/machinery/atmospherics/pipe/cap/initialize()
+/obj/machinery/atmospherics/pipe/cap/atmos_init()
 	..()
 	for(var/obj/machinery/atmospherics/target in get_step(src, dir))
 		if(target.initialize_directions & get_dir(target,src))
 			var/c = check_connect_types(target,src)
-			if (c)
+			if(c)
 				target.connected_to = c
 				src.connected_to = c
 				node = target

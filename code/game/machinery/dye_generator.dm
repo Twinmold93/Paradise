@@ -4,11 +4,12 @@
 	icon_state = "barbervend"
 	density = 1
 	anchored = 1
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 40
 	var/dye_color = "#FFFFFF"
 
-/obj/machinery/dye_generator/initialize()
+/obj/machinery/dye_generator/Initialize()
+	..()
 	power_change()
 
 /obj/machinery/dye_generator/power_change()
@@ -32,7 +33,7 @@
 			qdel(src)
 			return
 		if(2.0)
-			if (prob(50))
+			if(prob(50))
 				qdel(src)
 				return
 		if(3.0)
@@ -40,7 +41,7 @@
 				stat |= BROKEN
 				icon_state = "[initial(icon_state)]-broken"
 
-/obj/machinery/dye_generator/attack_hand(mob/user as mob)
+/obj/machinery/dye_generator/attack_hand(mob/user)
 	..()
 	src.add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
@@ -49,18 +50,18 @@
 	dye_color = temp
 	set_light(2, l_color = temp)
 
-/obj/machinery/dye_generator/attackby(obj/item/weapon/W, mob/user, params)
+/obj/machinery/dye_generator/attackby(obj/item/I, mob/user, params)
 
-	if(default_unfasten_wrench(user, W, time = 60))
+	if(default_unfasten_wrench(user, I, time = 60))
 		return
 
-	if(istype(W, /obj/item/hair_dye_bottle))
-		user.visible_message("<span class='notice'>[user] fills the [W] up with some dye.</span>","<span class='notice'>You fill the [W] up with some hair dye.</span>")
-		var/obj/item/hair_dye_bottle/HD = W
+	if(istype(I, /obj/item/hair_dye_bottle))
+		var/obj/item/hair_dye_bottle/HD = I
+		user.visible_message("<span class='notice'>[user] fills the [HD] up with some dye.</span>","<span class='notice'>You fill the [HD] up with some hair dye.</span>")
 		HD.dye_color = dye_color
 		HD.update_dye_overlay()
 	else
-		..()
+		return ..()
 
 //Hair Dye Bottle
 
@@ -73,7 +74,7 @@
 	throw_speed = 4
 	throw_range = 7
 	force = 0
-	w_class = 1.0
+	w_class = WEIGHT_CLASS_TINY
 	var/dye_color = "#FFFFFF"
 
 /obj/item/hair_dye_bottle/New()
@@ -86,8 +87,8 @@
 	I.color = dye_color
 	overlays += I
 
-/obj/item/hair_dye_bottle/attack(mob/living/carbon/M as mob, mob/user as mob)
-	if(user.a_intent != "help")
+/obj/item/hair_dye_bottle/attack(mob/living/carbon/M, mob/user)
+	if(user.a_intent != INTENT_HELP)
 		..()
 		return
 	if(!(M in view(1)))
@@ -95,36 +96,31 @@
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
+		var/dye_list = list("hair", "alt. hair theme")
 
-		var/dye_list = list("hair")
-
-		if(H.gender == MALE || H.get_species() == "Vulpkanin")
+		if(H.gender == MALE || isvulpkanin(H))
 			dye_list += "facial hair"
+			dye_list += "alt. facial hair theme"
 
-		if(H && (H.species.bodyflags & HAS_SKIN_COLOR))
+		if(H && (H.dna.species.bodyflags & HAS_SKIN_COLOR))
 			dye_list += "body"
 
-		var/what_to_dye = input(user, "Choose an area to apply the dye","Dye Application") in dye_list
-
+		var/what_to_dye = input(user, "Choose an area to apply the dye", "Dye Application") in dye_list
+		if(!user.Adjacent(M))
+			to_chat(user, "You are too far away!")
+			return
 		user.visible_message("<span class='notice'>[user] starts dying [M]'s [what_to_dye]!</span>", "<span class='notice'>You start dying [M]'s [what_to_dye]!</span>")
 		if(do_after(user, 50, target = H))
 			switch(what_to_dye)
 				if("hair")
-					var/r_hair = hex2num(copytext(dye_color, 2, 4))
-					var/g_hair = hex2num(copytext(dye_color, 4, 6))
-					var/b_hair = hex2num(copytext(dye_color, 6, 8))
-					if(H.change_hair_color(r_hair, g_hair, b_hair))
-						H.update_dna()
+					H.change_hair_color(dye_color)
+				if("alt. hair theme")
+					H.change_hair_color(dye_color, 1)
 				if("facial hair")
-					var/r_facial = hex2num(copytext(dye_color, 2, 4))
-					var/g_facial = hex2num(copytext(dye_color, 4, 6))
-					var/b_facial = hex2num(copytext(dye_color, 6, 8))
-					if(H.change_facial_hair_color(r_facial, g_facial, b_facial))
-						H.update_dna()
+					H.change_facial_hair_color(dye_color)
+				if("alt. facial hair theme")
+					H.change_facial_hair_color(dye_color, 1)
 				if("body")
-					var/r_skin = hex2num(copytext(dye_color, 2, 4))
-					var/g_skin = hex2num(copytext(dye_color, 4, 6))
-					var/b_skin = hex2num(copytext(dye_color, 6, 8))
-					if(H.change_skin_color(r_skin, g_skin, b_skin))
-						H.update_dna()
+					H.change_skin_color(dye_color)
+			H.update_dna()
 		user.visible_message("<span class='notice'>[user] finishes dying [M]'s [what_to_dye]!</span>", "<span class='notice'>You finish dying [M]'s [what_to_dye]!</span>")

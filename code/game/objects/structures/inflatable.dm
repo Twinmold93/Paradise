@@ -3,11 +3,11 @@
 	desc = "A folded membrane which rapidly expands into a large cubical shape on activation."
 	icon = 'icons/obj/inflatable.dmi'
 	icon_state = "folded_wall"
-	w_class = 3.0
+	w_class = WEIGHT_CLASS_NORMAL
 
 /obj/item/inflatable/attack_self(mob/user)
 	playsound(loc, 'sound/items/zip.ogg', 75, 1)
-	to_chat(user, "\blue You inflate [src].")
+	to_chat(user, "<span class='notice'>You inflate [src].</span>")
 	var/obj/structure/inflatable/R = new /obj/structure/inflatable(user.loc)
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
@@ -25,7 +25,7 @@
 
 	var/health = 50.0
 
-/obj/structure/inflatable/New(location)
+/obj/structure/inflatable/Initialize(location)
 	..()
 	air_update_turf(1)
 
@@ -33,7 +33,7 @@
 	air_update_turf(1)
 	return ..()
 
-/obj/structure/inflatable/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
+/obj/structure/inflatable/CanPass(atom/movable/mover, turf/target, height=0)
 	return 0
 
 /obj/structure/inflatable/CanAtmosPass(turf/T)
@@ -66,7 +66,7 @@
 	add_fingerprint(user)
 	return
 
-/obj/structure/inflatable/proc/attack_generic(mob/user as mob, damage = 0)	//used by attack_alien, attack_animal, and attack_slime
+/obj/structure/inflatable/attack_generic(mob/user, damage = 0)	//used by attack_alien, attack_animal, and attack_slime
 	health -= damage
 	if(health <= 0)
 		user.visible_message("<span class='danger'>[user] tears open [src]!</span>")
@@ -89,15 +89,15 @@
 
 /obj/structure/inflatable/attack_slime(mob/user as mob)
 	var/mob/living/carbon/slime/S = user
-	if (!S.is_adult)
+	if(!S.is_adult)
 		return
 	attack_generic(user, rand(10, 15))
 
-/obj/structure/inflatable/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+/obj/structure/inflatable/attackby(obj/item/W as obj, mob/user as mob, params)
 	if(!istype(W))
 		return
-	if (can_puncture(W))
-		visible_message("\red <b>[user] pierces [src] with [W]!</b>")
+	if(is_pointed(W))
+		visible_message("<span class='danger'>[user] pierces [src] with [W]!</span>")
 		deflate(1)
 	if(W.damtype == BRUTE || W.damtype == BURN)
 		hit(W.force)
@@ -150,7 +150,7 @@
 
 /obj/item/inflatable/door/attack_self(mob/user)
 	playsound(loc, 'sound/items/zip.ogg', 75, 1)
-	to_chat(user, "\blue You inflate [src].")
+	to_chat(user, "<span class='notice'>You inflate [src].</span>")
 	var/obj/structure/inflatable/door/R = new /obj/structure/inflatable/door(user.loc)
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
@@ -178,9 +178,7 @@
 /obj/structure/inflatable/door/attack_hand(mob/user as mob)
 	return TryToSwitchState(user)
 
-/obj/structure/inflatable/door/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
-	if(air_group)
-		return state
+/obj/structure/inflatable/door/CanPass(atom/movable/mover, turf/target, height=0)
 	if(istype(mover, /obj/effect/beam))
 		return !opacity
 	return !density
@@ -275,15 +273,15 @@
 	to_chat(user, "<span class='warning'>The inflatable door is too torn to be inflated!</span>")
 	add_fingerprint(user)
 
-/obj/item/weapon/storage/briefcase/inflatable
+/obj/item/storage/briefcase/inflatable
 	name = "inflatable barrier box"
 	desc = "Contains inflatable walls and doors."
 	icon_state = "inf_box"
 	item_state = "syringe_kit"
 	max_combined_w_class = 21
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 
-/obj/item/weapon/storage/briefcase/inflatable/New()
+/obj/item/storage/briefcase/inflatable/New()
 	..()
 	new /obj/item/inflatable/door(src)
 	new /obj/item/inflatable/door(src)

@@ -1,23 +1,17 @@
 /proc/dopage(src,target)
 	var/href_list
 	var/href
-	href_list = params2list("src=\ref[src]&[target]=1")
-	href = "src=\ref[src];[target]=1"
+	href_list = params2list("src=[src:UID()]&[target]=1")
+	href = "src=[src:UID()];[target]=1"
 	src:temphtml = null
 	src:Topic(href, href_list)
 	return null
 
-/proc/get_area_master(const/O)
-	var/area/A = get_area(O)
-
-	if (isarea(A))
-		return A
-
 /proc/get_area(atom/A)
-	if(!istype(A))
-		return
-	for(A, A && !isarea(A), A=A.loc); //semicolon is for the empty statement
-	return A
+	if(isarea(A))
+		return A
+	var/turf/T = get_turf(A)
+	return T ? T.loc : null
 
 /proc/get_area_name(N) //get area by its name
 	for(var/area/A in world)
@@ -42,7 +36,6 @@
 // Like view but bypasses luminosity check
 
 /proc/hear(var/range, var/atom/source)
-
 	var/lum = source.luminosity
 	source.luminosity = 6
 
@@ -138,9 +131,9 @@
 			if(sight_check && !isInSight(A, O))
 				continue
 			L |= M
-			//log_to_dd("[recursion_limit] = [M] - [get_turf(M)] - ([M.x], [M.y], [M.z])")
+			//log_world("[recursion_limit] = [M] - [get_turf(M)] - ([M.x], [M.y], [M.z])")
 
-		else if(include_radio && istype(A, /obj/item/device/radio))
+		else if(include_radio && istype(A, /obj/item/radio))
 			if(sight_check && !isInSight(A, O))
 				continue
 			L |= A
@@ -152,7 +145,7 @@
 // The old system would loop through lists for a total of 5000 per function call, in an empty server.
 // This new system will loop at around 1000 in an empty server.
 
-/proc/get_mobs_in_view(var/R, var/atom/source)
+/proc/get_mobs_in_view(var/R, var/atom/source, var/include_clientless = FALSE)
 	// Returns a list of mobs in range of R from source. Used in radio and say code.
 
 	var/turf/T = get_turf(source)
@@ -166,10 +159,10 @@
 	for(var/atom/A in range)
 		if(ismob(A))
 			var/mob/M = A
-			if(M.client)
+			if(M.client || include_clientless)
 				hear += M
-			//log_to_dd("Start = [M] - [get_turf(M)] - ([M.x], [M.y], [M.z])")
-		else if(istype(A, /obj/item/device/radio))
+			//log_world("Start = [M] - [get_turf(M)] - ([M.x], [M.y], [M.z])")
+		else if(istype(A, /obj/item/radio))
 			hear += A
 
 		if(isobj(A) || ismob(A))
@@ -178,23 +171,23 @@
 	return hear
 
 
-/proc/get_mobs_in_radio_ranges(var/list/obj/item/device/radio/radios)
+/proc/get_mobs_in_radio_ranges(var/list/obj/item/radio/radios)
 
 	set background = 1
 
 	. = list()
 	// Returns a list of mobs who can hear any of the radios given in @radios
 	var/list/speaker_coverage = list()
-	for(var/obj/item/device/radio/R in radios)
+	for(var/obj/item/radio/R in radios)
 		if(R)
 			//Cyborg checks. Receiving message uses a bit of cyborg's charge.
-			var/obj/item/device/radio/borg/BR = R
+			var/obj/item/radio/borg/BR = R
 			if(istype(BR) && BR.myborg)
 				var/mob/living/silicon/robot/borg = BR.myborg
 				var/datum/robot_component/CO = borg.get_component("radio")
 				if(!CO)
 					continue //No radio component (Shouldn't happen)
-				if(!borg.is_component_functioning("radio") || !borg.use_power(CO.energy_consumption))
+				if(!borg.is_component_functioning("radio"))
 					continue //No power.
 
 			var/turf/speaker = get_turf(R)
@@ -204,13 +197,13 @@
 
 
 	// Try to find all the players who can hear the message
-	for(var/A in player_list + hear_radio_list)
+	for(var/A in GLOB.player_list + GLOB.hear_radio_list)
 		var/mob/M = A
 		if(M)
 			var/turf/ear = get_turf(M)
 			if(ear)
 				// Ghostship is magic: Ghosts can hear radio chatter from anywhere
-				if(speaker_coverage[ear] || (istype(M, /mob/dead/observer) && (M.client) && (M.client.prefs.toggles & CHAT_GHOSTRADIO)))
+				if(speaker_coverage[ear] || (istype(M, /mob/dead/observer) && M.get_preference(CHAT_GHOSTRADIO)))
 					. |= M		// Since we're already looping through mobs, why bother using |= ? This only slows things down.
 	return .
 
@@ -275,7 +268,7 @@
 			break
 
 /proc/get_mob_by_key(var/key)
-	for(var/mob/M in mob_list)
+	for(var/mob/M in GLOB.mob_list)
 		if(M.ckey == lowertext(key))
 			return M
 	return null
@@ -285,7 +278,7 @@
 	var/list/candidates = list()
 	// Keep looping until we find a non-afk candidate within the time bracket (we limit the bracket to 10 minutes (6000))
 	while(!candidates.len && afk_bracket < 6000)
-		for(var/mob/dead/observer/G in player_list)
+		for(var/mob/dead/observer/G in GLOB.player_list)
 			if(G.client != null)
 				if(!(G.mind && G.mind.current && G.mind.current.stat != DEAD))
 					if(!G.client.is_afk(afk_bracket) && (be_special_type in G.client.prefs.be_special))
@@ -301,7 +294,7 @@
 	var/list/candidates = list()
 	// Keep looping until we find a non-afk candidate within the time bracket (we limit the bracket to 10 minutes (6000))
 	while(!candidates.len && afk_bracket < 6000)
-		for(var/mob/dead/observer/G in player_list)
+		for(var/mob/dead/observer/G in GLOB.player_list)
 			if(G.client != null)
 				if(!(G.mind && G.mind.current && G.mind.current.stat != DEAD))
 					if(!G.client.is_afk(afk_bracket) && (be_special_type in G.client.prefs.be_special))
@@ -322,7 +315,7 @@
 
 /proc/Show2Group4Delay(obj/O, list/group, delay=0)
 	if(!isobj(O))	return
-	if(!group)	group = clients
+	if(!group)	group = GLOB.clients
 	for(var/client/C in group)
 		C.screen += O
 	if(delay)
@@ -340,8 +333,8 @@
 /proc/get_active_player_count()
 	// Get active players who are playing in the round
 	var/active_players = 0
-	for(var/i = 1; i <= player_list.len; i++)
-		var/mob/M = player_list[i]
+	for(var/i = 1; i <= GLOB.player_list.len; i++)
+		var/mob/M = GLOB.player_list[i]
 		if(M && M.client)
 			if(istype(M, /mob/new_player)) // exclude people in the lobby
 				continue
@@ -391,44 +384,44 @@
 	return new /datum/projectile_data(src_x, src_y, time, distance, power_x, power_y, dest_x, dest_y)
 
 
-/proc/mobs_in_area(var/area/the_area, var/client_needed=0, var/moblist=mob_list)
+/proc/mobs_in_area(var/area/the_area, var/client_needed=0, var/moblist=GLOB.mob_list)
 	var/list/mobs_found[0]
-	var/area/our_area = get_area_master(the_area)
+	var/area/our_area = get_area(the_area)
 	for(var/mob/M in moblist)
 		if(client_needed && !M.client)
 			continue
-		if(our_area != get_area_master(M))
+		if(our_area != get_area(M))
 			continue
 		mobs_found += M
 	return mobs_found
 
-/proc/GetRedPart(const/hexa)
-	return hex2num(copytext(hexa,2,4))
-
-/proc/GetGreenPart(const/hexa)
-	return hex2num(copytext(hexa,4,6))
-
-/proc/GetBluePart(const/hexa)
-	return hex2num(copytext(hexa,6,8))
-
-/proc/GetHexColors(const/hexa)
-	return list(
-			GetRedPart(hexa),
-			GetGreenPart(hexa),
-			GetBluePart(hexa)
-		)
-
-
 /proc/alone_in_area(var/area/the_area, var/mob/must_be_alone, var/check_type = /mob/living/carbon)
-	var/area/our_area = get_area_master(the_area)
-	for(var/C in living_mob_list)
+	var/area/our_area = get_area(the_area)
+	for(var/C in GLOB.living_mob_list)
 		if(!istype(C, check_type))
 			continue
 		if(C == must_be_alone)
 			continue
-		if(our_area == get_area_master(C))
+		if(our_area == get_area(C))
 			return 0
 	return 1
+
+
+/proc/GetRedPart(const/hexa)
+	return hex2num(copytext(hexa, 2, 4))
+
+/proc/GetGreenPart(const/hexa)
+	return hex2num(copytext(hexa, 4, 6))
+
+/proc/GetBluePart(const/hexa)
+	return hex2num(copytext(hexa, 6, 8))
+
+/proc/GetHexColors(const/hexa)
+	return list(
+		GetRedPart(hexa),
+		GetGreenPart(hexa),
+		GetBluePart(hexa),
+	)
 
 /proc/MinutesToTicks(var/minutes as num)
 	return minutes * 60 * 10
@@ -436,14 +429,14 @@
 /proc/SecondsToTicks(var/seconds)
 	return seconds * 10
 
-proc/pollCandidates(var/Question, var/be_special_type, var/antag_age_check = 0, var/poll_time = 300)
+proc/pollCandidates(Question, be_special_type, antag_age_check = 0, poll_time = 300, ignore_respawnability = 0, min_hours = 0, flashwindow = TRUE, check_antaghud = TRUE)
 	var/roletext = be_special_type ? get_roletext(be_special_type) : null
 	var/list/mob/dead/observer/candidates = list()
 	var/time_passed = world.time
-	if (!Question)
+	if(!Question)
 		Question = "Would you like to be a special role?"
 
-	for(var/mob/dead/observer/G in player_list)
+	for(var/mob/dead/observer/G in (ignore_respawnability ? GLOB.player_list : GLOB.respawnable_list))
 		if(!G.key || !G.client)
 			continue
 		if(be_special_type)
@@ -455,12 +448,16 @@ proc/pollCandidates(var/Question, var/be_special_type, var/antag_age_check = 0, 
 		if(roletext)
 			if(jobban_isbanned(G, roletext) || jobban_isbanned(G, "Syndicate"))
 				continue
-		if(G.has_enabled_antagHUD)
+		if(config.use_exp_restrictions && min_hours)
+			if(G.client.get_exp_type_num(EXP_TYPE_LIVING) < min_hours * 60)
+				continue
+		if(check_antaghud && cannotPossess(G))
 			continue
 		spawn(0)
 			G << 'sound/misc/notice2.ogg'//Alerting them to their consideration
-
-			switch(alert(G,Question,"Please answer in [poll_time/10] seconds!","Yes","No"))
+			if(flashwindow)
+				window_flash(G.client)
+			switch(alert(G,Question,"Please answer in [poll_time/10] seconds!","No","Yes","Not This Round"))
 				if("Yes")
 					to_chat(G, "<span class='notice'>Choice registered: Yes.</span>")
 					if((world.time-time_passed)>poll_time)//If more than 30 game seconds passed.
@@ -470,6 +467,11 @@ proc/pollCandidates(var/Question, var/be_special_type, var/antag_age_check = 0, 
 					candidates += G
 				if("No")
 					to_chat(G, "<span class='danger'>Choice registered: No.</span>")
+					return
+				if("Not This Round")
+					to_chat(G, "<span class='danger'>Choice registered: No.</span>")
+					to_chat(G, "<span class='notice'>You will no longer receive notifications for the role '[roletext]' for the rest of the round.</span>")
+					G.client.prefs.be_special -= be_special_type
 					return
 				else
 					return
@@ -481,3 +483,33 @@ proc/pollCandidates(var/Question, var/be_special_type, var/antag_age_check = 0, 
 			candidates.Remove(G)
 
 	return candidates
+
+/proc/pollCandidatesWithVeto(adminclient, adminusr, max_slots, Question, be_special_type, antag_age_check = 0, poll_time = 300, ignore_respawnability = 0, min_hours = 0, flashwindow = TRUE, check_antaghud = TRUE)
+	var/list/willing_ghosts = pollCandidates(Question, be_special_type, antag_age_check, poll_time, ignore_respawnability, min_hours, flashwindow, check_antaghud)
+	var/list/selected_ghosts = list()
+	if(!willing_ghosts.len)
+		return selected_ghosts
+
+	var/list/candidate_ghosts = willing_ghosts.Copy()
+
+	to_chat(adminusr, "Candidate Ghosts:");
+	for(var/mob/dead/observer/G in candidate_ghosts)
+		if(G.key && G.client)
+			to_chat(adminusr, "- [G] ([G.key])");
+		else
+			candidate_ghosts -= G
+
+	for(var/i = max_slots, (i > 0 && candidate_ghosts.len), i--)
+		var/this_ghost = input("Pick players. This will go on until there either no more ghosts to pick from or the [i] remaining slot(s) are full.", "Candidates") as null|anything in candidate_ghosts
+		candidate_ghosts -= this_ghost
+		selected_ghosts += this_ghost
+	return selected_ghosts
+
+/proc/window_flash(client/C)
+	if(ismob(C))
+		var/mob/M = C
+		if(M.client)
+			C = M.client
+	if(!C || !C.prefs.windowflashing)
+		return
+	winset(C, "mainwindow", "flash=5")

@@ -5,13 +5,12 @@
 	icon_state = "crab"
 	icon_living = "crab"
 	icon_dead = "crab_dead"
-	small = 1
 	speak_emote = list("clicks")
 	emote_hear = list("clicks")
 	emote_see = list("clacks")
 	speak_chance = 1
 	turns_per_move = 5
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat = 1)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat = 1)
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "stomps the"
@@ -35,7 +34,7 @@
 					Move(get_step(src, east_vs_west), east_vs_west)
 					turns_since_move = 0
 
-/mob/living/simple_animal/crab/Life()
+/mob/living/simple_animal/crab/Life(seconds, times_fired)
 	. = ..()
 	regenerate_icons()
 
@@ -51,9 +50,9 @@
 
 //LOOK AT THIS - ..()??
 /*/mob/living/simple_animal/crab/attackby(var/obj/item/O as obj, var/mob/user as mob, params)
-	if(istype(O, /obj/item/weapon/wirecutters))
+	if(istype(O, /obj/item/wirecutters))
 		if(prob(50))
-			to_chat(user, "\red \b This kills the crab.")
+			to_chat(user, "<span class='boldwarning'>This kills the crab.</span>")
 			health -= 20
 			death()
 		else
@@ -68,22 +67,15 @@
 					MED.amount -= 1
 					if(MED.amount <= 0)
 						qdel(MED)
-					for(var/mob/M in viewers(src, null))
-						if ((M.client && !( M.blinded )))
-							M.show_message("\blue [user] applies the [MED] on [src]")
+					user.visible_message("<span class='notice'>[user] applies the [MED] on [src]</span>")
 		else
-			to_chat(user, "\blue this [src] is dead, medical items won't bring it back to life.")
+			to_chat(user, "<span class='notice'>this [src] is dead, medical items won't bring it back to life.</span>")
 	else
 		if(O.force)
 			health -= O.force
-			for(var/mob/M in viewers(src, null))
-				if ((M.client && !( M.blinded )))
-					M.show_message("\red \b [src] has been attacked with the [O] by [user]. ")
+			visible_message("<span class='boldwarning'>[src] has been attacked with the [O] by [user]. </span>")
 		else
-			to_chat(usr, "\red This weapon is ineffective, it does no damage.")
-			for(var/mob/M in viewers(src, null))
-				if ((M.client && !( M.blinded )))
-					M.show_message("\red [user] gently taps [src] with the [O]. ")
+			user.visible_message("<span class='warning'>[user] gently taps [src] with the [O]. </span>","<span class='warning'>This weapon is ineffective, it does no damage.</span>")
 
 /mob/living/simple_animal/crab/Topic(href, href_list)
 	if(usr.stat) return
@@ -106,14 +98,14 @@
 					inventory_head.loc = src.loc
 					inventory_head = null
 				else
-					to_chat(usr, "\red There is nothing to remove from its [remove_from].")
+					to_chat(usr, "<span class='warning'>There is nothing to remove from its [remove_from].</span>")
 					return
 			if("mask")
 				if(inventory_mask)
 					inventory_mask.loc = src.loc
 					inventory_mask = null
 				else
-					to_chat(usr, "\red There is nothing to remove from its [remove_from].")
+					to_chat(usr, "<span class='warning'>There is nothing to remove from its [remove_from].</span>")
 					return
 
 		//show_inv(usr) //Commented out because changing Ian's  name and then calling up his inventory opens a new inventory...which is annoying.
@@ -124,12 +116,12 @@
 			return
 		var/add_to = href_list["add_inv"]
 		if(!usr.get_active_hand())
-			to_chat(usr, "\red You have nothing in your hand to put on its [add_to].")
+			to_chat(usr, "<span class='warning'>You have nothing in your hand to put on its [add_to].</span>")
 			return
 		switch(add_to)
 			if("head")
 				if(inventory_head)
-					to_chat(usr, "\red It's is already wearing something.")
+					to_chat(usr, "<span class='warning'>It's is already wearing something.</span>")
 					return
 				else
 					var/obj/item/item_to_add = usr.get_active_hand()
@@ -166,12 +158,12 @@
 						/obj/item/clothing/head/hardhat,
 						/obj/item/clothing/head/collectable/hardhat,
 						/obj/item/clothing/head/hardhat/white,
-						/obj/item/weapon/bedsheet,
+						/obj/item/bedsheet,
 						/obj/item/clothing/head/soft
 					)
 
 					if( ! ( item_to_add.type in allowed_types ) )
-						to_chat(usr, "\red It doesn't seem too keen on wearing that item.")
+						to_chat(usr, "<span class='warning'>It doesn't seem too keen on wearing that item.</span>")
 						return
 
 					usr.drop_item()
@@ -221,7 +213,7 @@
 						if(/obj/item/clothing/head/wizard/fake,	/obj/item/clothing/head/wizard,	/obj/item/clothing/head/collectable/wizard)
 							name = "Grandwizard [real_name]"
 							speak = list("YAP", "Woof!", "Bark!", "AUUUUUU", "EI  NATH!")
-						if(/obj/item/weapon/bedsheet)
+						if(/obj/item/bedsheet)
 							name = "\improper Ghost"
 							speak = list("WoooOOOooo~","AUUUUUUUUUUUUUUUUUU")
 							emote_see = list("stumbles around", "shivers")
@@ -234,7 +226,7 @@
 
 			if("mask")
 				if(inventory_mask)
-					to_chat(usr, "\red It's already wearing something.")
+					to_chat(usr, "<span class='warning'>It's already wearing something.</span>")
 					return
 				else
 					var/obj/item/item_to_add = usr.get_active_hand()
@@ -246,11 +238,11 @@
 
 					var/list/allowed_types = list(
 						/obj/item/clothing/suit/armor/vest,
-						/obj/item/device/radio
+						/obj/item/radio
 					)
 
 					if( ! ( item_to_add.type in allowed_types ) )
-						to_chat(usr, "\red This object won't fit.")
+						to_chat(usr, "<span class='warning'>This object won't fit.</span>")
 						return
 
 					usr.drop_item()

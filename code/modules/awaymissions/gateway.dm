@@ -9,14 +9,14 @@ var/obj/machinery/gateway/centerstation/the_gateway = null
 	unacidable = 1
 	var/active = 0
 
+/obj/machinery/gateway/Initialize()
+	..()
+	update_icon()
+	update_density_from_dir()
 
-/obj/machinery/gateway/New()
-	if(!the_gateway)
-		the_gateway = src
-	spawn(25)
-		update_icon()
-		if(dir == 2)
-			density = 0
+/obj/machinery/gateway/proc/update_density_from_dir()
+	if(dir == 2)
+		density = 0
 
 
 /obj/machinery/gateway/update_icon()
@@ -31,7 +31,7 @@ var/obj/machinery/gateway/centerstation/the_gateway = null
 /obj/machinery/gateway/centerstation
 	density = 1
 	icon_state = "offcenter"
-	use_power = 1
+	use_power = IDLE_POWER_USE
 
 	//warping vars
 	var/list/linked = list()
@@ -40,13 +40,18 @@ var/obj/machinery/gateway/centerstation/the_gateway = null
 	var/obj/machinery/gateway/centeraway/awaygate = null
 
 /obj/machinery/gateway/centerstation/New()
+	..()
 	if(!the_gateway)
 		the_gateway = src
-	spawn(25)
-		update_icon()
-		wait = world.time + config.gateway_delay	//+ thirty minutes default
-		awaygate = locate(/obj/machinery/gateway/centeraway) in world
 
+/obj/machinery/gateway/centerstation/Initialize()
+	..()
+	update_icon()
+	wait = world.time + config.gateway_delay	//+ thirty minutes default
+	awaygate = locate(/obj/machinery/gateway/centeraway) in world
+
+/obj/machinery/gateway/centerstation/update_density_from_dir()
+	return
 
 /obj/machinery/gateway/centerstation/Destroy()
 	if(the_gateway == src)
@@ -61,7 +66,7 @@ var/obj/machinery/gateway/centerstation/the_gateway = null
 
 
 
-obj/machinery/gateway/centerstation/process()
+/obj/machinery/gateway/centerstation/process()
 	if(stat & (NOPOWER))
 		if(active) toggleoff()
 		return
@@ -91,9 +96,12 @@ obj/machinery/gateway/centerstation/process()
 
 
 /obj/machinery/gateway/centerstation/proc/toggleon(mob/user as mob)
-	if(!ready)			return
-	if(linked.len != 8)	return
-	if(!powered())		return
+	if(!ready)
+		return
+	if(linked.len != 8)
+		return
+	if(!powered())
+		return
 	if(!awaygate)
 		awaygate = locate(/obj/machinery/gateway/centeraway) in world
 		if(!awaygate)
@@ -130,9 +138,12 @@ obj/machinery/gateway/centerstation/process()
 
 //okay, here's the good teleporting stuff
 /obj/machinery/gateway/centerstation/Bumped(atom/movable/M as mob|obj)
-	if(!ready)		return
-	if(!active)		return
-	if(!awaygate)	return
+	if(!ready)
+		return
+	if(!active)
+		return
+	if(!awaygate)
+		return
 
 	if(awaygate.calibrated)
 		M.forceMove(get_step(awaygate.loc, SOUTH))
@@ -147,9 +158,9 @@ obj/machinery/gateway/centerstation/process()
 		return
 
 
-/obj/machinery/gateway/centerstation/attackby(obj/item/device/W as obj, mob/user as mob, params)
-	if(istype(W,/obj/item/device/multitool))
-		to_chat(user, "\black The gate is already calibrated, there is no work for you to do here.")
+/obj/machinery/gateway/centerstation/attackby(obj/item/W as obj, mob/user as mob, params)
+	if(istype(W,/obj/item/multitool))
+		to_chat(user, "The gate is already calibrated, there is no work for you to do here.")
 		return
 
 /////////////////////////////////////Away////////////////////////
@@ -158,18 +169,21 @@ obj/machinery/gateway/centerstation/process()
 /obj/machinery/gateway/centeraway
 	density = 1
 	icon_state = "offcenter"
-	use_power = 0
+	use_power = NO_POWER_USE
 	var/calibrated = 1
 	var/list/linked = list()	//a list of the connected gateway chunks
 	var/ready = 0
 	var/obj/machinery/gateway/centeraway/stationgate = null
 
 
-/obj/machinery/gateway/centeraway/New()
-	spawn(25)
-		update_icon()
-		stationgate = locate(/obj/machinery/gateway/centerstation) in world
+/obj/machinery/gateway/centeraway/Initialize()
+	..()
+	update_icon()
+	stationgate = locate(/obj/machinery/gateway/centerstation) in world
 
+
+/obj/machinery/gateway/centeraway/update_density_from_dir()
+	return
 
 /obj/machinery/gateway/centeraway/update_icon()
 	if(active)
@@ -199,8 +213,10 @@ obj/machinery/gateway/centerstation/process()
 
 
 /obj/machinery/gateway/centeraway/proc/toggleon(mob/user as mob)
-	if(!ready)			return
-	if(linked.len != 8)	return
+	if(!ready)
+		return
+	if(linked.len != 8)
+		return
 	if(!stationgate)
 		stationgate = locate(/obj/machinery/gateway/centerstation) in world
 		if(!stationgate)
@@ -233,25 +249,32 @@ obj/machinery/gateway/centerstation/process()
 
 
 /obj/machinery/gateway/centeraway/Bumped(atom/movable/M as mob|obj)
-	if(!ready)	return
-	if(!active)	return
+	if(!ready)
+		return
+	if(!active)
+		return
 	if(istype(M, /mob/living/carbon))
-		if (exilecheck(M)) return
+		if(exilecheck(M))
+			return
 	if(istype(M, /obj))
+		if(M.can_buckle && M.has_buckled_mobs())
+			if(exilecheck(M.buckled_mob))
+				return
 		for(var/mob/living/carbon/F in M)
-			if (exilecheck(F)) return
+			if(exilecheck(F))
+				return
 	M.forceMove(get_step(stationgate.loc, SOUTH))
 	M.dir = SOUTH
 
 /obj/machinery/gateway/centeraway/proc/exilecheck(var/mob/living/carbon/M)
-	for(var/obj/item/weapon/implant/exile/E in M)//Checking that there is an exile implant in the contents
+	for(var/obj/item/implant/exile/E in M)//Checking that there is an exile implant in the contents
 		if(E.imp_in == M)//Checking that it's actually implanted vs just in their pocket
 			to_chat(M, "<span class='notice'>The station gate has detected your exile implant and is blocking your entry.</span>")
 			return 1
 	return 0
 
-/obj/machinery/gateway/centeraway/attackby(obj/item/device/W as obj, mob/user as mob, params)
-	if(istype(W,/obj/item/device/multitool))
+/obj/machinery/gateway/centeraway/attackby(obj/item/W as obj, mob/user as mob, params)
+	if(istype(W,/obj/item/multitool))
 		if(calibrated)
 			to_chat(user, "<span class='notice'>The gate is already calibrated, there is no work for you to do here.</span>")
 			return

@@ -75,14 +75,14 @@
 /**
  * Employee reassignment hook.
  * Called in card.dm when someone's card is reassigned at the HoP's desk.
- * Parameters: var/obj/item/weapon/card/id
+ * Parameters: var/obj/item/card/id
  */
 /hook/reassign_employee
 
 /**
  * Employee terminated hook.
  * Called in card.dm when someone's card is terminated at the HoP's desk.
- * Parameters: var/obj/item/weapon/card/id
+ * Parameters: var/obj/item/card/id
  */
 /hook/terminate_employee
 
@@ -99,3 +99,24 @@
  * Parameters: var/mob/living/carbon/human/captain
  */
 /hook/captain_spawned
+
+/**
+ * Mob login hook.
+ * Called in login.dm when a player logs in to a mob.
+ * Parameters: var/client/client, var/mob/mob
+ */
+/hook/mob_login
+
+ /**
+ * Mob logout hook.
+ * Called in logout.dm when a player logs out of a mob.
+ * Parameters: var/client/client, var/mob/mob
+ */
+/hook/mob_logout
+
+/**
+ * Mob area change hook.
+ * Called in area.dm when a mob moves from one area to another.
+ * Parameters: var/mob/mob, var/area/newarea, var/area/oldarea
+ */
+/hook/mob_area_change

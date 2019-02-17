@@ -35,8 +35,8 @@
 #define MINIMUM_TEMPERATURE_RATIO_TO_SUSPEND		0.012
 #define MINIMUM_TEMPERATURE_DELTA_TO_SUSPEND		4		//Minimum temperature difference before group processing is suspended
 #define MINIMUM_TEMPERATURE_DELTA_TO_CONSIDER		0.5		//Minimum temperature difference before the gas temperatures are just set to be equal
-#define MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION		T20C+10
-#define MINIMUM_TEMPERATURE_START_SUPERCONDUCTION	T20C+200
+#define MINIMUM_TEMPERATURE_FOR_SUPERCONDUCTION		(T20C+10)
+#define MINIMUM_TEMPERATURE_START_SUPERCONDUCTION	(T20C+200)
 #define FLOOR_HEAT_TRANSFER_COEFFICIENT		0.4
 #define WALL_HEAT_TRANSFER_COEFFICIENT		0.0
 #define DOOR_HEAT_TRANSFER_COEFFICIENT		0.0
@@ -45,24 +45,24 @@
 #define WINDOW_HEAT_TRANSFER_COEFFICIENT	0.1		//a hack for now
 	//Must be between 0 and 1. Values closer to 1 equalize temperature faster
 	//Should not exceed 0.4 else strange heat flow occur
-#define FIRE_MINIMUM_TEMPERATURE_TO_SPREAD	150+T0C
-#define FIRE_MINIMUM_TEMPERATURE_TO_EXIST	100+T0C
+#define FIRE_MINIMUM_TEMPERATURE_TO_SPREAD	(150+T0C)
+#define FIRE_MINIMUM_TEMPERATURE_TO_EXIST	(100+T0C)
 #define FIRE_SPREAD_RADIOSITY_SCALE			0.85
-#define FIRE_CARBON_ENERGY_RELEASED			500000	//Amount of heat released per mole of burnt carbon into the tile
-#define FIRE_PLASMA_ENERGY_RELEASED			3000000	//Amount of heat released per mole of burnt plasma into the tile
+#define FIRE_CARBON_ENERGY_RELEASED			2500000		//Amount of heat released per mole of burnt carbon into the tile
+#define FIRE_PLASMA_ENERGY_RELEASED			15000000	//Amount of heat released per mole of burnt plasma into the tile
 #define FIRE_GROWTH_RATE					40000	//For small fires
 #define CARBON_LIFEFORM_FIRE_RESISTANCE 	200+T0C	//Resistance to fire damage
 #define CARBON_LIFEFORM_FIRE_DAMAGE			4		//Fire damage
 	//Plasma fire properties
-#define OXYGEN_BURN_RATE_BASE				1.4
-#define PLASMA_BURN_RATE_DELTA				4
-#define PLASMA_MINIMUM_BURN_TEMPERATURE		100+T0C
-#define PLASMA_UPPER_TEMPERATURE			1370+T0C
+#define OXYGEN_BURN_RATE_BASE				7
+#define PLASMA_BURN_RATE_DELTA				20
+#define PLASMA_MINIMUM_BURN_TEMPERATURE		(100+T0C)
+#define PLASMA_UPPER_TEMPERATURE			(1370+T0C)
 #define PLASMA_MINIMUM_OXYGEN_NEEDED		2
 #define PLASMA_MINIMUM_OXYGEN_PLASMA_RATIO	30
 #define PLASMA_OXYGEN_FULLBURN				10
-#define MIN_PLASMA_DAMAGE					1
-#define MAX_PLASMA_DAMAGE					10
+#define MIN_TOXIC_GAS_DAMAGE				1
+#define MAX_TOXIC_GAS_DAMAGE				10
 #define MOLES_PLASMA_VISIBLE				0.5		//Moles in a standard cell after which plasma is visible
 
 // Pressure limits.
@@ -116,5 +116,7 @@
 #define MAX_OUTPUT_PRESSURE					4500 // (kPa) What pressure pumps and powered equipment max out at.
 #define MAX_TRANSFER_RATE					200 // (L/s) Maximum speed powered equipment can work at.
 
-// Sound Limits
-#define SOUND_MINIMUM_PRESSURE 10
+// Atmos alarm defines
+#define ATMOS_ALARM_NONE					0
+#define ATMOS_ALARM_WARNING					1
+#define ATMOS_ALARM_DANGER					2

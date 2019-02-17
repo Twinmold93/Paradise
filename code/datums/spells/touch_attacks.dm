@@ -1,6 +1,6 @@
-/obj/effect/proc_holder/spell/targeted/touch/
-	var/hand_path = "/obj/item/weapon/melee/touch_attack"
-	var/obj/item/weapon/melee/touch_attack/attached_hand = null
+/obj/effect/proc_holder/spell/targeted/touch
+	var/hand_path = /obj/item/melee/touch_attack
+	var/obj/item/melee/touch_attack/attached_hand = null
 	invocation_type = "none" //you scream on connecting, not summoning
 	include_user = 1
 	range = -1
@@ -14,10 +14,10 @@
 		return 0
 	..()
 
-/obj/effect/proc_holder/spell/targeted/touch/cast(list/targets)
-	for(var/mob/living/carbon/user in targets)
+/obj/effect/proc_holder/spell/targeted/touch/cast(list/targets, mob/user = usr)
+	for(var/mob/living/carbon/target in targets)
 		if(!attached_hand)
-			if(!ChargeHand(user))
+			if(!ChargeHand(target))
 				return 0
 	while(attached_hand) //hibernate untill the spell is actually used
 		charge_counter = 0
@@ -47,7 +47,7 @@
 /obj/effect/proc_holder/spell/targeted/touch/disintegrate
 	name = "Disintegrate"
 	desc = "This spell charges your hand with vile energy that can be used to violently explode victims."
-	hand_path = "/obj/item/weapon/melee/touch_attack/disintegrate"
+	hand_path = /obj/item/melee/touch_attack/disintegrate
 
 	school = "evocation"
 	charge_max = 600
@@ -59,7 +59,7 @@
 /obj/effect/proc_holder/spell/targeted/touch/flesh_to_stone
 	name = "Flesh to Stone"
 	desc = "This spell charges your hand with the power to turn victims into inert statues for a long period of time."
-	hand_path = "/obj/item/weapon/melee/touch_attack/fleshtostone"
+	hand_path = /obj/item/melee/touch_attack/fleshtostone
 
 	school = "transmutation"
 	charge_max = 600

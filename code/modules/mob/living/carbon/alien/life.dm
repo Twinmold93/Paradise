@@ -4,15 +4,16 @@
 
 	if(!breath || (breath.total_moles() == 0))
 		//Aliens breathe in vaccuum
-		return 0
+		return FALSE
 
 	var/toxins_used = 0
+	var/tox_detect_threshold = 0.02
 	var/breath_pressure = (breath.total_moles() * R_IDEAL_GAS_EQUATION * breath.temperature) / BREATH_VOLUME
 
 	//Partial pressure of the toxins in our breath
 	var/Toxins_pp = (breath.toxins / breath.total_moles()) * breath_pressure
 
-	if(Toxins_pp) // Detect toxins in air
+	if(Toxins_pp > tox_detect_threshold) // Detect toxins in air
 		adjustPlasma(breath.toxins*250)
 		throw_alert("alien_tox", /obj/screen/alert/alien_tox)
 
@@ -28,24 +29,32 @@
 	//BREATH TEMPERATURE
 	handle_breath_temperature(breath)
 
-	return 1
-
 /mob/living/carbon/alien/update_sight()
-	if(stat == DEAD || (XRAY in mutations))
-		sight |= SEE_TURFS
-		sight |= SEE_MOBS
-		sight |= SEE_OBJS
+	if(!client)
+		return
+	if(stat == DEAD)
+		grant_death_vision()
+		return
+
+	sight = SEE_MOBS
+	if(nightvision)
 		see_in_dark = 8
+		see_invisible = SEE_INVISIBLE_MINIMUM
+	else
+		see_in_dark = 4
 		see_invisible = SEE_INVISIBLE_LEVEL_TWO
-	else if(stat != DEAD)
-		sight |= SEE_MOBS
-		sight &= ~SEE_TURFS
-		sight &= ~SEE_OBJS
-		if(nightvision)
-			see_in_dark = 8
-			see_invisible = SEE_INVISIBLE_MINIMUM
-		else if(!nightvision)
-			see_in_dark = 4
-			see_invisible = 45
-		if(see_override)
-			see_invisible = see_override
+
+	if(client.eye != src)
+		var/atom/A = client.eye
+		if(A.update_remote_sight(src)) //returns 1 if we override all other sight updates.
+			return
+
+	for(var/obj/item/organ/internal/cyberimp/eyes/E in internal_organs)
+		sight |= E.vision_flags
+		if(E.dark_view)
+			see_in_dark = max(see_in_dark, E.dark_view)
+		if(E.see_invisible)
+			see_invisible = min(see_invisible, E.see_invisible)
+
+	if(see_override)
+		see_invisible = see_override

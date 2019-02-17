@@ -29,7 +29,7 @@
 	switch(get_area_type())
 		if(AREA_SPACE)
 			text += "<p>According to the [src.name], you are now in <b>outer space</b>.  Hold your breath.</p> \
-			<p><a href='?src=\ref[src];create_area=1'>Mark this place as new area.</a></p>"
+			<p><a href='?src=[UID()];create_area=1'>Mark this place as new area.</a></p>"
 		if(AREA_SPECIAL)
 			text += "<p>This place is not noted on the [src.name].</p>"
 	return text
@@ -51,9 +51,9 @@
 	desc = "This is a one-use permit that allows the user to officially declare a built room as new addition to the station."
 	fluffnotice = "Nanotrasen Engineering requires all on-station construction projects to be approved by a head of staff, as detailed in Nanotrasen Company Regulation 512-C (Mid-Shift Modifications to Company Property). \
 						By submitting this form, you accept any fines, fees, or personal injury/death that may occur during construction."
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 
-/obj/item/areaeditor/permit/attack_self(mob/user as mob)
+/obj/item/areaeditor/permit/attack_self(mob/user)
 	. = ..()
 	var/area/A = get_area()
 	if(get_area_type() == AREA_STATION)
@@ -68,6 +68,22 @@
 	..()
 	qdel(src)
 
+//free golem blueprints, like permit but can claim as much as needed
+
+/obj/item/areaeditor/golem
+	name = "Golem Land Claim"
+	desc = "Used to define new areas in space."
+	fluffnotice = "Praise the Liberator!"
+
+/obj/item/areaeditor/golem/attack_self(mob/user)
+	. = ..()
+	var/area/A = get_area()
+	if(get_area_type() == AREA_STATION)
+		. += "<p>According to the [src], you are now in <b>\"[sanitize(A.name)]\"</b>.</p>"
+	var/datum/browser/popup = new(user, "blueprints", "[src]", 700, 500)
+	popup.set_content(.)
+	popup.open()
+	onclose(usr, "blueprints")
 
 //Station blueprints!!!
 /obj/item/areaeditor/blueprints
@@ -76,7 +92,7 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "blueprints"
 	fluffnotice = "Property of Nanotrasen. For heads of staff only. Store in high-secure storage."
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	var/list/showing = list()
 	var/client/viewing
 
@@ -85,17 +101,17 @@
 	return ..()
 
 
-/obj/item/areaeditor/blueprints/attack_self(mob/user as mob)
+/obj/item/areaeditor/blueprints/attack_self(mob/user)
 	. = ..()
 	var/area/A = get_area()
 	if(get_area_type() == AREA_STATION)
 		. += "<p>According to the [src], you are now in <b>\"[sanitize(A.name)]\"</b>.</p>"
-		. += "<p>You may <a href='?src=\ref[src];edit_area=1'> move an amendment</a> to the drawing.</p>"
+		. += "<p>You may <a href='?src=[UID()];edit_area=1'> move an amendment</a> to the drawing.</p>"
 	if(!viewing)
-		. += "<p><a href='?src=\ref[src];view_blueprints=1'>View structural data</a></p>"
+		. += "<p><a href='?src=[UID()];view_blueprints=1'>View structural data</a></p>"
 	else
-		. += "<p><a href='?src=\ref[src];refresh=1'>Refresh structural data</a></p>"
-		. += "<p><a href='?src=\ref[src];hide_blueprints=1'>Hide structural data</a></p>"
+		. += "<p><a href='?src=[UID()];refresh=1'>Refresh structural data</a></p>"
+		. += "<p><a href='?src=[UID()];hide_blueprints=1'>Hide structural data</a></p>"
 	var/datum/browser/popup = new(user, "blueprints", "[src]", 700, 500)
 	popup.set_content(.)
 	popup.open()
@@ -153,7 +169,7 @@
 
 
 /obj/item/areaeditor/proc/get_area_type(var/area/A = get_area())
-	if (istype(A,/area/space))
+	if(A.outdoors)
 		return AREA_SPACE
 	var/list/SPECIALS = list(
 		/area/shuttle,
@@ -167,8 +183,8 @@
 		/area/prison
 		// /area/derelict //commented out, all hail derelict-rebuilders!
 	)
-	for (var/type in SPECIALS)
-		if ( istype(A,type) )
+	for(var/type in SPECIALS)
+		if( istype(A,type) )
 			return AREA_SPECIAL
 	return AREA_STATION
 
@@ -229,7 +245,7 @@
 
 
 /obj/item/areaeditor/proc/set_area_machinery_title(var/area/A,var/title,var/oldtitle)
-	if (!oldtitle) // or replacetext goes to infinite loop
+	if(!oldtitle) // or replacetext goes to infinite loop
 		return
 	for(var/obj/machinery/alarm/M in A)
 		M.name = replacetext(M.name,oldtitle,title)
@@ -244,28 +260,30 @@
 	//TODO: much much more. Unnamed airlocks, cameras, etc.
 
 /obj/item/areaeditor/proc/check_tile_is_border(var/turf/T2,var/dir)
-	if (istype(T2, /turf/space))
+	if(istype(T2, /turf/space))
 		return BORDER_SPACE //omg hull breach we all going to die here
-	if (istype(T2, /turf/simulated/shuttle))
+	if(istype(T2, /turf/simulated/shuttle))
 		return BORDER_SPACE
-	if (get_area_type(T2.loc)!=AREA_SPACE)
+	if(get_area_type(T2.loc)!=AREA_SPACE)
 		return BORDER_BETWEEN
-	if (istype(T2, /turf/simulated/wall))
+	if(istype(T2, /turf/simulated/wall))
 		return BORDER_2NDTILE
-	if (!istype(T2, /turf/simulated))
+	if(istype(T2, /turf/simulated/mineral))
+		return BORDER_2NDTILE
+	if(!istype(T2, /turf/simulated))
 		return BORDER_BETWEEN
 
-	for (var/obj/structure/window/W in T2)
+	for(var/obj/structure/window/W in T2)
 		if(turn(dir,180) == W.dir)
 			return BORDER_BETWEEN
-		if (W.dir in list(NORTHEAST,SOUTHEAST,NORTHWEST,SOUTHWEST))
+		if(W.dir in list(NORTHEAST,SOUTHEAST,NORTHWEST,SOUTHWEST))
 			return BORDER_2NDTILE
 	for(var/obj/machinery/door/window/D in T2)
 		if(turn(dir,180) == D.dir)
 			return BORDER_BETWEEN
-	if (locate(/obj/machinery/door) in T2)
+	if(locate(/obj/machinery/door) in T2)
 		return BORDER_2NDTILE
-	if (locate(/obj/structure/falsewall) in T2)
+	if(locate(/obj/structure/falsewall) in T2)
 		return BORDER_2NDTILE
 
 	return BORDER_NONE
@@ -275,23 +293,23 @@
 	var/list/turf/found = new
 	var/list/turf/pending = list(first)
 	while(pending.len)
-		if (found.len+pending.len > 300)
+		if(found.len+pending.len > 300)
 			return ROOM_ERR_TOOLARGE
 		var/turf/T = pending[1] //why byond havent list::pop()?
 		pending -= T
-		for (var/dir in cardinal)
+		for(var/dir in cardinal)
 			var/skip = 0
-			for (var/obj/structure/window/W in T)
+			for(var/obj/structure/window/W in T)
 				if(dir == W.dir || (W.dir in list(NORTHEAST,SOUTHEAST,NORTHWEST,SOUTHWEST)))
 					skip = 1; break
-			if (skip) continue
+			if(skip) continue
 			for(var/obj/machinery/door/window/D in T)
 				if(dir == D.dir)
 					skip = 1; break
-			if (skip) continue
+			if(skip) continue
 
 			var/turf/NT = get_step(T,dir)
-			if (!isturf(NT) || (NT in found) || (NT in pending))
+			if(!isturf(NT) || (NT in found) || (NT in pending))
 				continue
 
 			switch(check_tile_is_border(NT,dir))
@@ -305,3 +323,11 @@
 					return ROOM_ERR_SPACE
 		found+=T
 	return found
+
+//Blueprint Subtypes
+
+/obj/item/areaeditor/blueprints/cyborg
+	name = "station schematics"
+	desc = "A digital copy of the station blueprints stored in your memory."
+	fluffnotice = "Intellectual Property of Nanotrasen. For use in engineering cyborgs only. Wipe from memory upon departure from the station."
+

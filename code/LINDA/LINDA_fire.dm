@@ -34,15 +34,15 @@
 		active_hotspot.temperature = exposed_temperature
 		active_hotspot.volume = exposed_volume
 
-		active_hotspot.just_spawned = (current_cycle < air_master.current_cycle)
+		active_hotspot.just_spawned = (current_cycle < SSair.times_fired)
 			//remove just_spawned protection if no longer processing this cell
-		air_master.add_to_active(src, 0)
+		SSair.add_to_active(src, 0)
 	return igniting
 
 //This is the icon for fire on turfs, also helps for nurturing small fires until they are full tile
 /obj/effect/hotspot
 	anchored = 1
-	mouse_opacity = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	unacidable = 1//So you can't melt fire with acid.
 	icon = 'icons/effects/fire.dmi'
 	icon_state = "1"
@@ -58,7 +58,7 @@
 
 /obj/effect/hotspot/New()
 	..()
-	air_master.hotspots += src
+	SSair.hotspots += src
 	perform_exposure()
 	dir = pick(cardinal)
 	air_update_turf()
@@ -126,6 +126,9 @@
 			var/radiated_temperature = location.air.temperature*FIRE_SPREAD_RADIOSITY_SCALE
 			for(var/direction in cardinal)
 				if(!(location.atmos_adjacent_turfs & direction))
+					var/turf/simulated/wall/W = get_step(src, direction)
+					if(istype(W))
+						W.adjacent_fire_act(W, radiated_temperature)
 					continue
 				var/turf/simulated/T = get_step(src, direction)
 				if(istype(T) && T.active_hotspot)
@@ -151,7 +154,7 @@
 
 /obj/effect/hotspot/Destroy()
 	set_light(0)
-	air_master.hotspots -= src
+	SSair.hotspots -= src
 	DestroyTurf()
 	if(istype(loc, /turf/simulated))
 		var/turf/simulated/T = loc
@@ -165,7 +168,7 @@
 		var/turf/simulated/T = loc
 		if(T.to_be_destroyed)
 			var/chance_of_deletion
-			if (T.heat_capacity) //beware of division by zero
+			if(T.heat_capacity) //beware of division by zero
 				chance_of_deletion = T.max_fire_temperature_sustained / T.heat_capacity * 8 //there is no problem with prob(23456), min() was redundant --rastaf0
 			else
 				chance_of_deletion = 100

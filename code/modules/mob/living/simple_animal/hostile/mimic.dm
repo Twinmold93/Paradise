@@ -1,7 +1,7 @@
 /mob/living/simple_animal/hostile/mimic
 	name = "crate"
 	desc = "A rectangular steel crate."
-	icon = 'icons/obj/storage.dmi'
+	icon = 'icons/obj/crates.dmi'
 	icon_state = "crate"
 	icon_living = "crate"
 
@@ -27,17 +27,12 @@
 
 	var/is_electronic = 0
 	gold_core_spawnable = CHEM_MOB_SPAWN_HOSTILE
+	del_on_death = 1
 
 /mob/living/simple_animal/hostile/mimic/FindTarget()
 	. = ..()
 	if(.)
 		custom_emote(1, "growls at [.]")
-
-/mob/living/simple_animal/hostile/mimic/death()
-	..()
-	visible_message("<span class='danger'>[src]</b> stops moving!</span>")
-	ghostize()
-	qdel(src)
 
 /mob/living/simple_animal/hostile/mimic/emp_act(severity)
 	if(is_electronic)
@@ -56,7 +51,7 @@
 	var/attempt_open = 0
 
 // Pickup loot
-/mob/living/simple_animal/hostile/mimic/crate/initialize()
+/mob/living/simple_animal/hostile/mimic/crate/Initialize()
 	..()
 	for(var/obj/item/I in loc)
 		I.loc = src
@@ -96,16 +91,14 @@
 	..()
 	icon_state = initial(icon_state)
 
-/mob/living/simple_animal/hostile/mimic/crate/LostTarget()
-	..()
-	icon_state = initial(icon_state)
-
-/mob/living/simple_animal/hostile/mimic/crate/death()
-	var/obj/structure/closet/crate/C = new(get_turf(src))
-	// Put loot in crate
-	for(var/obj/O in src)
-		O.loc = C
-	..()
+/mob/living/simple_animal/hostile/mimic/crate/death(gibbed)
+	if(can_die())
+		var/obj/structure/closet/crate/C = new(get_turf(src))
+		// Put loot in crate
+		for(var/obj/O in src)
+			O.loc = C
+	// due to `del_on_death`
+	return ..()
 
 /mob/living/simple_animal/hostile/mimic/crate/AttackingTarget()
 	. =..()
@@ -132,14 +125,17 @@ var/global/list/protected_objects = list(/obj/structure/table, /obj/structure/ca
 
 /mob/living/simple_animal/hostile/mimic/copy/Life()
 	..()
+	if(!target && !ckey) //Objects eventually revert to normal if no one is around to terrorize
+		adjustBruteLoss(1)
 	for(var/mob/living/M in contents) //a fix for animated statues from the flesh to stone spell
 		death()
 
-/mob/living/simple_animal/hostile/mimic/copy/death()
-
-	for(var/atom/movable/M in src)
-		M.loc = get_turf(src)
-	..()
+/mob/living/simple_animal/hostile/mimic/copy/death(gibbed)
+	if(can_die())
+		for(var/atom/movable/M in src)
+			M.loc = get_turf(src)
+	// due to `del_on_death`
+	return ..()
 
 /mob/living/simple_animal/hostile/mimic/copy/ListTargets()
 	. = ..()
@@ -182,8 +178,6 @@ var/global/list/protected_objects = list(/obj/structure/table, /obj/structure/ca
 			melee_damage_lower = 2 + I.force
 			melee_damage_upper = 2 + I.force
 			move_to_delay = 2 * I.w_class + 1
-			if(istype(O, /obj/item/device))
-				is_electronic = 1
 		maxHealth = health
 		if(user)
 			creator = user
@@ -191,7 +185,6 @@ var/global/list/protected_objects = list(/obj/structure/table, /obj/structure/ca
 		if(destroy_original)
 			qdel(O)
 		return 1
-	return
 
 /mob/living/simple_animal/hostile/mimic/copy/DestroySurroundings()
 	if(destroy_objects)
@@ -226,33 +219,34 @@ var/global/list/protected_objects = list(/obj/structure/table, /obj/structure/ca
 	return ..()
 
 /mob/living/simple_animal/hostile/mimic/copy/ranged
-	var/obj/item/weapon/gun/TrueGun = null
-	var/obj/item/weapon/gun/magic/Zapstick
-	var/obj/item/weapon/gun/projectile/Pewgun
-	var/obj/item/weapon/gun/energy/Zapgun
+	var/obj/item/gun/TrueGun = null
+	var/obj/item/gun/magic/Zapstick
+	var/obj/item/gun/projectile/Pewgun
+	var/obj/item/gun/energy/Zapgun
 
 /mob/living/simple_animal/hostile/mimic/copy/ranged/CopyObject(obj/O, mob/living/creator, destroy_original = 0)
 	if(..())
 		emote_see = list("aims menacingly")
+		obj_damage = 0
 		environment_smash = 0 //needed? seems weird for them to do so
 		ranged = 1
 		retreat_distance = 1 //just enough to shoot
 		minimum_distance = 6
-		var/obj/item/weapon/gun/G = O
+		var/obj/item/gun/G = O
 		melee_damage_upper = G.force
 		melee_damage_lower = G.force - max(0, (G.force / 2))
 		move_to_delay = 2 * G.w_class + 1
 		projectilesound = G.fire_sound
 		TrueGun = G
-		if(istype(G, /obj/item/weapon/gun/magic))
+		if(istype(G, /obj/item/gun/magic))
 			Zapstick = G
 			var/obj/item/ammo_casing/magic/M = Zapstick.ammo_type
 			projectiletype = initial(M.projectile_type)
-		if(istype(G, /obj/item/weapon/gun/projectile))
+		if(istype(G, /obj/item/gun/projectile))
 			Pewgun = G
 			var/obj/item/ammo_box/magazine/M = Pewgun.mag_type
 			casingtype = initial(M.ammo_type)
-		if(istype(G, /obj/item/weapon/gun/energy))
+		if(istype(G, /obj/item/gun/energy))
 			Zapgun = G
 			var/selectfiresetting = Zapgun.select
 			var/obj/item/ammo_casing/energy/E = Zapgun.ammo_type[selectfiresetting]

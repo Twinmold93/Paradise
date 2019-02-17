@@ -21,16 +21,16 @@
 	..()
 	switch(stage)
 		if(1)
-			if (prob(stage_prob) && stage1)
+			if(prob(stage_prob) && stage1)
 				to_chat(affected_mob, pick(stage1))
 		if(2)
-			if (prob(stage_prob) && stage2)
+			if(prob(stage_prob) && stage2)
 				to_chat(affected_mob, pick(stage2))
 		if(3)
-			if (prob(stage_prob*2) && stage3)
+			if(prob(stage_prob*2) && stage3)
 				to_chat(affected_mob, pick(stage3))
 		if(4)
-			if (prob(stage_prob*2) && stage4)
+			if(prob(stage_prob*2) && stage4)
 				to_chat(affected_mob, pick(stage4))
 		if(5)
 			do_disease_transformation(affected_mob)
@@ -50,10 +50,11 @@
 		affected_mob.overlays.Cut()
 		affected_mob.invisibility = 101
 		for(var/obj/item/W in affected_mob)
-			if(istype(W, /obj/item/weapon/implant))
+			if(istype(W, /obj/item/implant))
 				qdel(W)
 				continue
 			W.layer = initial(W.layer)
+			W.plane = initial(W.plane)
 			W.loc = affected_mob.loc
 			W.dropped(affected_mob)
 		var/mob/living/new_mob = new new_form(affected_mob.loc)
@@ -77,7 +78,6 @@
 	permeability_mod = 1
 	cure_chance = 1
 	disease_flags = CAN_CARRY|CAN_RESIST
-	longevity = 30
 	desc = "Monkeys with this disease will bite humans, causing humans to mutate into a monkey."
 	severity = BIOHAZARD
 	stage_prob = 4
@@ -105,7 +105,7 @@
 		if(3)
 			if(prob(4))
 				to_chat(affected_mob, "<span class='danger'>You feel a stabbing pain in your head.</span>")
-				affected_mob.confused += 10
+				affected_mob.AdjustConfused(10)
 		if(4)
 			if(prob(3))
 				affected_mob.say(pick("Eeek, ook ook!", "Eee-eeek!", "Eeee!", "Ungh, ungh."))
@@ -133,13 +133,13 @@
 	..()
 	switch(stage)
 		if(3)
-			if (prob(8))
+			if(prob(8))
 				affected_mob.say(pick("Beep, boop", "beep, beep!", "Boop...bop"))
-			if (prob(4))
+			if(prob(4))
 				to_chat(affected_mob, "<span class='danger'>You feel a stabbing pain in your head.</span>")
 				affected_mob.Paralyse(2)
 		if(4)
-			if (prob(20))
+			if(prob(20))
 				affected_mob.say(pick("beep, beep!", "Boop bop boop beep.", "kkkiiiill mmme", "I wwwaaannntt tttoo dddiiieeee..."))
 
 
@@ -164,11 +164,11 @@
 	..()
 	switch(stage)
 		if(3)
-			if (prob(4))
+			if(prob(4))
 				to_chat(affected_mob, "<span class='danger'>You feel a stabbing pain in your head.</span>")
 				affected_mob.Paralyse(2)
 		if(4)
-			if (prob(20))
+			if(prob(20))
 				affected_mob.say(pick("You look delicious.", "Going to... devour you...", "Hsssshhhhh!"))
 
 
@@ -186,7 +186,7 @@
 	stage3	= list("<span class='danger'>Your appendages are melting away.</span>", "<span class='danger'>Your limbs begin to lose their shape.</span>")
 	stage4	= list("<span class='danger'>You are turning into a slime.</span>")
 	stage5	= list("<span class='danger'>You have become a slime.</span>")
-	new_form = /mob/living/simple_animal/slime
+	new_form = /mob/living/carbon/slime/random
 
 /datum/disease/transformation/slime/stage_act()
 	..()
@@ -194,13 +194,13 @@
 		if(1)
 			if(ishuman(affected_mob))
 				var/mob/living/carbon/human/H = affected_mob
-				if(H.species.name == "Slime People")
+				if(isslimeperson(H))
 					stage = 5
 		if(3)
 			if(ishuman(affected_mob))
 				var/mob/living/carbon/human/human = affected_mob
-				if(human.species.name != "Slime People")
-					human.set_species("Slime People")
+				if(!isslimeperson(human))
+					human.set_species(/datum/species/slime)
 
 /datum/disease/transformation/corgi
 	name = "The Barkening"
@@ -220,10 +220,10 @@
 	..()
 	switch(stage)
 		if(3)
-			if (prob(8))
+			if(prob(8))
 				affected_mob.say(pick("YAP", "Woof!"))
 		if(4)
-			if (prob(20))
+			if(prob(20))
 				affected_mob.say(pick("Bark!", "AUUUUUU"))
 
 /datum/disease/transformation/morph

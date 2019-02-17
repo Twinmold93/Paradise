@@ -1,7 +1,7 @@
 //Please use mob or src (not usr) in these procs. This way they can be called in the same fashion as procs.
 /client/verb/wiki(query as text)
 	set name = "wiki"
-	set desc = "Type what you want to know about.  This will open the wiki on your web browser."
+	set desc = "Type what you want to know about.  This will open the wiki in your web browser."
 	set hidden = 1
 	if(config.wikiurl)
 		if(query)
@@ -10,7 +10,7 @@
 		else
 			src << link(config.wikiurl)
 	else
-		src << "<span class='danger'>The wiki URL is not set in the server configuration.</span>"
+		to_chat(src, "<span class='danger'>The wiki URL is not set in the server configuration.</span>")
 	return
 
 /client/verb/changes()
@@ -38,7 +38,7 @@
 		'html/changelog.html'
 		)
 	src << browse('html/changelog.html', "window=changes;size=675x650")
-
+	update_changelog_button()
 	if(prefs.lastchangelog != changelog_hash) //if it's already opened, no need to tell them they have unread changes
 		prefs.SetChangelog(src,changelog_hash)
 
@@ -51,7 +51,7 @@
 			return
 		src << link(config.forumurl)
 	else
-		src << "<span class='danger'>The forum URL is not set in the server configuration.</span>"
+		to_chat(src, "<span class='danger'>The forum URL is not set in the server configuration.</span>")
 	return
 
 /client/verb/rules()
@@ -63,9 +63,33 @@
 			return
 		src << link(config.rulesurl)
 	else
-		src << "<span class='danger'>The rules URL is not set in the server configuration.</span>"
+		to_chat(src, "<span class='danger'>The rules URL is not set in the server configuration.</span>")
 	return
 
+/client/verb/github()
+	set name = "GitHub"
+	set desc = "Visit the GitHub page."
+	set hidden = 1
+	if(config.githuburl)
+		if(alert("This will open our GitHub repository in your browser. Are you sure?",,"Yes","No")=="No")
+			return
+		src << link(config.githuburl)
+	else
+		to_chat(src, "<span class='danger'>The GitHub URL is not set in the server configuration.</span>")
+	return
+
+/client/verb/discord()
+	set name = "Discord"
+	set desc = "Join our Discord server."
+	set hidden = 1
+	if(config.discordurl)
+		if(alert("This will invite you to our Discord server. Are you sure?",,"Yes","No")=="No")
+			return
+		src << link(config.discordurl)
+	else
+		to_chat(src, "<span class='danger'>The Discord URL is not set in the server configuration.</span>")
+	return
+	
 /client/verb/donate()
 	set name = "Donate"
 	set desc = "Donate to help with hosting costs."
@@ -75,7 +99,7 @@
 			return
 		src << link(config.donationsurl)
 	else
-		src << "<span class='danger'>The rules URL is not set in the server configuration.</span>"
+		to_chat(src, "<span class='danger'>The rules URL is not set in the server configuration.</span>")
 	return
 
 /client/verb/hotkeys_help()
@@ -89,12 +113,17 @@ Admin:
 \tF7 = Player Panel
 \tF8 = Admin PM
 \tF9 = Invisimin
+
+Admin ghost:
+\tCtrl+Click = Player Panel
+\tCtrl+Shift+Click = View Variables
+\tShift+Middle Click = Mob Info
 </font>"}
 
 	mob.hotkey_help()
 
 	if(check_rights(R_MOD|R_ADMIN,0))
-		src << adminhotkeys
+		to_chat(src, adminhotkeys)
 
 /mob/proc/hotkey_help()
 	var/hotkey_mode = {"<font color='purple'>
@@ -151,8 +180,8 @@ Any-Mode: (hotkey doesn't need to be on)
 \tF4 = Me
 </font>"}
 
-	src << hotkey_mode
-	src << other
+	to_chat(src, hotkey_mode)
+	to_chat(src, other)
 
 /mob/living/silicon/robot/hotkey_help()
 	var/hotkey_mode = {"<font color='purple'>
@@ -203,15 +232,15 @@ Any-Mode: (hotkey doesn't need to be on)
 \tF4 = Me
 </font>"}
 
-	src << hotkey_mode
-	src << other
+	to_chat(src, hotkey_mode)
+	to_chat(src, other)
 
 //adv. hotkey mode verbs, vars located in /code/modules/client/client defines.dm
 /client/verb/hotkey_toggle()//toggles hotkey mode between on and off, respects selected type
 	set name = ".Toggle Hotkey Mode"
 
 	hotkeyon = !hotkeyon//toggle the var
-	usr << (hotkeyon ? "Hotkey mode enabled." : "Hotkey mode disabled.")//feedback to the user
+	to_chat(usr, (hotkeyon ? "Hotkey mode enabled." : "Hotkey mode disabled."))//feedback to the user
 
 	if(hotkeyon)//using an if statement because I don't want to clutter winset() with ? operators
 		winset(usr, "mainwindow.hotkey_toggle", "is-checked=true")//checks the button
@@ -233,4 +262,4 @@ Any-Mode: (hotkey doesn't need to be on)
 	var/hotkeyname = hotkeys[hotkeyon ? "on" : "off"]//get the name of the hotkey, to not clutter winset() to much
 
 	winset(usr, "mainwindow", "macro=[hotkeyname]")//change the hotkey
-	usr << "Hotkey mode changed to [hotkeytype]."
+	to_chat(usr, "Hotkey mode changed to [hotkeytype].")

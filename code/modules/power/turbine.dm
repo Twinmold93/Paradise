@@ -58,7 +58,7 @@
 	desc = "A computer to remotely control a gas turbine"
 	icon_screen = "turbinecomp"
 	icon_keyboard = "tech_key"
-	circuit = /obj/item/weapon/circuitboard/turbine_computer
+	circuit = /obj/item/circuitboard/turbine_computer
 	var/obj/machinery/power/compressor/compressor
 	var/id = 0
 
@@ -67,13 +67,13 @@
 /obj/machinery/power/compressor/New()
 	..()
 	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/power_compressor(null)
-	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
-	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
-	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
-	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
-	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
-	component_parts += new /obj/item/weapon/stock_parts/manipulator(null)
+	component_parts += new /obj/item/circuitboard/power_compressor(null)
+	component_parts += new /obj/item/stock_parts/manipulator(null)
+	component_parts += new /obj/item/stock_parts/manipulator(null)
+	component_parts += new /obj/item/stock_parts/manipulator(null)
+	component_parts += new /obj/item/stock_parts/manipulator(null)
+	component_parts += new /obj/item/stock_parts/manipulator(null)
+	component_parts += new /obj/item/stock_parts/manipulator(null)
 	component_parts += new /obj/item/stack/cable_coil(null, 5)
 	RefreshParts()
 // The inlet of the compressor is the direction it faces
@@ -82,7 +82,7 @@
 	inturf = get_step(src, dir)
 
 
-/obj/machinery/power/compressor/initialize()
+/obj/machinery/power/compressor/Initialize()
 	..()
 	locate_machinery()
 	if(!turbine)
@@ -107,7 +107,7 @@
 
 /obj/machinery/power/compressor/RefreshParts()
 	var/E = 0
-	for(var/obj/item/weapon/stock_parts/manipulator/M in component_parts)
+	for(var/obj/item/stock_parts/manipulator/M in component_parts)
 		E += M.rating
 	efficiency = E / 6
 
@@ -156,7 +156,7 @@
 
 // RPM function to include compression friction - be advised that too low/high of a compfriction value can make things screwy
 
-	rpm = max(0, rpm - (rpm*rpm)/(COMPFRICTION/efficiency))
+	rpm = max(0, rpm - (rpm*rpm)/(COMPFRICTION*efficiency))
 
 
 	if(starter && !(stat & NOPOWER))
@@ -188,13 +188,13 @@
 /obj/machinery/power/turbine/New()
 	..()
 	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/power_turbine(src)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(src)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(src)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(src)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(src)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(src)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(src)
+	component_parts += new /obj/item/circuitboard/power_turbine(src)
+	component_parts += new /obj/item/stock_parts/capacitor(src)
+	component_parts += new /obj/item/stock_parts/capacitor(src)
+	component_parts += new /obj/item/stock_parts/capacitor(src)
+	component_parts += new /obj/item/stock_parts/capacitor(src)
+	component_parts += new /obj/item/stock_parts/capacitor(src)
+	component_parts += new /obj/item/stock_parts/capacitor(src)
 	component_parts += new /obj/item/stack/cable_coil(src, 5)
 	RefreshParts()
 // The outlet is pointed at the direction of the turbine component
@@ -202,7 +202,7 @@
 	outturf = get_step(src, dir)
 
 
-/obj/machinery/power/turbine/initialize()
+/obj/machinery/power/turbine/Initialize()
 	..()
 	locate_machinery()
 	if(!compressor)
@@ -210,7 +210,7 @@
 
 /obj/machinery/power/turbine/RefreshParts()
 	var/P = 0
-	for(var/obj/item/weapon/stock_parts/capacitor/C in component_parts)
+	for(var/obj/item/stock_parts/capacitor/C in component_parts)
 		P += C.rating
 	productivity = P / 6
 
@@ -293,7 +293,7 @@
 
 /obj/machinery/power/turbine/interact(mob/user)
 
-	if ( !Adjacent(user)  || (stat & (NOPOWER|BROKEN)) && (!istype(user, /mob/living/silicon)) )
+	if( !Adjacent(user)  || (stat & (NOPOWER|BROKEN)) && (!istype(user, /mob/living/silicon)) )
 		user.unset_machine(src)
 		user << browse(null, "window=turbine")
 		return
@@ -304,9 +304,9 @@
 
 	t += "Turbine: [round(compressor.rpm)] RPM<BR>"
 
-	t += "Starter: [ compressor.starter ? "<A href='?src=\ref[src];str=1'>Off</A> <B>On</B>" : "<B>Off</B> <A href='?src=\ref[src];str=1'>On</A>"]"
+	t += "Starter: [ compressor.starter ? "<A href='?src=[UID()];str=1'>Off</A> <B>On</B>" : "<B>Off</B> <A href='?src=[UID()];str=1'>On</A>"]"
 
-	t += "</PRE><HR><A href='?src=\ref[src];close=1'>Close</A>"
+	t += "</PRE><HR><A href='?src=[UID()];close=1'>Close</A>"
 
 	t += "</TT>"
 	var/datum/browser/popup = new(user, "turbine", name)
@@ -341,7 +341,7 @@
 
 
 
-/obj/machinery/computer/turbine_computer/initialize()
+/obj/machinery/computer/turbine_computer/Initialize()
 	..()
 	spawn(10)
 		locate_machinery()
@@ -363,18 +363,18 @@
 		if(compressor.stat || compressor.turbine.stat)
 			dat += "[compressor.stat ? "<B>Compressor is inoperable</B><BR>" : "<B>Turbine is inoperable</B>"]"
 		else
-			dat += {"Turbine status: [ src.compressor.starter ? "<A href='?src=\ref[src];str=1'>Off</A> <B>On</B>" : "<B>Off</B> <A href='?src=\ref[src];str=1'>On</A>"]
+			dat += {"Turbine status: [ src.compressor.starter ? "<A href='?src=[UID()];str=1'>Off</A> <B>On</B>" : "<B>Off</B> <A href='?src=[UID()];str=1'>On</A>"]
 			\n<BR>
 			\nTurbine speed: [src.compressor.rpm]rpm<BR>
 			\nPower currently being generated: [src.compressor.turbine.lastgen]W<BR>
 			\nInternal gas temperature: [src.compressor.gas_contained.temperature]K<BR>
-			\n</PRE><HR><A href='?src=\ref[src];close=1'>Close</A>
+			\n</PRE><HR><A href='?src=[UID()];close=1'>Close</A>
 			\n<BR>
 			\n"}
 	else
 		dat += "<B>There is [!compressor ? "no compressor" : " compressor[!compressor.turbine ? " but no turbine" : ""]"].</B><BR>"
 		if(!compressor)
-			dat += "<A href='?src=\ref[src];search=1'>Search for compressor</A>"
+			dat += "<A href='?src=[UID()];search=1'>Search for compressor</A>"
 
 	var/datum/browser/popup = new(user, "turbinecomputer", name)
 	popup.set_content(dat)

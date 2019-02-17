@@ -4,13 +4,15 @@
 		////////////////
 	var/datum/admins/holder = null
 
-	var/last_message	= "" //Contains the last message sent by this client - used to protect against copy-paste spamming.
-	var/last_message_count = 0 //contins a number of how many times a message identical to last_message was sent.
+	var/last_message	= "" //contains the last message sent by this client - used to protect against copy-paste spamming.
+	var/last_message_count = 0 //contains a number of how many times a message identical to last_message was sent.
+	var/last_message_time = 0 //holds the last time (based on world.time) a message was sent
 
 		/////////
 		//OTHER//
 		/////////
 	var/datum/preferences/prefs = null
+	var/skip_antag = FALSE //TRUE when a player declines to be included for the selection process of game mode antagonists.
 	var/move_delay		= 1
 	var/moving			= null
 	var/adminobs		= null
@@ -18,6 +20,13 @@
 	var/time_died_as_mouse = null //when the client last died as a mouse
 
 	var/adminhelped = 0
+
+	var/gc_destroyed //Time when this object was destroyed.
+
+#ifdef TESTING
+	var/running_find_references
+	var/last_find_references = 0
+#endif
 
 		///////////////
 		//SOUND STUFF//
@@ -75,8 +84,6 @@
 			"off" = "borgmacro")
 	)
 
-	var/reset_stretch = 0 //Used by things that fiddle with client's stretch-to-fit.
-
 	var/topic_debugging = 0 //if set to true, allows client to see nanoUI errors -- yes i realize this is messy but it'll make live testing infinitely easier
 
 	control_freak = CONTROL_FREAK_ALL | CONTROL_FREAK_SKIN | CONTROL_FREAK_MACROS
@@ -85,3 +92,16 @@
 
 	//datum that controls the displaying and hiding of tooltips
 	var/datum/tooltip/tooltips
+
+	// Their chat window, sort of important.
+	// See /goon/code/datums/browserOutput.dm
+	var/datum/chatOutput/chatOutput
+
+	// Donator stuff.
+	var/donator_level = DONATOR_LEVEL_NONE
+
+	// If set to true, this client can interact with atoms such as buttons and doors on top of regular machinery interaction
+	var/advanced_admin_interaction = FALSE
+
+	// Has the client been varedited by an admin?
+	var/var_edited = FALSE

@@ -1,4 +1,5 @@
 /datum/disease/tuberculosis
+	form = "Disease"
 	name = "Fungal tuberculosis"
 	max_stages = 5
 	spread_text = "Airborne"
@@ -8,8 +9,9 @@
 	viable_mobtypes = list(/mob/living/carbon/human)
 	cure_chance = 5//like hell are you getting out of hell
 	desc = "A rare highly transmittable virulent virus. Few samples exist, rumoured to be carefully grown and cultured by clandestine bio-weapon specialists. Causes fever, blood vomiting, lung damage, weight loss, and fatigue."
-	required_organs = list(/obj/item/organ/external/head)
+	required_organs = list(/obj/item/organ/internal/lungs)
 	severity = DANGEROUS
+	bypasses_immunity = TRUE //Fungal and bacterial in nature; also infects the lungs
 
 /datum/disease/tuberculosis/stage_act() //it begins
 	..()
@@ -44,7 +46,7 @@
 				affected_mob.AdjustSleeping(5)
 			if(prob(2))
 				to_chat(affected_mob, "<span class='userdanger'>You feel your mind relax and your thoughts drift!</span>")
-				affected_mob.confused = min(100, affected_mob.confused + 8)
+				affected_mob.AdjustConfused(8, bound_lower = 0, bound_upper = 100)
 			if(prob(10))
 				affected_mob.vomit(20)
 			if(prob(3))
@@ -55,4 +57,3 @@
 				to_chat(affected_mob, "<span class='danger'>[pick("You feel uncomfortably hot...", "You feel like unzipping your jumpsuit", "You feel like taking off some clothes...")]</span>")
 				affected_mob.bodytemperature += 40
 	return
-

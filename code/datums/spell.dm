@@ -3,8 +3,52 @@
 
 /obj/effect/proc_holder
 	var/panel = "Debug"//What panel the proc holder needs to go on.
+	var/active = FALSE //Used by toggle based abilities.
+	var/ranged_mousepointer
 
 var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin verb for now
+
+/obj/effect/proc_holder/proc/InterceptClickOn(mob/living/user, params, atom/A)
+	if(user.ranged_ability != src)
+		to_chat(user, "<span class='warning'><b>[user.ranged_ability.name]</b> has been disabled.")
+		user.ranged_ability.remove_ranged_ability(user)
+		return TRUE //TRUE for failed, FALSE for passed.
+	user.changeNext_click(CLICK_CD_CLICK_ABILITY)
+	user.face_atom(A)
+	return FALSE
+
+/obj/effect/proc_holder/proc/add_ranged_ability(mob/living/user, var/msg)
+	if(!user || !user.client)
+		return
+	if(user.ranged_ability && user.ranged_ability != src)
+		to_chat(user, "<span class='warning'><b>[user.ranged_ability.name]</b> has been replaced by <b>[name]</b>.")
+		user.ranged_ability.remove_ranged_ability(user)
+	user.ranged_ability = src
+	user.client.click_intercept = user.ranged_ability
+	add_mousepointer(user.client)
+	active = TRUE
+	if(msg)
+		to_chat(user, msg)
+	update_icon()
+
+/obj/effect/proc_holder/proc/add_mousepointer(client/C)
+	if(C && ranged_mousepointer && C.mouse_pointer_icon == initial(C.mouse_pointer_icon))
+		C.mouse_pointer_icon = ranged_mousepointer
+
+/obj/effect/proc_holder/proc/remove_mousepointer(client/C)
+	if(C && ranged_mousepointer && C.mouse_pointer_icon == ranged_mousepointer)
+		C.mouse_pointer_icon = initial(C.mouse_pointer_icon)
+
+/obj/effect/proc_holder/proc/remove_ranged_ability(mob/living/user, var/msg)
+	if(!user || !user.client || (user.ranged_ability && user.ranged_ability != src)) //To avoid removing the wrong ability
+		return
+	user.ranged_ability = null
+	user.client.click_intercept = null
+	remove_mousepointer(user.client)
+	active = FALSE
+	if(msg)
+		to_chat(user, msg)
+	update_icon()
 
 /obj/effect/proc_holder/spell
 	name = "Spell"
@@ -26,6 +70,8 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 
 	var/ghost = 0 // Skip life check.
 	var/clothes_req = 1 //see if it requires clothes
+	var/human_req = 0 //spell can only be cast by humans
+	var/nonabstract_req = 0 //spell can only be cast by mobs that are physical entities
 	var/stat_allowed = 0 //see if it requires being conscious/alive, need to set to 1 for ghostpells
 	var/invocation = "HURP DURP" //what is uttered when the wizard casts the spell
 	var/invocation_emote_self = null
@@ -51,25 +97,26 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 	var/centcom_cancast = 1 //Whether or not the spell should be allowed on z2
 
 	var/datum/action/spell_action/action = null
-	var/action_icon = 'icons/mob/actions.dmi'
+	var/action_icon = 'icons/mob/actions/actions.dmi'
 	var/action_icon_state = "spell_default"
 	var/action_background_icon_state = "bg_spell"
+	var/special_availability_check = 0//Whether the spell needs to bypass the action button's IsAvailable()
+
+	var/sound = null //The sound the spell makes when it is cast
 
 /obj/effect/proc_holder/spell/proc/cast_check(skipcharge = 0, mob/living/user = usr) //checks if the spell can be cast based on its settings; skipcharge is used when an additional cast_check is called inside the spell
-
-	if(((!user.mind) || !(src in user.mind.spell_list)) && !(src in user.spell_list))
+	if(((!user.mind) || !(src in user.mind.spell_list)) && !(src in user.mob_spell_list))
 		to_chat(user, "<span class='warning'>You shouldn't have this spell! Something's wrong.</span>")
 		return 0
-	if (istype(user, /mob/living/carbon/human))
+
+	if(ishuman(user))
 		var/mob/living/carbon/human/caster = user
 		if(caster.remoteview_target)
 			caster.remoteview_target = null
-			caster.reset_view(0)
+			caster.reset_perspective(0)
 			return 0
 
-	if(user.z == ZLEVEL_CENTCOMM && !centcom_cancast) //Certain spells are not allowed on the centcom zlevel
-		return 0
-	if(user.z == ZLEVEL_CENTCOMM && ticker.mode.name == "ragin' mages")
+	if(is_admin_level(user.z) && !centcom_cancast) //Certain spells are not allowed on the centcom zlevel
 		return 0
 
 	if(!skipcharge)
@@ -85,25 +132,30 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 
 	if(!ghost)
 		if(user.stat && !stat_allowed)
-			to_chat(user, "Not when you're incapacitated.")
+			to_chat(user, "<span class='notice'>You can't cast this spell while incapacitated.</span>")
 			return 0
-
 		if(ishuman(user) && (invocation_type == "whisper" || invocation_type == "shout") && user.is_muzzled())
 			to_chat(user, "Mmmf mrrfff!")
 			return 0
-	var/obj/effect/proc_holder/spell/noclothes/spell = locate() in (user.spell_list | (user.mind ? user.mind.spell_list : list()))
-	if(clothes_req && !(spell && istype(spell)))//clothes check
-		if(!istype(user, /mob/living/carbon/human))
-			to_chat(user, "You aren't a human, Why are you trying to cast a human spell, silly non-human? Casting human spells is for humans.")
+
+	var/obj/effect/proc_holder/spell/noclothes/clothes_spell = locate() in (user.mob_spell_list | (user.mind ? user.mind.spell_list : list()))
+	if((ishuman(user) && clothes_req) && !istype(clothes_spell))//clothes check
+		var/mob/living/carbon/human/H = user
+		var/obj/item/clothing/robe = H.wear_suit
+		var/obj/item/clothing/hat = H.head
+		var/obj/item/clothing/shoes = H.shoes
+		if(!robe || !hat || !shoes)
+			to_chat(user, "<span class='notice'>Your outfit isn't complete, you should put on your robe and wizard hat, as well as sandals.</span>")
 			return 0
-		if(!istype(user:wear_suit, /obj/item/clothing/suit/wizrobe) && !istype(user:wear_suit, /obj/item/clothing/suit/space/rig/wizard))
-			to_chat(user, "I don't feel strong enough without my robe.")
+		if(!robe.magical || !hat.magical || !shoes.magical)
+			to_chat(user, "<span class='notice'>Your outfit isn't magical enough, you should put on your robe and wizard hat, as well as your sandals.</span>")
 			return 0
-		if(!istype(user:shoes, /obj/item/clothing/shoes/sandal))
-			to_chat(user, "I don't feel strong enough without my sandals.")
+	else if(!ishuman(user))
+		if(clothes_req || human_req)
+			to_chat(user, "<span class='notice'>This spell can only be cast by humans!</span>")
 			return 0
-		if(!istype(user:head, /obj/item/clothing/head/wizard) && !istype(user:head, /obj/item/clothing/head/helmet/space/rig/wizard))
-			to_chat(user, "<span class='notice'>I don't feel strong enough without my hat.</span>")
+		if(nonabstract_req && (isbrain(user) || ispAI(user)))
+			to_chat(user, "<span class='notice'>This spell can only be cast by physical beings!</span>")
 			return 0
 
 	if(!skipcharge)
@@ -120,10 +172,13 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 /obj/effect/proc_holder/spell/proc/invocation(mob/user = usr) //spelling the spell out and setting it on recharge/reducing charges amount
 	switch(invocation_type)
 		if("shout")
-			if(prob(50))//Auto-mute? Fuck that noise
-				user.say(invocation)
+			if(!user.IsVocal())
+				user.custom_emote(1, "makes frantic gestures!")
 			else
-				user.say(replacetext(invocation," ","`"))
+				if(prob(50))//Auto-mute? Fuck that noise
+					user.say(invocation)
+				else
+					user.say(replacetext(invocation," ","`"))
 		if("whisper")
 			if(prob(50))
 				user.whisper(invocation)
@@ -132,15 +187,18 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 		if("emote")
 			user.visible_message(invocation, invocation_emote_self) //same style as in mob/living/emote.dm
 
+/obj/effect/proc_holder/spell/proc/playMagSound()
+	playsound(get_turf(usr), sound,50,1)
+
 /obj/effect/proc_holder/spell/New()
 	..()
+	action = new(src)
 
 	still_recharging_msg = "<span class='notice'>[name] is still recharging.</span>"
 	charge_counter = charge_max
 
 /obj/effect/proc_holder/spell/Destroy()
-	qdel(action)
-	action = null
+	QDEL_NULL(action)
 	return ..()
 
 /obj/effect/proc_holder/spell/Click()
@@ -152,21 +210,30 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 	return
 
 /obj/effect/proc_holder/spell/proc/start_recharge()
+	if(action)
+		action.UpdateButtonIcon()
 	while(charge_counter < charge_max)
 		sleep(1)
 		charge_counter++
+	if(action)
+		action.UpdateButtonIcon()
 
 /obj/effect/proc_holder/spell/proc/perform(list/targets, recharge = 1, mob/user = usr) //if recharge is started is important for the trigger spells
 	before_cast(targets)
 	invocation()
-	user.attack_log += text("\[[time_stamp()]\] <font color='red'>[user.real_name] ([user.ckey]) cast the spell [name].</font>")
+	if(user && user.ckey)
+		user.create_attack_log("<font color='red'>[key_name(user)] cast the spell [name].</font>")
 	spawn(0)
 		if(charge_type == "recharge" && recharge)
 			start_recharge()
+
+	if(sound)
+		playMagSound()
+
 	if(prob(critfailchance))
 		critfail(targets)
 	else
-		cast(targets)
+		cast(targets, user = user)
 	after_cast(targets)
 
 /obj/effect/proc_holder/spell/proc/before_cast(list/targets)
@@ -195,24 +262,22 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 		if(istype(target,/mob/living) && message)
 			to_chat(target, text("[message]"))
 		if(sparks_spread)
-			var/datum/effect/system/spark_spread/sparks = new /datum/effect/system/spark_spread()
-			sparks.set_up(sparks_amt, 0, location) //no idea what the 0 is
-			sparks.start()
+			do_sparks(sparks_amt, 0, location)
 		if(smoke_spread)
 			if(smoke_spread == 1)
-				var/datum/effect/system/harmless_smoke_spread/smoke = new /datum/effect/system/harmless_smoke_spread()
+				var/datum/effect_system/smoke_spread/smoke = new
 				smoke.set_up(smoke_amt, 0, location) //no idea what the 0 is
 				smoke.start()
 			else if(smoke_spread == 2)
-				var/datum/effect/system/bad_smoke_spread/smoke = new /datum/effect/system/bad_smoke_spread()
+				var/datum/effect_system/smoke_spread/bad/smoke = new
 				smoke.set_up(smoke_amt, 0, location) //no idea what the 0 is
 				smoke.start()
 			else if(smoke_spread == 3)
-				var/datum/effect/system/sleep_smoke_spread/smoke = new /datum/effect/system/sleep_smoke_spread()
+				var/datum/effect_system/smoke_spread/sleeping/smoke = new
 				smoke.set_up(smoke_amt, 0, location) // same here
 				smoke.start()
 
-/obj/effect/proc_holder/spell/proc/cast(list/targets)
+/obj/effect/proc_holder/spell/proc/cast(list/targets, mob/user = usr)
 	return
 
 /obj/effect/proc_holder/spell/proc/critfail(list/targets)
@@ -228,6 +293,10 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 			adjust_var(user, holder_var_type, -holder_var_amount)
 
 	return
+
+/obj/effect/proc_holder/spell/proc/updateButtonIcon()
+	if(action)
+		action.UpdateButtonIcon()
 
 /obj/effect/proc_holder/spell/proc/adjust_var(mob/living/target = usr, type, amount) //handles the adjustment of the var when the spell is used. has some hardcoded types
 	switch(type)
@@ -255,7 +324,7 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 	var/include_user = 0 //if it includes usr in the target list
 	var/random_target = 0 // chooses random viable target instead of asking the caster
 	var/random_target_priority = TARGET_CLOSEST // if random_target is enabled how it will pick the target
-
+	var/humans_only = 0 //for avoiding simple animals and only doing "human" mobs, 0 = all mobs, 1 = humans only
 
 /obj/effect/proc_holder/spell/aoe_turf //affects all turfs in view or range (depends)
 	var/inner_radius = -1 //for all your ring spell needs
@@ -265,21 +334,30 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 
 	switch(max_targets)
 		if(0) //unlimited
-			for(var/mob/living/target in view_or_range(range, user, selection_type))
-				for(var/F in user.faction)
-					if(F in target.faction)
-						continue
-				targets += target
+
+			if(!humans_only)
+				for(var/mob/living/target in view_or_range(range, user, selection_type))
+					targets += target
+			else
+				for(var/mob/living/carbon/human/target in view_or_range(range, user, selection_type))
+					targets += target
+
 		if(1) //single target can be picked
 			if(range < 0)
 				targets += user
 			else
 				var/possible_targets = list()
 
-				for(var/mob/living/M in view_or_range(range, user, selection_type))
-					if(!include_user && user == M)
-						continue
-					possible_targets += M
+				if(!humans_only)
+					for(var/mob/living/M in view_or_range(range, user, selection_type))
+						if(!include_user && user == M)
+							continue
+						possible_targets += M
+				else
+					for(var/mob/living/carbon/human/M in view_or_range(range, user, selection_type))
+						if(!include_user && user == M)
+							continue
+						possible_targets += M
 
 				//targets += input("Choose the target for the spell.", "Targeting") as mob in possible_targets
 				//Adds a safety check post-input to make sure those targets are actually in range.
@@ -303,8 +381,12 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 
 		else
 			var/list/possible_targets = list()
-			for(var/mob/living/target in view_or_range(range, user, selection_type))
-				possible_targets += target
+			if(!humans_only)
+				for(var/mob/living/target in view_or_range(range, user, selection_type))
+					possible_targets += target
+			else
+				for(var/mob/living/carbon/human/target in view_or_range(range, user, selection_type))
+					possible_targets += target
 			for(var/i=1,i<=max_targets,i++)
 				if(!possible_targets.len)
 					break
@@ -322,7 +404,7 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 		revert_cast(user)
 		return
 
-	perform(targets)
+	perform(targets, user=user)
 
 	return
 
@@ -337,7 +419,7 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 		revert_cast()
 		return
 
-	perform(targets)
+	perform(targets, user=user)
 
 	return
 
@@ -355,12 +437,10 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 	return 1
 
 /obj/effect/proc_holder/spell/proc/can_cast(mob/user = usr)
-	if(((!user.mind) || !(src in user.mind.spell_list)) && !(src in user.spell_list))
+	if(((!user.mind) || !(src in user.mind.spell_list)) && !(src in user.mob_spell_list))
 		return 0
 
-	if(user.z == ZLEVEL_CENTCOMM && !centcom_cancast) //Certain spells are not allowed on the centcom zlevel
-		return 0
-	if(user.z == ZLEVEL_CENTCOMM && ticker.mode.name == "ragin' mages")
+	if(is_admin_level(user.z) && !centcom_cancast) //Certain spells are not allowed on the centcom zlevel
 		return 0
 
 	switch(charge_type)
@@ -375,24 +455,24 @@ var/list/spells = typesof(/obj/effect/proc_holder/spell) //needed for the badmin
 		return 0
 
 	if(ishuman(user))
-
 		var/mob/living/carbon/human/H = user
 
 		if((invocation_type == "whisper" || invocation_type == "shout") && H.is_muzzled())
 			return 0
 
-		var/obj/effect/proc_holder/spell/noclothes/clothcheck = locate() in user.spell_list
-		var/obj/effect/proc_holder/spell/noclothes/clothcheck2 = locate() in user.mind.spell_list
-		if(clothes_req && !(clothcheck && istype(clothcheck)) && !(clothcheck2 && istype(clothcheck2)))//clothes check
-			if(!istype(H.wear_suit, /obj/item/clothing/suit/wizrobe) && !istype(H.wear_suit, /obj/item/clothing/suit/space/rig/wizard))
+		var/clothcheck = locate(/obj/effect/proc_holder/spell/noclothes) in user.mob_spell_list
+		var/clothcheck2 = user.mind && (locate(/obj/effect/proc_holder/spell/noclothes) in user.mind.spell_list)
+		if(clothes_req && !clothcheck && !clothcheck2) //clothes check
+			var/obj/item/clothing/robe = H.wear_suit
+			var/obj/item/clothing/hat = H.head
+			var/obj/item/clothing/shoes = H.shoes
+			if(!robe || !hat || !shoes)
 				return 0
-			if(!istype(H.shoes, /obj/item/clothing/shoes/sandal))
-				return 0
-			if(!istype(H.head, /obj/item/clothing/head/wizard) && !istype(H.head, /obj/item/clothing/head/helmet/space/rig/wizard))
+			if(!robe.magical || !hat.magical || !shoes.magical)
 				return 0
 	else
-		if(clothes_req)
+		if(clothes_req  || human_req)
 			return 0
-		if(isbrain(user) || ispAI(user))
+		if(nonabstract_req && (isbrain(user) || ispAI(user)))
 			return 0
 	return 1

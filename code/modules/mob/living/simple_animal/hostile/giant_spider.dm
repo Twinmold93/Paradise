@@ -10,7 +10,7 @@
 
 /mob/living/simple_animal/hostile/poison/AttackingTarget()
 	..()
-	if(isliving(target))
+	if(isliving(target) && (!client || a_intent == INTENT_HARM))
 		var/mob/living/L = target
 		if(L.reagents)
 			L.reagents.add_reagent("spidertoxin", poison_per_bite)
@@ -33,12 +33,13 @@
 	speak_chance = 5
 	turns_per_move = 5
 	see_in_dark = 10
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/spidermeat = 2, /obj/item/weapon/reagent_containers/food/snacks/spiderleg = 8)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/spidermeat = 2, /obj/item/reagent_containers/food/snacks/spiderleg = 8)
 	response_help  = "pets"
 	response_disarm = "gently pushes aside"
 	response_harm   = "hits"
 	maxHealth = 200
 	health = 200
+	obj_damage = 60
 	melee_damage_lower = 15
 	melee_damage_upper = 20
 	heat_damage_per_tick = 20	//amount of damage applied if animal's body temperature is higher than maxbodytemp
@@ -57,7 +58,7 @@
 	icon_state = "nurse"
 	icon_living = "nurse"
 	icon_dead = "nurse_dead"
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/spidermeat = 2, /obj/item/weapon/reagent_containers/food/snacks/spiderleg = 8, /obj/item/weapon/reagent_containers/food/snacks/spidereggs = 4)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/spidermeat = 2, /obj/item/reagent_containers/food/snacks/spiderleg = 8, /obj/item/reagent_containers/food/snacks/spidereggs = 4)
 
 	maxHealth = 40
 	health = 40
@@ -116,7 +117,7 @@
 					GiveUp(C)
 					return
 			//second, spin a sticky spiderweb on this tile
-			var/obj/effect/spider/stickyweb/W = locate() in get_turf(src)
+			var/obj/structure/spider/stickyweb/W = locate() in get_turf(src)
 			if(!W)
 				Web()
 			else
@@ -157,7 +158,7 @@
 		stop_automated_movement = 1
 		spawn(40)
 			if(busy == SPINNING_WEB && src.loc == T)
-				new /obj/effect/spider/stickyweb(T)
+				new /obj/structure/spider/stickyweb(T)
 			busy = 0
 			stop_automated_movement = 0
 
@@ -187,7 +188,7 @@
 		spawn(50)
 			if(busy == SPINNING_COCOON)
 				if(cocoon_target && istype(cocoon_target.loc, /turf) && get_dist(src,cocoon_target) <= 1)
-					var/obj/effect/spider/cocoon/C = new(cocoon_target.loc)
+					var/obj/structure/spider/cocoon/C = new(cocoon_target.loc)
 					var/large_cocoon = 0
 					C.pixel_x = cocoon_target.pixel_x
 					C.pixel_y = cocoon_target.pixel_y
@@ -223,7 +224,7 @@
 	set category = "Spider"
 	set desc = "Lay a clutch of eggs, but you must wrap a creature for feeding first."
 
-	var/obj/effect/spider/eggcluster/E = locate() in get_turf(src)
+	var/obj/structure/spider/eggcluster/E = locate() in get_turf(src)
 	if(E)
 		to_chat(src, "<span class='notice'>There is already a cluster of eggs here!</span>")
 	else if(!fed)
@@ -236,8 +237,8 @@
 			if(busy == LAYING_EGGS)
 				E = locate() in get_turf(src)
 				if(!E)
-					var/obj/effect/spider/eggcluster/C = new /obj/effect/spider/eggcluster(src.loc)
-					C.faction = faction
+					var/obj/structure/spider/eggcluster/C = new /obj/structure/spider/eggcluster(src.loc)
+					C.faction = faction.Copy()
 					C.master_commander = master_commander
 					if(ckey)
 						C.player_spiders = 1

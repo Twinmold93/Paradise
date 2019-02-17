@@ -3,7 +3,7 @@
 #define X_SUIT_LAYER			2
 #define X_L_HAND_LAYER			3
 #define X_R_HAND_LAYER			4
-#define TARGETED_LAYER			5
+#define X_TARGETED_LAYER			5
 #define X_FIRE_LAYER			6
 #define X_TOTAL_LAYERS			6
 /////////////////////////////////
@@ -33,7 +33,7 @@
 
 	else if(lying || resting)
 		icon_state = "alien[caste]_sleep"
-	else if(m_intent == "run")
+	else if(m_intent == MOVE_INTENT_RUN)
 		icon_state = "alien[caste]_running"
 	else
 		icon_state = "alien[caste]_s"
@@ -56,7 +56,7 @@
 
 /mob/living/carbon/alien/humanoid/regenerate_icons()
 	..()
-	if (notransform)	return
+	if(notransform)	return
 
 	update_inv_head(0,0)
 	update_inv_wear_suit(0,0)
@@ -103,8 +103,7 @@
 				t_suit = "armor"
 			standing.overlays	+= image("icon" = 'icons/effects/blood.dmi', "icon_state" = "[t_suit]blood")
 
-		if (istype(wear_suit, /obj/item/clothing/suit/straight_jacket))
-			unEquip(handcuffed)
+		if(wear_suit.breakouttime)
 			drop_r_hand()
 			drop_l_hand()
 
@@ -115,7 +114,7 @@
 
 
 /mob/living/carbon/alien/humanoid/update_inv_head(var/update_icons=1)
-	if (head)
+	if(head)
 		var/t_state = head.item_state
 		if(!t_state)	t_state = head.icon_state
 		var/image/standing	= image("icon" = 'icons/mob/mob.dmi', "icon_state" = "[t_state]")
@@ -162,6 +161,6 @@
 #undef X_SUIT_LAYER
 #undef X_L_HAND_LAYER
 #undef X_R_HAND_LAYER
-#undef TARGETED_LAYER
+#undef X_TARGETED_LAYER
 #undef X_FIRE_LAYER
 #undef X_TOTAL_LAYERS

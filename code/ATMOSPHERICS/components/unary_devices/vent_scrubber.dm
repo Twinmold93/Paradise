@@ -7,7 +7,7 @@
 	name = "air scrubber"
 	desc = "Has a valve and pump attached to it"
 
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 10
 	active_power_usage = 60
 
@@ -15,7 +15,7 @@
 
 	var/area/initial_loc
 	var/id_tag = null
-	var/frequency = 1439
+	var/frequency = ATMOS_VENTSCRUB
 	var/datum/radio_frequency/radio_connection
 	var/advcontrol = 0//does this device listen to the AAC?
 
@@ -41,18 +41,21 @@
 	connect_types = list(1,3) //connects to regular and scrubber pipes
 
 /obj/machinery/atmospherics/unary/vent_scrubber/New()
+	..()
 	icon = null
 	initial_loc = get_area(loc)
 	area_uid = initial_loc.uid
-	if (!id_tag)
+	if(!id_tag)
 		assign_uid()
 		id_tag = num2text(uid)
-	..()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/Destroy()
-	if(initial_loc && frequency == 1439)
+	if(initial_loc && frequency == ATMOS_VENTSCRUB)
 		initial_loc.air_scrub_info -= id_tag
 		initial_loc.air_scrub_names -= id_tag
+	if(radio_controller)
+		radio_controller.remove_object(src, frequency)
+	radio_connection = null
 	return ..()
 
 /obj/machinery/atmospherics/unary/vent_pump/examine(mob/user)
@@ -63,26 +66,26 @@
 /obj/machinery/atmospherics/unary/vent_scrubber/auto_use_power()
 	if(!powered(power_channel))
 		return 0
-	if (!on || welded)
+	if(!on || welded)
 		return 0
 	if(stat & (NOPOWER|BROKEN))
 		return 0
 
 	var/amount = idle_power_usage
 
-	if (scrubbing)
-		if (scrub_CO2)
+	if(scrubbing)
+		if(scrub_CO2)
 			amount += idle_power_usage
-		if (scrub_Toxins)
+		if(scrub_Toxins)
 			amount += idle_power_usage
-		if (scrub_N2)
+		if(scrub_N2)
 			amount += idle_power_usage
-		if (scrub_N2O)
+		if(scrub_N2O)
 			amount += idle_power_usage
 	else
 		amount = active_power_usage
 
-	if (widenet)
+	if(widenet)
 		amount += amount*(adjacent_turfs.len*(adjacent_turfs.len/2))
 	use_power(amount, power_channel)
 	return 1
@@ -106,7 +109,8 @@
 	if(welded)
 		scrubber_icon = "scrubberweld"
 
-	overlays += icon_manager.get_atmos_icon("device", , , scrubber_icon)
+	overlays += GLOB.pipe_icon_manager.get_atmos_icon("device", , , scrubber_icon)
+	update_pipe_image()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/update_underlays()
 	if(..())
@@ -126,7 +130,7 @@
 	radio_controller.remove_object(src, frequency)
 	frequency = new_frequency
 	radio_connection = radio_controller.add_object(src, frequency, radio_filter_in)
-	if(frequency != 1439)
+	if(frequency != ATMOS_VENTSCRUB)
 		initial_loc.air_scrub_info -= id_tag
 		initial_loc.air_scrub_names -= id_tag
 		name = "air Scrubber"
@@ -155,7 +159,7 @@
 		"filter_n2o" = scrub_N2O,
 		"sigtype" = "status"
 	)
-	if(frequency == 1439)//We're on the frequency the air alarms and stuff use
+	if(frequency == ATMOS_VENTSCRUB)
 		if(!initial_loc.air_scrub_names[id_tag])
 			var/new_name = "[initial_loc.name] Air Scrubber #[initial_loc.air_scrub_names.len+1]"
 			initial_loc.air_scrub_names[id_tag] = new_name
@@ -165,7 +169,7 @@
 
 	return 1
 
-/obj/machinery/atmospherics/unary/vent_scrubber/initialize()
+/obj/machinery/atmospherics/unary/vent_scrubber/atmos_init()
 	..()
 	radio_filter_in = frequency==initial(frequency)?(RADIO_FROM_AIRALARM):null
 	radio_filter_out = frequency==initial(frequency)?(RADIO_TO_AIRALARM):null
@@ -174,17 +178,16 @@
 		src.broadcast_status()
 	check_turfs()
 
-/obj/machinery/atmospherics/unary/vent_scrubber/process()
-	if(!..())
-		return 0
+/obj/machinery/atmospherics/unary/vent_scrubber/process_atmos()
+	..()
 
-	if (widenet)
+	if(widenet)
 		check_turfs()
 
 	if(stat & (NOPOWER|BROKEN))
 		return
 
-	if (!node)
+	if(!node)
 		on = 0
 
 	if(welded)
@@ -194,8 +197,8 @@
 		return 0
 
 	scrub(loc)
-	if (widenet)
-		for (var/turf/simulated/tile in adjacent_turfs)
+	if(widenet)
+		for(var/turf/simulated/tile in adjacent_turfs)
 			scrub(tile)
 
 //we populate a list of turfs with nonatmos-blocked cardinal turfs AND
@@ -203,22 +206,22 @@
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/check_turfs()
 	adjacent_turfs.Cut()
 	var/turf/T = loc
-	if (istype(T))
+	if(istype(T))
 		adjacent_turfs = T.GetAtmosAdjacentTurfs(alldir=1)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/scrub(var/turf/simulated/tile)
-	if (!tile || !istype(tile))
+	if(!tile || !istype(tile))
 		return 0
 
 	var/datum/gas_mixture/environment = tile.return_air()
 
 	if(scrubbing)
-		if((environment.toxins>0.001) || (environment.carbon_dioxide>0.001) || (environment.trace_gases.len>0))
-			var/transfer_moles = min(1, volume_rate/environment.volume)*environment.total_moles()
+		if((scrub_O2 && environment.oxygen>0.001) || (scrub_N2 && environment.nitrogen>0.001) || (scrub_CO2 && environment.carbon_dioxide>0.001) || (scrub_Toxins && environment.toxins>0.001) || (environment.trace_gases.len>0))
+			var/transfer_moles = min(1, volume_rate/environment.volume)*environment.total_moles() / 5
 
 			//Take a gas sample
 			var/datum/gas_mixture/removed = loc.remove_air(transfer_moles)
-			if (isnull(removed)) //in space
+			if(isnull(removed)) //in space
 				return
 
 			//Filter it
@@ -253,10 +256,10 @@
 			tile.air_update_turf()
 
 	else //Just siphoning all air
-		if (air_contents.return_pressure()>=50*ONE_ATMOSPHERE)
+		if(air_contents.return_pressure()>=50*ONE_ATMOSPHERE)
 			return
 
-		var/transfer_moles = environment.total_moles()*(volume_rate/environment.volume)
+		var/transfer_moles = environment.total_moles()*(volume_rate/environment.volume) / 5
 
 		var/datum/gas_mixture/removed = tile.remove_air(transfer_moles)
 
@@ -336,47 +339,47 @@
 	if(old_stat != stat)
 		update_icon()
 
-/obj/machinery/atmospherics/unary/vent_scrubber/multitool_menu(var/mob/user,var/obj/item/device/multitool/P)
+/obj/machinery/atmospherics/unary/vent_scrubber/multitool_menu(var/mob/user,var/obj/item/multitool/P)
 	return {"
 	<ul>
-		<li><b>Frequency:</b> <a href="?src=\ref[src];set_freq=-1">[format_frequency(frequency)] GHz</a> (<a href="?src=\ref[src];set_freq=[1439]">Reset</a>)</li>
+		<li><b>Frequency:</b> <a href="?src=[UID()];set_freq=-1">[format_frequency(frequency)] GHz</a> (<a href="?src=[UID()];set_freq=[ATMOS_VENTSCRUB]">Reset</a>)</li>
 		<li>[format_tag("ID Tag","id_tag", "set_id")]</li>
-		<li><b>AAC Acces:</b> <a href="?src=\ref[src];toggleadvcontrol=1">[advcontrol ? "Allowed" : "Blocked"]</a>
+		<li><b>AAC Acces:</b> <a href="?src=[UID()];toggleadvcontrol=1">[advcontrol ? "Allowed" : "Blocked"]</a>
 	</ul>
 	"}
 
 /obj/machinery/atmospherics/unary/vent_scrubber/multitool_topic(var/mob/user, var/list/href_list, var/obj/O)
 	if("toggleadvcontrol" in href_list)
 		advcontrol = !advcontrol
-		return MT_UPDATE
+		return TRUE
 
 	if("set_id" in href_list)
 		var/newid = copytext(reject_bad_text(input(usr, "Specify the new ID tag for this machine", src, src:id_tag) as null|text),1,MAX_MESSAGE_LEN)
 		if(!newid)
 			return
 
-		if(frequency == 1439)
+		if(frequency == ATMOS_VENTSCRUB)
 			initial_loc.air_scrub_info -= id_tag
 			initial_loc.air_scrub_names -= id_tag
 
 		id_tag = newid
 		broadcast_status()
 
-		return MT_UPDATE
+		return TRUE
 
 	return ..()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/can_crawl_through()
 	return !welded
 
-/obj/machinery/atmospherics/unary/vent_scrubber/attackby(var/obj/item/weapon/W as obj, var/mob/user as mob, params)
-	if(istype(W, /obj/item/weapon/weldingtool))
-		var/obj/item/weapon/weldingtool/WT = W
-		if (WT.remove_fuel(0,user))
+/obj/machinery/atmospherics/unary/vent_scrubber/attackby(var/obj/item/W as obj, var/mob/user as mob, params)
+	if(istype(W, /obj/item/weldingtool))
+		var/obj/item/weldingtool/WT = W
+		if(WT.remove_fuel(0,user))
 			to_chat(user, "<span class='notice'>Now welding the scrubber.</span>")
-			if(do_after(user, 20, target = src))
+			if(do_after(user, 20 * WT.toolspeed, target = src))
 				if(!src || !WT.isOn()) return
-				playsound(get_turf(src), 'sound/items/Welder2.ogg', 50, 1)
+				playsound(get_turf(src), WT.usesound, 50, 1)
 				if(!welded)
 					user.visible_message("[user] welds the scrubber shut.", "You weld the vent scrubber.", "You hear welding.")
 					welded = 1
@@ -391,11 +394,11 @@
 		else
 			to_chat(user, "<span class='notice'>You need more welding fuel to complete this task.</span>")
 			return 1
-	if(istype(W, /obj/item/device/multitool))
+	if(istype(W, /obj/item/multitool))
 		update_multitool_menu(user)
 		return 1
-	if (istype(W, /obj/item/weapon/wrench))
-		if (!(stat & NOPOWER) && on)
+	if(istype(W, /obj/item/wrench))
+		if(!(stat & NOPOWER) && on)
 			to_chat(user, "<span class='danger'>You cannot unwrench this [src], turn it off first.</span>")
 			return 1
 

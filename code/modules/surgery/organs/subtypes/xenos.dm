@@ -2,29 +2,19 @@
 	origin_tech = "biotech=5"
 	icon_state = "xgibmid2"
 	var/list/alien_powers = list()
-	tough = 1
-	sterile = 1
-
-///obj/item/organ/internal/xenos/New()
-//	for(var/A in alien_powers)
-//		if(ispath(A))
-//			alien_powers -= A
-//			alien_powers += new A(src)
-//	..()
+	tough = TRUE
+	sterile = TRUE
 
 ///can be changed if xenos get an update..
 /obj/item/organ/internal/xenos/insert(mob/living/carbon/M, special = 0)
 	..()
 	for(var/P in alien_powers)
 		M.verbs |= P
-    	//M.verbs |= alien_powers.Copy()
 
 /obj/item/organ/internal/xenos/remove(mob/living/carbon/M, special = 0)
 	for(var/P in alien_powers)
 		M.verbs -= P
-		//M.verbs -= alien_powers.Copy()
-
-	..()
+	. = ..()
 
 /obj/item/organ/internal/xenos/prepare_eat()
 	var/obj/S = ..()
@@ -36,8 +26,8 @@
 /obj/item/organ/internal/xenos/plasmavessel
 	name = "xeno plasma vessel"
 	icon_state = "plasma"
-	origin_tech = "biotech=5;plasmatech=2"
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
+	origin_tech = "biotech=5;plasmatech=4"
 	parent_organ = "chest"
 	slot = "plasmavessel"
 	alien_powers = list(/mob/living/carbon/alien/humanoid/verb/plant, /mob/living/carbon/alien/humanoid/verb/transfer_plasma)
@@ -56,7 +46,7 @@
 /obj/item/organ/internal/xenos/plasmavessel/queen
 	name = "bloated xeno plasma vessel"
 	icon_state = "plasma_large"
-	origin_tech = "biotech=6;plasma=3"
+	origin_tech = "biotech=6;plasmatech=4"
 	stored_plasma = 200
 	max_plasma = 500
 	plasma_rate = 25
@@ -106,7 +96,7 @@
 		A.updatePlasmaDisplay()
 
 /obj/item/organ/internal/alien/plasmavessel/remove(mob/living/carbon/M, special = 0)
-	..()
+	. =..()
 	if(isalien(M))
 		var/mob/living/carbon/alien/A = M
 		A.updatePlasmaDisplay()
@@ -127,7 +117,7 @@
 	parent_organ = "head"
 	slot = "hivenode"
 	origin_tech = "biotech=5;magnets=4;bluespace=3"
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	alien_powers = list(/mob/living/carbon/alien/humanoid/verb/whisp)
 
 /obj/item/organ/internal/xenos/hivenode/insert(mob/living/carbon/M, special = 0)
@@ -140,7 +130,7 @@
 	M.faction -= "alien"
 	M.remove_language("Hivemind")
 	M.remove_language("Xenomorph")
-	..()
+	. = ..()
 
 /obj/item/organ/internal/xenos/neurotoxin
 	name = "xeno neurotoxin gland"
@@ -163,6 +153,6 @@
 	icon_state = "eggsac"
 	parent_organ = "groin"
 	slot = "eggsac"
-	w_class = 4
-	origin_tech = "biotech=8"
+	w_class = WEIGHT_CLASS_BULKY
+	origin_tech = "biotech=6"
 	alien_powers = list(/mob/living/carbon/alien/humanoid/queen/verb/lay_egg)

@@ -6,7 +6,7 @@
 	icon_state = "clawmachine_on"
 	density = 1
 	anchored = 1
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 40
 	var/tokens = 0
 	var/freeplay = 0				//for debugging and admin kindness
@@ -16,9 +16,10 @@
 
 /obj/machinery/arcade/New()
 	..()
-	var/choice = pick(subtypesof(/obj/machinery/arcade))
-	new choice(loc)
-	qdel(src)
+	if(type == /obj/machinery/arcade)		//if you spawn the base-type, it will replace itself with a random subtype for randomness
+		var/choice = pick(subtypesof(/obj/machinery/arcade))
+		new choice(loc)
+		qdel(src)
 
 /obj/machinery/arcade/examine(mob/user)
 	..(user)
@@ -59,45 +60,41 @@
 		return
 
 /obj/machinery/arcade/attackby(var/obj/item/O as obj, var/mob/user as mob, params)
-	if(istype(O, /obj/item/weapon/screwdriver) && anchored)
-		playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
+	if(istype(O, /obj/item/screwdriver) && anchored)
+		playsound(src.loc, O.usesound, 50, 1)
 		panel_open = !panel_open
 		to_chat(user, "You [panel_open ? "open" : "close"] the maintenance panel.")
 		update_icon()
 		return
 	if(!freeplay)
-		if(istype(O, /obj/item/weapon/card/id))
-			var/obj/item/weapon/card/id/C = O
+		if(istype(O, /obj/item/card/id))
+			var/obj/item/card/id/C = O
 			if(pay_with_card(C))
 				tokens += 1
 			return
-		else if(istype(O, /obj/item/weapon/spacecash))
-			var/obj/item/weapon/spacecash/C = O
+		else if(istype(O, /obj/item/stack/spacecash))
+			var/obj/item/stack/spacecash/C = O
 			if(pay_with_cash(C, user))
 				tokens += 1
 			return
-	if(panel_open&& component_parts && istype(O, /obj/item/weapon/crowbar))
+	if(panel_open && component_parts && istype(O, /obj/item/crowbar))
 		default_deconstruction_crowbar(O)
 
 /obj/machinery/arcade/update_icon()
 	return
 
-/obj/machinery/arcade/proc/pay_with_cash(var/obj/item/weapon/spacecash/cashmoney, var/mob/user)
-	if(cashmoney.get_total() < token_price)
-		to_chat(user, "\icon[cashmoney] <span class='warning'>That is not enough money.</span>")
+/obj/machinery/arcade/proc/pay_with_cash(obj/item/stack/spacecash/cashmoney, mob/user)
+	if(cashmoney.amount < token_price)
+		to_chat(user, "[bicon(cashmoney)] <span class='warning'>That is not enough money.</span>")
 		return 0
 	visible_message("<span class='info'>[usr] inserts a credit chip into [src].</span>")
-	var/left = cashmoney.get_total() - token_price
-	user.unEquip(cashmoney)
-	qdel(cashmoney)
-	if(left)
-		dispense_cash(left, src.loc, user)
+	cashmoney.use(token_price)
 	return 1
 
-/obj/machinery/arcade/proc/pay_with_card(var/obj/item/weapon/card/id/I, var/mob/user)
+/obj/machinery/arcade/proc/pay_with_card(var/obj/item/card/id/I, var/mob/user)
 	visible_message("<span class='info'>[usr] swipes a card through [src].</span>")
 	var/datum/money_account/customer_account = attempt_account_access_nosec(I.associated_account_number)
-	if (!customer_account)
+	if(!customer_account)
 		to_chat(user, "Error: Unable to access account. Please contact technical support if problem persists.")
 		return 0
 
@@ -115,28 +112,7 @@
 			to_chat(user, "Unable to access account: incorrect credentials.")
 			return 0
 
-	if(token_price > customer_account.money)
-		to_chat(user, "Insufficient funds in account.")
-		return 0
-	else
-		// Okay to move the money at this point
-
-		// debit money from the purchaser's account
-		customer_account.money -= token_price
-
-		// create entry in the purchaser's account log
-		var/datum/transaction/T = new()
-		T.target_name = "[src.name]"
-		T.purpose = "Purchase of [src.name] credit"
-		if(token_price > 0)
-			T.amount = "([token_price])"
-		else
-			T.amount = "[token_price]"
-		T.source_terminal = src.name
-		T.date = current_date_string
-		T.time = worldtime2text()
-		customer_account.transaction_log.Add(T)
-		return 1
+	return customer_account.charge(token_price, null, "Purchase of [name] credit", name, name)
 
 /obj/machinery/arcade/proc/start_play(mob/user as mob)
 	user.set_machine(src)

@@ -1,7 +1,7 @@
 /obj/machinery/atmospherics/binary
 	dir = SOUTH
 	initialize_directions = SOUTH|NORTH
-	use_power = 1
+	use_power = IDLE_POWER_USE
 
 	var/datum/gas_mixture/air1
 	var/datum/gas_mixture/air2
@@ -41,7 +41,7 @@
 		nullifyPipenet(parent2)
 	return ..()
 
-/obj/machinery/atmospherics/binary/initialize()
+/obj/machinery/atmospherics/binary/atmos_init()
 	..()
 	var/node2_connect = dir
 	var/node1_connect = turn(dir, 180)
@@ -49,7 +49,7 @@
 	for(var/obj/machinery/atmospherics/target in get_step(src,node1_connect))
 		if(target.initialize_directions & get_dir(target,src))
 			var/c = check_connect_types(target,src)
-			if (c)
+			if(c)
 				target.connected_to = c
 				connected_to = c
 				node1 = target
@@ -58,7 +58,7 @@
 	for(var/obj/machinery/atmospherics/target in get_step(src,node2_connect))
 		if(target.initialize_directions & get_dir(target,src))
 			var/c = check_connect_types(target,src)
-			if (c)
+			if(c)
 				target.connected_to = c
 				connected_to = c
 				node2 = target
@@ -67,7 +67,7 @@
 	update_icon()
 	update_underlays()
 
-/obj/machinery/atmospherics/binary/build_network()
+/obj/machinery/atmospherics/binary/build_network(remove_deferral = FALSE)
 	if(!parent1)
 		parent1 = new /datum/pipeline()
 		parent1.build_pipeline(src)
@@ -75,6 +75,7 @@
 	if(!parent2)
 		parent2 = new /datum/pipeline()
 		parent2.build_pipeline(src)
+	..()
 
 /obj/machinery/atmospherics/binary/disconnect(obj/machinery/atmospherics/reference)
 	if(reference == node1)
@@ -147,6 +148,6 @@
 		T.assume_air(to_release)
 		air_update_turf(1)
 
-/obj/machinery/atmospherics/binary/process()
+/obj/machinery/atmospherics/binary/process_atmos()
 	..()
 	return parent1 && parent2

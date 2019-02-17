@@ -51,10 +51,10 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 			qdel(src)
 
 
-/mob/living/simple_animal/tribble/attackby(var/obj/item/weapon/O as obj, var/mob/user as mob, params)
-	if(istype(O, /obj/item/weapon/scalpel))
+/mob/living/simple_animal/tribble/attackby(var/obj/item/O as obj, var/mob/user as mob, params)
+	if(istype(O, /obj/item/scalpel))
 		to_chat(user, "<span class='notice'>You try to neuter the tribble, but it's moving too much and you fail!</span>")
-	else if(istype(O, /obj/item/weapon/cautery))
+	else if(istype(O, /obj/item/cautery))
 		to_chat(user, "<span class='notice'>You try to un-neuter the tribble, but it's moving too much and you fail!</span>")
 	..()
 
@@ -68,7 +68,7 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 				gestation = 0
 
 
-/mob/living/simple_animal/tribble/Life()
+/mob/living/simple_animal/tribble/Life(seconds, times_fired)
 	..()
 	if(src.health > 0) //no mostly dead procreation
 		if(gestation != null) //neuter check
@@ -79,8 +79,11 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 					src.procreate()
 
 
-/mob/living/simple_animal/tribble/death() // Gotta make sure to remove tribbles from the list on death
-	..()
+/mob/living/simple_animal/tribble/death(gibbed) // Gotta make sure to remove tribbles from the list on death
+	// Only execute the below if we successfully died
+	. = ..(gibbed)
+	if(!.)
+		return FALSE
 	totaltribbles -= 1
 
 
@@ -91,15 +94,15 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 	icon = 'icons/mob/tribbles.dmi'
 	icon_state = "tribble1"
 	item_state = "tribble1"
-	w_class = 10.0
+	w_class = 10
 	var/gestation = 0
+	flags = DROPDEL
 
 /obj/item/toy/tribble/attack_self(mob/user as mob) //hug that tribble (and play a sound if we add one)
 	..()
 	to_chat(user, "<span class='notice'>You nuzzle the tribble and it trills softly.</span>")
 
 /obj/item/toy/tribble/dropped(mob/user as mob) //now you can't item form them to get rid of them all so easily
-	..()
 	new /mob/living/simple_animal/tribble(user.loc)
 	for(var/mob/living/simple_animal/tribble/T in user.loc)
 		T.icon_state = src.icon_state
@@ -108,14 +111,14 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 		T.gestation = src.gestation
 
 	to_chat(user, "<span class='notice'>The tribble gets up and wanders around.</span>")
-	qdel(src)
+	. = ..()
 
-/obj/item/toy/tribble/attackby(var/obj/item/weapon/O as obj, var/mob/user as mob) //neutering and un-neutering
+/obj/item/toy/tribble/attackby(var/obj/item/O as obj, var/mob/user as mob) //neutering and un-neutering
 	..()
-	if(istype(O, /obj/item/weapon/scalpel) && src.gestation != null)
+	if(istype(O, /obj/item/scalpel) && src.gestation != null)
 		gestation = null
 		to_chat(user, "<span class='notice'>You neuter the tribble so that it can no longer re-produce.</span>")
-	else if (istype(O, /obj/item/weapon/cautery) && src.gestation == null)
+	else if(istype(O, /obj/item/cautery) && src.gestation == null)
 		gestation = 0
 		to_chat(user, "<span class='notice'>You fuse some recently cut tubes together, it should be able to reproduce again.</span>")
 
@@ -136,16 +139,16 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 
 /obj/structure/tribble_cage/ex_act(severity)
 	switch(severity)
-		if (1)
-			new /obj/item/weapon/shard( src.loc )
+		if(1)
+			new /obj/item/shard( src.loc )
 			Break()
 			qdel(src)
-		if (2)
-			if (prob(50))
+		if(2)
+			if(prob(50))
 				src.health -= 15
 				src.healthcheck()
-		if (3)
-			if (prob(50))
+		if(3)
+			if(prob(50))
 				src.health -= 5
 				src.healthcheck()
 
@@ -158,22 +161,22 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 
 
 /obj/structure/tribble_cage/blob_act()
-	if (prob(75))
-		new /obj/item/weapon/shard( src.loc )
+	if(prob(75))
+		new /obj/item/shard( src.loc )
 		Break()
 		qdel(src)
 
 
 /obj/structure/tribble_cage/proc/healthcheck()
-	if (src.health <= 0)
-		if (!( src.destroyed ))
+	if(src.health <= 0)
+		if(!( src.destroyed ))
 			src.density = 0
 			src.destroyed = 1
-			new /obj/item/weapon/shard( src.loc )
+			new /obj/item/shard( src.loc )
 			playsound(src, "shatter", 70, 1)
 			Break()
 	else
-		playsound(src.loc, 'sound/effects/Glasshit.ogg', 75, 1)
+		playsound(src.loc, 'sound/effects/glasshit.ogg', 75, 1)
 	return
 
 /obj/structure/tribble_cage/update_icon()
@@ -184,7 +187,7 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 	return
 
 
-/obj/structure/tribble_cage/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+/obj/structure/tribble_cage/attackby(obj/item/W as obj, mob/user as mob, params)
 	src.health -= W.force
 	src.healthcheck()
 	..()
@@ -192,13 +195,10 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 
 
 /obj/structure/tribble_cage/attack_hand(mob/user as mob)
-	if (src.destroyed)
+	if(src.destroyed)
 		return
 	else
-		to_chat(usr, text("\blue You kick the lab cage."))
-		for(var/mob/O in oviewers())
-			if ((O.client && !( O.blinded )))
-				to_chat(O, text("\red [] kicks the lab cage.", usr))
+		user.visible_message("<span class='warning'>[user] kicks the lab cage.</span>", "<span class='notice'>You kick the lab cage.</span>")
 		src.health -= 2
 		healthcheck()
 		return
@@ -212,9 +212,6 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 
 
 //||Fur and Fur Products ||
-/obj
-	var/f_amt = 0	// registers fur amount as an object variable
-
 
 /obj/item/stack/sheet/fur //basic fur sheets (very lumpy furry piles of sheets)
 	name = "pile of fur"
@@ -223,8 +220,8 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 	icon = 'icons/mob/tribbles.dmi'
 	icon_state = "sheet-fur"
 	origin_tech = "materials=2"
-	f_amt = 1000
 	max_amount = 50
+
 
 /obj/item/clothing/ears/earmuffs/tribblemuffs //earmuffs but with tribbles
 	name = "earmuffs"
@@ -232,29 +229,30 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 	icon = 'icons/mob/tribbles.dmi'
 	icon_state = "tribblemuffs"
 	item_state = "tribblemuffs"
-	f_amt = 2000
 
+/* The advanced cold protection of the non-coat items has been removed, so as not
+	to give patreon donors an unfair advantage - the winter coat provides equivalent
+	cold protection
+*/
 /obj/item/clothing/gloves/furgloves
 	desc = "These gloves are warm and furry."
 	name = "fur gloves"
 	icon = 'icons/mob/tribbles.dmi'
 	icon_state = "furglovesico"
 	item_state = "furgloves"
-	f_amt = 3000
+	transfer_prints = TRUE
+	transfer_blood = TRUE
 
-	cold_protection = HANDS
-	min_cold_protection_temperature = GLOVES_MIN_TEMP_PROTECT
-
+// Equivalent to a winter coat's hood
 /obj/item/clothing/head/furcap
 	name = "fur cap"
 	desc = "A warm furry cap."
 	icon = 'icons/mob/tribbles.dmi'
 	icon_state = "furcap"
 	item_state = "furcap"
-	f_amt = 5000
 
 	cold_protection = HEAD
-	min_cold_protection_temperature = HELMET_MIN_TEMP_PROTECT
+	min_cold_protection_temperature = FIRE_SUIT_MIN_TEMP_PROTECT
 
 /obj/item/clothing/shoes/furboots
 	name = "fur boots"
@@ -262,11 +260,8 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 	icon = 'icons/mob/tribbles.dmi'
 	icon_state = "furboots"
 	item_state = "furboots"
-	f_amt = 4000
 
-	cold_protection = FEET
-	min_cold_protection_temperature = SHOES_MIN_TEMP_PROTECT
-
+// As a donator piece of clothing, this is now in line with the winter coat
 /obj/item/clothing/suit/furcoat
 	name = "fur coat"
 	desc = "A trenchcoat made from fur. You could put an oxygen tank in one of the pockets."
@@ -274,11 +269,10 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 	icon_state = "furcoat"
 	item_state = "furcoat"
 	blood_overlay_type = "armor"
-	f_amt = 15000
-	body_parts_covered = UPPER_TORSO|LEGS|ARMS|LOWER_TORSO
-	allowed = list (/obj/item/weapon/tank/emergency_oxygen)
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | ARMS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_TEMP_PROTECT
+	body_parts_covered = UPPER_TORSO|ARMS|LOWER_TORSO
+	allowed = list (/obj/item/tank/emergency_oxygen)
+	cold_protection = UPPER_TORSO | LOWER_TORSO | ARMS
+	min_cold_protection_temperature = FIRE_SUIT_MIN_TEMP_PROTECT
 
 /obj/item/clothing/suit/furcape
 	name = "fur cape"
@@ -287,7 +281,6 @@ var/global/totaltribbles = 0   //global variable so it updates for all tribbles,
 	icon_state = "furcape"
 	item_state = "furcape"
 	blood_overlay_type = "armor"
-	f_amt = 10000
-	body_parts_covered = UPPER_TORSO|LEGS|ARMS
-	cold_protection = UPPER_TORSO | LEGS | ARMS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_TEMP_PROTECT
+	body_parts_covered = UPPER_TORSO|ARMS
+	cold_protection = UPPER_TORSO | ARMS
+	min_cold_protection_temperature = FIRE_SUIT_MIN_TEMP_PROTECT

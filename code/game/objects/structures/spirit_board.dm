@@ -33,7 +33,7 @@
 		notify_ghosts("Someone has begun playing with a [src.name] in [get_area(src)]!", source = src)
 
 	planchette = input("Choose the letter.", "Seance!") in list("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z")
-	add_logs(M, src, "picked a letter on", addition="which was \"[planchette]\".")
+	add_attack_logs(M, src, "Picked a letter on [src] which was \"[planchette]\".")
 	cooldown = world.time
 	lastuser = M.ckey
 
@@ -55,11 +55,10 @@
 	//lighting check
 	var/light_amount = 0
 	var/turf/T = get_turf(src)
-	var/atom/movable/lighting_overlay/LO = locate(/atom/movable/lighting_overlay) in T
-	if(LO)
-		light_amount = LO.get_clamped_lum(0.5)*10
+	if(T)
+		light_amount = T.get_lumcount(0.5) * 10
 	else
-		light_amount =  10
+		light_amount = 10
 
 	if(light_amount > 2)
 		to_chat(M, "<span class='warning'>It's too bright here to use [src.name]!</span>")

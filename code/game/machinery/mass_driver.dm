@@ -4,7 +4,7 @@
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "mass_driver"
 	anchored = 1.0
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 2
 	active_power_usage = 50
 
@@ -14,16 +14,16 @@
 	settagwhitelist = list("id_tag")
 	var/drive_range = 50 //this is mostly irrelevant since current mass drivers throw into space, but you could make a lower-range mass driver for interstation transport or something I guess.
 
-/obj/machinery/mass_driver/attackby(obj/item/weapon/W, mob/user as mob)
+/obj/machinery/mass_driver/attackby(obj/item/W, mob/user as mob)
 
-	if(istype(W, /obj/item/device/multitool))
+	if(istype(W, /obj/item/multitool))
 		update_multitool_menu(user)
 		return 1
 
-	if(istype(W, /obj/item/weapon/screwdriver))
+	if(istype(W, /obj/item/screwdriver))
 		to_chat(user, "You begin to unscrew the bolts off the [src]...")
-		playsound(get_turf(src), 'sound/items/Screwdriver.ogg', 50, 1)
-		if(do_after(user, 30, target = src))
+		playsound(get_turf(src), W.usesound, 50, 1)
+		if(do_after(user, 30 * W.toolspeed, target = src))
 			var/obj/machinery/mass_driver_frame/F = new(get_turf(src))
 			F.dir = src.dir
 			F.anchored = 1
@@ -34,7 +34,7 @@
 
 	return ..()
 
-/obj/machinery/mass_driver/multitool_menu(var/mob/user, var/obj/item/device/multitool/P)
+/obj/machinery/mass_driver/multitool_menu(var/mob/user, var/obj/item/multitool/P)
 	return {"
 	<ul>
 	<li>[format_tag("ID Tag","id_tag")]</li>
@@ -101,102 +101,102 @@
 /obj/machinery/mass_driver_frame/attackby(var/obj/item/W as obj, var/mob/user as mob)
 	switch(build)
 		if(0) // Loose frame
-			if(istype(W, /obj/item/weapon/weldingtool))
-				var/obj/item/weapon/weldingtool/WT = W
+			if(istype(W, /obj/item/weldingtool))
+				var/obj/item/weldingtool/WT = W
 				if(!WT.remove_fuel(0, user))
 					to_chat(user, "The welding tool must be on to complete this task.")
 					return 1
-				playsound(get_turf(src), 'sound/items/Welder.ogg', 50, 1)
+				playsound(get_turf(src), WT.usesound, 50, 1)
 				to_chat(user, "You begin to cut the frame apart...")
-				if(do_after(user, 30, target = src) && (build == 0))
+				if(do_after(user, 30 * WT.toolspeed, target = src) && (build == 0))
 					to_chat(user, "<span class='notice'>You detach the plasteel sheets from each others.</span>")
 					new /obj/item/stack/sheet/plasteel(get_turf(src),3)
 					qdel(src)
 				return 1
-			if(istype(W, /obj/item/weapon/wrench))
+			if(istype(W, /obj/item/wrench))
 				to_chat(user, "You begin to anchor \the [src] on the floor.")
-				playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
-				if(do_after(user, 10, target = src) && (build == 0))
+				playsound(get_turf(src), W.usesound, 50, 1)
+				if(do_after(user, 10 * W.toolspeed, target = src) && (build == 0))
 					to_chat(user, "<span class='notice'>You anchor \the [src]!</span>")
 					anchored = 1
 					build++
 					update_icon()
 				return 1
 		if(1) // Fixed to the floor
-			if(istype(W, /obj/item/weapon/wrench))
+			if(istype(W, /obj/item/wrench))
 				to_chat(user, "You begin to de-anchor \the [src] from the floor.")
-				playsound(get_turf(src), 'sound/items/Ratchet.ogg', 50, 1)
-				if(do_after(user, 10, target = src) && (build == 1))
+				playsound(get_turf(src), W.usesound, 50, 1)
+				if(do_after(user, 10 * W.toolspeed, target = src) && (build == 1))
 					build--
 					update_icon()
 					anchored = 0
 					to_chat(user, "<span class='notice'>You de-anchored \the [src]!</span>")
 				return 1
-			if(istype(W, /obj/item/weapon/weldingtool))
-				var/obj/item/weapon/weldingtool/WT = W
+			if(istype(W, /obj/item/weldingtool))
+				var/obj/item/weldingtool/WT = W
 				if(!WT.remove_fuel(0, user))
 					to_chat(user, "The welding tool must be on to complete this task.")
 					return 1
-				playsound(get_turf(src), 'sound/items/Welder.ogg', 50, 1)
+				playsound(get_turf(src), WT.usesound, 50, 1)
 				to_chat(user, "You begin to weld \the [src] to the floor...")
-				if(do_after(user, 40, target = src) && (build == 1))
+				if(do_after(user, 40 * WT.toolspeed, target = src) && (build == 1))
 					to_chat(user, "<span class='notice'>You welded \the [src] to the floor.</span>")
 					build++
 					update_icon()
 				return 1
 		if(2) // Welded to the floor
-			if(istype(W, /obj/item/weapon/weldingtool))
-				var/obj/item/weapon/weldingtool/WT = W
+			if(istype(W, /obj/item/weldingtool))
+				var/obj/item/weldingtool/WT = W
 				if(!WT.remove_fuel(0, user))
 					to_chat(user, "The welding tool must be on to complete this task.")
 					return 1
-				playsound(get_turf(src), 'sound/items/Welder.ogg', 50, 1)
+				playsound(get_turf(src), WT.usesound, 50, 1)
 				to_chat(user, "You begin to unweld \the [src] to the floor...")
-				if(do_after(user, 40, target = src) && (build == 2))
+				if(do_after(user, 40 * WT.toolspeed, target = src) && (build == 2))
 					to_chat(user, "<span class='notice'>You unwelded \the [src] to the floor.</span>")
 					build--
 					update_icon()
 			if(istype(W, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/C=W
+				var/obj/item/stack/cable_coil/C = W
 				to_chat(user, "You start adding cables to \the [src]...")
-				playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
-				if(do_after(user, 20, target = src) && (C.amount >= 3) && (build == 2))
+				playsound(get_turf(src), C.usesound, 50, 1)
+				if(do_after(user, 20 * C.toolspeed, target = src) && (C.amount >= 3) && (build == 2))
 					C.use(3)
 					to_chat(user, "<span class='notice'>You've added cables to \the [src].</span>")
 					build++
 					update_icon()
 		if(3) // Wired
-			if(istype(W, /obj/item/weapon/wirecutters))
+			if(istype(W, /obj/item/wirecutters))
 				to_chat(user, "You begin to remove the wiring from \the [src].")
-				if(do_after(user, 10, target = src) && (build == 3))
+				if(do_after(user, 10 * W.toolspeed, target = src) && (build == 3))
 					new /obj/item/stack/cable_coil(loc,3)
-					playsound(get_turf(src), 'sound/items/Wirecutter.ogg', 50, 1)
+					playsound(get_turf(src), W.usesound, 50, 1)
 					to_chat(user, "<span class='notice'>You've removed the cables from \the [src].</span>")
 					build--
 					update_icon()
 				return 1
 			if(istype(W, /obj/item/stack/rods))
-				var/obj/item/stack/rods/R=W
+				var/obj/item/stack/rods/R = W
 				to_chat(user, "You begin to complete \the [src]...")
-				playsound(get_turf(src), 'sound/items/Deconstruct.ogg', 50, 1)
-				if(do_after(user, 20, target = src) && (R.amount >= 3) && (build == 3))
+				playsound(get_turf(src), R.usesound, 50, 1)
+				if(do_after(user, 20 * R.toolspeed, target = src) && (R.amount >= 3) && (build == 3))
 					R.use(3)
 					to_chat(user, "<span class='notice'>You've added the grille to \the [src].</span>")
 					build++
 					update_icon()
 				return 1
 		if(4) // Grille in place
-			if(istype(W, /obj/item/weapon/crowbar))
+			if(istype(W, /obj/item/crowbar))
 				to_chat(user, "You begin to pry off the grille from \the [src]...")
-				playsound(get_turf(src), 'sound/items/Crowbar.ogg', 50, 1)
-				if(do_after(user, 30, target = src) && (build == 4))
+				playsound(get_turf(src), W.usesound, 50, 1)
+				if(do_after(user, 30 * W.toolspeed, target = src) && (build == 4))
 					new /obj/item/stack/rods(loc,2)
 					build--
 					update_icon()
 				return 1
-			if(istype(W, /obj/item/weapon/screwdriver))
+			if(istype(W, /obj/item/screwdriver))
 				to_chat(user, "You finalize the Mass Driver...")
-				playsound(get_turf(src), 'sound/items/Screwdriver.ogg', 50, 1)
+				playsound(get_turf(src), W.usesound, 50, 1)
 				var/obj/machinery/mass_driver/M = new(get_turf(src))
 				M.dir = src.dir
 				qdel(src)
@@ -211,7 +211,7 @@
 	set name = "Rotate Frame"
 	set src in view(1)
 
-	if ( usr.stat || usr.restrained()  || (usr.status_flags & FAKEDEATH))
+	if( usr.stat || usr.restrained()  || (usr.status_flags & FAKEDEATH))
 		return
 
 	src.dir = turn(src.dir, -90)

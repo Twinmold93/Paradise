@@ -1,8 +1,3 @@
-#define FULLSCREEN_LAYER 18
-#define DAMAGE_LAYER FULLSCREEN_LAYER + 0.1
-#define BLIND_LAYER DAMAGE_LAYER + 0.1
-#define CRIT_LAYER BLIND_LAYER + 0.1
-
 /mob
 	var/list/screens = list()
 
@@ -59,21 +54,20 @@
 	icon_state = "default"
 	screen_loc = "CENTER-7,CENTER-7"
 	layer = FULLSCREEN_LAYER
-	mouse_opacity = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	var/severity = 0
 
 /obj/screen/fullscreen/Destroy()
-	..()
 	severity = 0
-	return QDEL_HINT_HARDDEL_NOW
+	return ..()
 
 /obj/screen/fullscreen/brute
 	icon_state = "brutedamageoverlay"
-	layer = DAMAGE_LAYER
+	layer = UI_DAMAGE_LAYER
 
 /obj/screen/fullscreen/oxy
 	icon_state = "oxydamageoverlay"
-	layer = DAMAGE_LAYER
+	layer = UI_DAMAGE_LAYER
 
 /obj/screen/fullscreen/crit
 	icon_state = "passage"
@@ -108,5 +102,4 @@
 
 #undef FULLSCREEN_LAYER
 #undef BLIND_LAYER
-#undef DAMAGE_LAYER
 #undef CRIT_LAYER

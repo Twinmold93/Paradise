@@ -41,14 +41,14 @@ var/global/datum/store/centcomm_store=new
 	T.purpose = "Purchase of [item.name]"
 	T.amount = -amount
 	T.date = current_date_string
-	T.time = worldtime2text()
+	T.time = station_time_timestamp()
 	T.source_terminal = "\[CLASSIFIED\] Terminal #[rand(111,333)]"
 	mind.initial_account.transaction_log.Add(T)
 	return 1
 
 /datum/store/proc/reconnect_database()
 	for(var/obj/machinery/computer/account_database/DB in world)
-		if((DB.z in config.station_levels))
+		if(is_station_level(DB.z))
 			linked_db = DB
 			break
 

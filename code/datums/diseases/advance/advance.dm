@@ -46,13 +46,6 @@ var/list/advance_cures = 	list(
  */
 
 /datum/disease/advance/New(var/process = 1, var/datum/disease/advance/D)
-
-	// Setup our dictionary if it hasn't already.
-	if(!dictionary_symptoms.len)
-		for(var/symp in list_symptoms)
-			var/datum/symptom/S = new symp
-			dictionary_symptoms[S.id] = symp
-
 	if(!istype(D))
 		D = null
 	// Generate symptoms if we weren't given any.
@@ -96,7 +89,7 @@ var/list/advance_cures = 	list(
 	if(!(istype(D, /datum/disease/advance)))
 		return 0
 
-	if(src.GetDiseaseID() != D.GetDiseaseID())
+	if(GetDiseaseID() != D.GetDiseaseID())
 		return 0
 	return 1
 
@@ -121,7 +114,7 @@ var/list/advance_cures = 	list(
 
 // Mix the symptoms of two diseases (the src and the argument)
 /datum/disease/advance/proc/Mix(datum/disease/advance/D)
-	if(!(src.IsSame(D)))
+	if(!(IsSame(D)))
 		var/list/possible_symptoms = shuffle(D.symptoms)
 		for(var/datum/symptom/S in possible_symptoms)
 			AddSymptom(new S.type)
@@ -161,7 +154,6 @@ var/list/advance_cures = 	list(
 	return generated
 
 /datum/disease/advance/proc/Refresh(new_name = 0)
-//	to_chat(world, "[src.name] \ref[src] - REFRESH!")
 	var/list/properties = GenerateProperties()
 	AssignProperties(properties)
 	id = null
@@ -259,7 +251,7 @@ var/list/advance_cures = 	list(
 		cures = list(advance_cures[res])
 
 		// Get the cure name from the cure_id
-		var/datum/reagent/D = chemical_reagents_list[cures[1]]
+		var/datum/reagent/D = GLOB.chemical_reagents_list[cures[1]]
 		cure_text = D.name
 
 
@@ -402,11 +394,11 @@ var/list/advance_cures = 	list(
 		D.AssignName(new_name)
 		D.Refresh()
 
-		for(var/datum/disease/advance/AD in disease_master.processing)
+		for(var/datum/disease/advance/AD in GLOB.active_diseases)
 			AD.Refresh()
 
-		for(var/mob/living/carbon/human/H in shuffle(living_mob_list))
-			if(H.z != 1)
+		for(var/mob/living/carbon/human/H in shuffle(GLOB.living_mob_list))
+			if(!is_station_level(H.z))
 				continue
 			if(!H.HasDisease(D))
 				H.ForceContractDisease(D)
@@ -417,12 +409,6 @@ var/list/advance_cures = 	list(
 			name_symptoms += S.name
 		message_admins("[key_name_admin(user)] has triggered a custom virus outbreak of [D.name]! It has these symptoms: [english_list(name_symptoms)]")
 
-/*
-/mob/verb/test()
-
-	for(var/datum/disease/D in disease_master.processing)
-		to_chat(src, "<a href='?_src_=vars;Vars=\ref[D]'>[D.name] - [D.holder]</a>")
-*/
 
 
 /datum/disease/advance/proc/totalStageSpeed()
@@ -452,5 +438,3 @@ var/list/advance_cures = 	list(
 		var/datum/symptom/S = i
 		total_transmittable += S.transmittable
 	return total_transmittable
-
-#undef RANDOM_STARTING_LEVEL

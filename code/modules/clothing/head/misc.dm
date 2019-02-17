@@ -5,7 +5,7 @@
 	icon_state = "centcom"
 	desc = "It's good to be emperor."
 	item_state = "centhat"
-	armor = list(melee = 50, bullet = 15, laser = 50, energy = 10, bomb = 25, bio = 0, rad = 0)
+	armor = list(melee = 30, bullet = 15, laser = 30, energy = 10, bomb = 25, bio = 0, rad = 0)
 	strip_delay = 80
 
 /obj/item/clothing/head/hairflower
@@ -14,16 +14,26 @@
 	desc = "Smells nice."
 	item_state = "hairflower"
 
-/obj/item/clothing/head/hairflower/purple
-	icon_state = "hairflowerp"
-	item_state = "hairflowerp"
-	item_state = "that"
-
 /obj/item/clothing/head/powdered_wig
 	name = "powdered wig"
 	desc = "A powdered wig."
 	icon_state = "pwig"
 	item_state = "pwig"
+
+/obj/item/clothing/head/justice_wig
+	name = "Justice wig"
+	desc = "A fancy powdered wig given to arbitrators of the law. It looks itchy."
+	icon_state = "jwig"
+	item_state = "jwig"
+
+/obj/item/clothing/head/beret/blue
+	icon_state = "beret_blue"
+
+/obj/item/clothing/head/beret/black
+	icon_state = "beret_black"
+
+/obj/item/clothing/head/beret/purple_normal
+	icon_state = "beret_purple_normal"
 
 /obj/item/clothing/head/that
 	name = "top-hat"
@@ -51,7 +61,8 @@
 	name = "hastur's hood"
 	desc = "It's unspeakably stylish"
 	icon_state = "hasturhood"
-	flags = HEADCOVERSEYES | BLOCKHAIR
+	flags = BLOCKHAIR
+	flags_cover = HEADCOVERSEYES
 
 /obj/item/clothing/head/nursehat
 	name = "nurse's hat"
@@ -65,14 +76,37 @@
 	desc = "A plastic replica of a syndicate agent's space helmet, you'll look just like a real murderous syndicate agent in this! This is a toy, it is not made for use in space!"
 	flags = BLOCKHAIR
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/helmet.dmi'
+	)
+
 
 /obj/item/clothing/head/cueball
 	name = "cueball helmet"
 	desc = "A large, featureless white orb meant to be worn on your head. How do you even see out of this thing?"
 	icon_state = "cueball"
-	flags = HEADCOVERSEYES | HEADCOVERSMOUTH | BLOCKHAIR
-	item_state="cueball"
-	flags_inv = 0
+	item_state = "cueball"
+	flags = BLOCKHAIR
+	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
+	flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
+
+/obj/item/clothing/head/snowman
+	name = "snowman head"
+	desc = "A ball of white styrofoam. So festive."
+	icon_state = "snowman_h"
+	item_state = "snowman_h"
+	flags = BLOCKHAIR
+	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
+	flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
 
 /obj/item/clothing/head/that
 	name = "sturdy top-hat"
@@ -94,7 +128,8 @@
 	desc = "Fight for what's righteous!"
 	icon_state = "justicered"
 	item_state = "justicered"
-	flags = HEADCOVERSEYES | HEADCOVERSMOUTH | BLOCKHAIR
+	flags = BLOCKHAIR
+	flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH
 
 /obj/item/clothing/head/justice/blue
 	icon_state = "justiceblue"
@@ -161,22 +196,56 @@
 	item_state = "boater_hat"
 	desc = "Goes well with celery."
 
+/obj/item/clothing/head/cowboyhat
+	name = "cowboy hat"
+	icon_state = "cowboyhat"
+	item_state = "cowboyhat"
+	desc = "For the Rancher in us all."
+
+/obj/item/clothing/head/cowboyhat/tan
+	name = "tan cowboy hat"
+	icon_state = "cowboyhat_tan"
+	item_state = "cowboyhat_tan"
+	desc = "There's a new sheriff in town. Pass the whiskey."
+
+/obj/item/clothing/head/cowboyhat/black
+	name = "black cowboy hat"
+	icon_state = "cowboyhat_black"
+	item_state = "cowboyhat_black"
+	desc = "This station ain't big enough for the two ah' us."
+
+/obj/item/clothing/head/cowboyhat/white
+	name = "white cowboy hat"
+	icon_state = "cowboyhat_white"
+	item_state = "cowboyhat_white"
+	desc = "Authentic Marshall hair case. Now ya can protect this here homestead. Navy Model not included."
+
+/obj/item/clothing/head/cowboyhat/pink
+	name = "cowgirl hat"
+	icon_state = "cowboyhat_pink"
+	item_state = "cowboyhat_pink"
+	desc = "For those buckle bunnies wanta' become a real buckaroo."
+
 /obj/item/clothing/head/fedora
-	name = "\improper fedora"
+	name = "fedora"
 	icon_state = "fedora"
 	item_state = "fedora"
 	desc = "A great hat ruined by being within fifty yards of you."
+	actions_types = list(/datum/action/item_action/tip_fedora)
 
-//TIPS FEDORA
-/obj/item/clothing/head/fedora/verb/tip_fedora()
-	set name = "Tip Fedora"
-	set category = "Object"
-	set desc = "Show that CIS SCUM who's boss."
+/obj/item/clothing/head/fedora/attack_self(mob/user)
+	tip_fedora(user)
 
-	usr.visible_message("[usr] tips their fedora.","You tip your fedora")
+/obj/item/clothing/head/fedora/item_action_slot_check(slot)
+	if(slot == slot_head)
+		return 1
+
+/obj/item/clothing/head/fedora/proc/tip_fedora(mob/user)
+	user.visible_message("[user] tips [user.p_their()] fedora.", "You tip your fedora")
+
 
 /obj/item/clothing/head/fez
-	name = "\improper fez"
+	name = "fez"
 	icon_state = "fez"
 	item_state = "fez"
 	desc = "Put it on your monkey, make lots of cash money."
@@ -196,6 +265,10 @@
 	icon_state = "chickenhead"
 	item_state = "chickensuit"
 	flags = BLOCKHAIR
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
 
 /obj/item/clothing/head/corgi
 	name = "corgi suit head"
@@ -325,31 +398,39 @@
 	throwforce = 3.0
 	throw_speed = 2
 	throw_range = 5
-	w_class = 2.0
+	w_class = WEIGHT_CLASS_SMALL
 	attack_verb = list("warned", "cautioned", "smashed")
+	burn_state = FIRE_PROOF
+
+/obj/item/clothing/head/jester
+	name = "jester hat"
+	desc = "A hat with bells, to add some merryness to the suit."
+	icon_state = "jester_hat"
+
+/obj/item/clothing/head/rice_hat
+	name = "rice hat"
+	desc = "Welcome to the rice fields, motherfucker."
+	icon_state = "rice_hat"
 
 /obj/item/clothing/head/griffin
 	name = "griffon head"
 	desc = "Why not 'eagle head'? Who knows."
 	icon_state = "griffinhat"
 	item_state = "griffinhat"
-	flags = BLOCKHAIR|NODROP
+	flags = BLOCKHAIR
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
-	action_button_name = "Caw"
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
+	actions_types = list(/datum/action/item_action/caw)
 
 /obj/item/clothing/head/griffin/attack_self()
 	caw()
 
-/obj/item/clothing/head/griffin/verb/caw()
-
-	set category = "Object"
-	set name = "Caw"
-	set src in usr
-	if(!istype(usr, /mob/living)) return
-	if(usr.stat) return
-
+/obj/item/clothing/head/griffin/proc/caw()
 	if(cooldown < world.time - 20) // A cooldown, to stop people being jerks
-		playsound(src.loc, "sound/misc/caw.ogg", 50, 1)
+		playsound(src.loc, 'sound/misc/caw.ogg', 50, 1)
 		cooldown = world.time
 
 
@@ -364,3 +445,42 @@
 	desc = "A horribly bloated and mismatched human head."
 	icon_state = "lingspacehelmet"
 	item_state = "lingspacehelmet"
+
+/obj/item/clothing/head/papersack
+	name = "paper sack hat"
+	desc = "A paper sack with crude holes cut out for eyes. Useful for hiding one's identity or ugliness."
+	icon_state = "papersack"
+	flags = BLOCKHAIR
+	flags_inv = HIDEFACE|HIDEEARS
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
+
+/obj/item/clothing/head/papersack/smiley
+	name = "paper sack hat"
+	desc = "A paper sack with crude holes cut out for eyes and a sketchy smile drawn on the front. Not creepy at all."
+	icon_state = "papersack_smile"
+	flags = BLOCKHAIR
+	flags_inv = HIDEFACE|HIDEEARS
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
+
+/obj/item/clothing/head/crown
+	name = "crown"
+	desc = "A crown fit for a king, a petty king maybe."
+	icon_state = "crown"
+	armor = list(melee = 15, bullet = 0, laser = 0, energy = 15, bomb = 0, bio = 0, rad = 0) //for a warrior king //energy cause gold is reflective //worse than sec helm overall
+
+/obj/item/clothing/head/crown/fancy
+	name = "magnificent crown"
+	desc = "A crown worn by only the highest emperors of the land."
+	icon_state = "fancycrown"
+
+/obj/item/clothing/head/zepelli
+	name = "chequered diamond hat"
+	desc = "Wearing this makes you feel like a real mozzarella cheeseball. "
+	icon_state = "zepelli"
+	item_state = "zepelli"

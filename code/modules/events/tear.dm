@@ -5,7 +5,7 @@
 	var/obj/effect/tear/TE
 
 /datum/event/tear/announce()
-	command_announcement.Announce("A tear in the fabric of space and time has opened. Expected location: [impact_area.name].", "Anomaly Alert")
+	event_announcement.Announce("A tear in the fabric of space and time has opened. Expected location: [impact_area.name].", "Anomaly Alert")
 
 /datum/event/tear/start()
 	var/turf/T = pick(get_area_turfs(impact_area))
@@ -28,6 +28,7 @@
 	density = 0
 	anchored = 1
 	luminosity = 3
+	var/list/tear_critters = list()
 
 /obj/effect/tear/New()
 	..()
@@ -38,10 +39,10 @@
 	animation.master = src
 //	flick("newtear",usr)
 	spawn(15)
-		if(animation)	qdel(animation)
+		if(animation)
+			qdel(animation)
 
 	spawn(rand(30,120))
-		var/list/tear_critters = list()
 		for(var/T in typesof(/mob/living/simple_animal))
 			var/mob/living/simple_animal/SA = T
 			if(initial(SA.gold_core_spawnable) == CHEM_MOB_SPAWN_HOSTILE)

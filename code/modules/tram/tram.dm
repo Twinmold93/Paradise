@@ -23,7 +23,7 @@
 	var/delay_timer = null
 
 	var/list/blacklist = list(/obj/tram/rail,/atom/movable/lighting_overlay)
-	var/list/ancwhitelist = list(/obj/tram, /obj/vehicle, /obj/structure/stool/bed/chair, /obj/structure/grille, /obj/structure/window)
+	var/list/ancwhitelist = list(/obj/tram, /obj/vehicle, /obj/structure/chair, /obj/structure/grille, /obj/structure/window)
 
 /obj/tram/tram_controller/New()
 	spawn(1)
@@ -254,8 +254,8 @@
 	if(M.melee_damage_upper == 0)	return
 	if(prob(M.melee_damage_upper))
 		qdel(src)
-	src.visible_message("\red <B>[M] has [M.attacktext] [src]!</B>")
-	M.attack_log += text("\[[time_stamp()]\] <font color='red'>attacked [src.name]</font>")
+	src.visible_message("<span class='danger'>[M] has [M.attacktext] [src]!</span>")
+	M.create_attack_log("<font color='red'>attacked [src.name]</font>")
 
 /obj/tram/bullet_act(var/obj/item/projectile/proj)
 	if(prob(proj.damage))

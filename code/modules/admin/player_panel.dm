@@ -1,6 +1,6 @@
 
 /datum/admins/proc/player_panel_new()//The new one
-	if (!usr.client.holder)
+	if(!usr.client.holder)
 		return
 	var/dat = "<html><head><title>Admin Player Panel</title></head>"
 
@@ -29,7 +29,7 @@
 
 						var maintable_data = document.getElementById('maintable_data');
 						var ltr = maintable_data.getElementsByTagName("tr");
-						for ( var i = 0; i < ltr.length; ++i )
+						for( var i = 0; i < ltr.length; ++i )
 						{
 							try{
 								var tr = ltr\[i\];
@@ -42,7 +42,7 @@
 								var search = lsearch\[0\];
 								//var inner_span = li.getElementsByTagName("span")\[1\] //Should only ever contain one element.
 								//document.write("<p>"+search.innerText+"<br>"+filter+"<br>"+search.innerText.indexOf(filter))
-								if ( search.innerText.toLowerCase().indexOf(filter) == -1 )
+								if( search.innerText.toLowerCase().indexOf(filter) == -1 )
 								{
 									//document.write("a");
 									//ltr.removeChild(tr);
@@ -61,7 +61,7 @@
 
 				}
 
-				function expand(id,job,name,real_name,image,key,ip,antagonist,ref,eyeref){
+				function expand(id,job,name,real_name,image,key,ip,antagonist,UID,eyeUID){
 
 					clearAll();
 
@@ -75,18 +75,18 @@
 
 					body += "</td><td align='center'>";
 
-					body += "<a href='?src=\ref[src];adminplayeropts="+ref+"'>PP</a> - "
-					body += "<a href='?src=\ref[src];shownoteckey="+key+"'>N</a> - "
-					body += "<a href='?_src_=vars;Vars="+ref+"'>VV</a> - "
-					body += "<a href='?src=\ref[src];traitor="+ref+"'>TP</a> - "
-					body += "<a href='?src=\ref[usr];priv_msg=\ref"+ref+"'>PM</a> - "
-					body += "<a href='?src=\ref[src];subtlemessage="+ref+"'>SM</a> - "
-					body += "<a href='?src=\ref[src];adminplayerobservefollow="+ref+"'>FLW</a>"
-					if(eyeref)
-						body += "|<a href='?src=\ref[src];adminplayerobservefollow="+eyeref+"'>EYE</a>"
+					body += "<a href='?src=[UID()];adminplayeropts="+UID+"'>PP</a> - "
+					body += "<a href='?src=[UID()];shownoteckey="+key+"'>N</a> - "
+					body += "<a href='?_src_=vars;Vars="+UID+"'>VV</a> - "
+					body += "<a href='?src=[UID()];traitor="+UID+"'>TP</a> - "
+					body += "<a href='?src=[usr.UID()];priv_msg="+UID+"'>PM</a> - "
+					body += "<a href='?src=[UID()];subtlemessage="+UID+"'>SM</a> - "
+					body += "<a href='?src=[UID()];adminplayerobservefollow="+UID+"'>FLW</a>"
+					if(eyeUID)
+						body += "|<a href='?src=[UID()];adminplayerobservefollow="+eyeUID+"'>EYE</a>"
 					body += "<br>"
 					if(antagonist > 0)
-						body += "<font size='2'><a href='?src=\ref[src];check_antagonist=1'><font color='red'><b>Antagonist</b></font></a></font>";
+						body += "<font size='2'><a href='?src=[UID()];check_antagonist=1'><font color='red'><b>Antagonist</b></font></a></font>";
 
 					body += "</td></tr></table>";
 
@@ -197,7 +197,7 @@
 			<tr id='title_tr'>
 				<td align='center'>
 					<font size='5'><b>Player panel</b></font><br>
-					Hover over a line to see more information | [check_rights(R_ADMIN,0) ? "<a href='?src=\ref[src];check_antagonist=1'>Check antagonists</a> | Kick <a href='?_src_=holder;kick_all_from_lobby=1;afkonly=0'>everyone</a>/<a href='?_src_=holder;kick_all_from_lobby=1;afkonly=1'>AFKers</a> in lobby" : "" ]
+					Hover over a line to see more information | [check_rights(R_ADMIN,0) ? "<a href='?src=[UID()];check_antagonist=1'>Check antagonists</a> | Kick <a href='?_src_=holder;kick_all_from_lobby=1;afkonly=0'>everyone</a>/<a href='?_src_=holder;kick_all_from_lobby=1;afkonly=1'>AFKers</a> in lobby" : "" ]
 					<p>
 				</td>
 			</tr>
@@ -270,9 +270,6 @@
 			else if(isobserver(M))
 				M_job = "Ghost"
 
-			else if(isSpirit(M))
-				M_job = (ismask(M)) ? "Mask" : "Spirit"
-
 			M_job = replacetext(M_job, "'", "")
 			M_job = replacetext(M_job, "\"", "")
 			M_job = replacetext(M_job, "\\", "")
@@ -291,11 +288,11 @@
 			M_key = replacetext(M_key, "\"", "")
 			M_key = replacetext(M_key, "\\", "")
 
-			var/M_eyeref = ""
+			var/M_eyeUID = ""
 			if(isAI(M))
 				var/mob/living/silicon/ai/A = M
 				if(A.client && A.eyeobj) // No point following clientless AI eyes
-					M_eyeref = "\ref[A.eyeobj]"
+					M_eyeUID = "[A.eyeobj.UID()]"
 			//output for each mob
 			dat += {"
 
@@ -303,7 +300,7 @@
 					<td align='center' bgcolor='[color]'>
 						<span id='notice_span[i]'></span>
 						<a id='link[i]'
-						onmouseover='expand("item[i]","[M_job]","[M_name]","[M_rname]","--unused--","[M_key]","[M.lastKnownIP]",[is_antagonist],"\ref[M]", "[M_eyeref]")'
+						onmouseover='expand("item[i]","[M_job]","[M_name]","[M_rname]","--unused--","[M_key]","[M.lastKnownIP]",[is_antagonist],"[M.UID()]", "[M_eyeUID]")'
 						>
 						<b id='search[i]'>[M_name] - [M_rname] - [M_key] ([M_job])</b>
 						</a>
@@ -332,7 +329,7 @@
 
 //The old one
 /datum/admins/proc/player_panel_old()
-	if (!usr.client.holder)
+	if(!usr.client.holder)
 		return
 	var/dat = "<html><head><title>Player Menu</title></head>"
 	dat += "<body><table border=1 cellspacing=5><B><tr><th>Name</th><th>Real Name</th><th>Assigned Job</th><th>Key</th><th>Options</th><th>PM</th><th>Traitor?</th></tr></B>"
@@ -360,10 +357,6 @@
 			dat += "<td>Ghost</td>"
 		else if(isalien(M))
 			dat += "<td>Alien</td>"
-		else if(ismask(M))
-			dat += "<td>Mask</td>"
-		else if(isSpirit(M))
-			dat += "<td>Spirit</td>"
 		else
 			dat += "<td>Unknown</td>"
 
@@ -377,16 +370,16 @@
 
 
 		dat += {"<td>[(M.client ? "[M.client]" : "No client")]</td>
-		<td align=center><A HREF='?src=\ref[src];adminplayeropts=\ref[M]'>X</A></td>
-		<td align=center><A href='?src=\ref[usr];priv_msg=\ref[M]'>PM</A></td>
+		<td align=center><A HREF='?src=[UID()];adminplayeropts=[M.UID()]'>X</A></td>
+		<td align=center><A href='?src=[usr.UID()];priv_msg=[M.UID()]'>PM</A></td>
 		"}
 		switch(is_special_character(M))
 			if(0)
-				dat += {"<td align=center><A HREF='?src=\ref[src];traitor=\ref[M]'>Traitor?</A></td>"}
+				dat += {"<td align=center><A HREF='?src=[UID()];traitor=[M.UID()]'>Traitor?</A></td>"}
 			if(1)
-				dat += {"<td align=center><A HREF='?src=\ref[src];traitor=\ref[M]'><font color=red>Traitor?</font></A></td>"}
+				dat += {"<td align=center><A HREF='?src=[UID()];traitor=[M.UID()]'><font color=red>Traitor?</font></A></td>"}
 			if(2)
-				dat += {"<td align=center><A HREF='?src=\ref[src];traitor=\ref[M]'><font color=red><b>Traitor?</b></font></A></td>"}
+				dat += {"<td align=center><A HREF='?src=[UID()];traitor=[M.UID()]'><font color=red><b>Traitor?</b></font></A></td>"}
 
 	dat += "</table></body></html>"
 
@@ -400,28 +393,31 @@
 		logout_status = " <i>(snpc)</i>"
 	else
 		logout_status = M.client ? "" : " <i>(logged out)</i>"
+	var/dname = M.real_name
+	if(!dname)
+		dname = M
 
-	return {"<tr><td><a href='?src=\ref[src];adminplayeropts=\ref[M]'>[M.real_name]</a><b>[caption]</b>[logout_status][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>
-		<td><A href='?src=\ref[usr];priv_msg=\ref[M]'>PM</A></td>[close ? "</tr>" : ""]"}
+	return {"<tr><td><a href='?src=[UID()];adminplayeropts=[M.UID()]'>[dname]</a><b>[caption]</b>[logout_status][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>
+		<td><A href='?src=[usr.UID()];priv_msg=[M.UID()]'>PM</A></td>[close ? "</tr>" : ""]"}
 
 /datum/admins/proc/check_antagonists()
 	if(!check_rights(R_ADMIN))	return
-	if (ticker && ticker.current_state >= GAME_STATE_PLAYING)
+	if(ticker && ticker.current_state >= GAME_STATE_PLAYING)
 		var/dat = "<html><head><title>Round Status</title></head><body><h1><B>Round Status</B></h1>"
 		dat += "Current Game Mode: <B>[ticker.mode.name]</B><BR>"
-		dat += "Round Duration: <B>[round(world.time / 36000)]:[add_zero(num2text(world.time / 600 % 60), 2)]:[add_zero(num2text(world.time / 10 % 60), 2)]</B><BR>"
+		dat += "Round Duration: <B>[round(ROUND_TIME / 36000)]:[add_zero(num2text(ROUND_TIME / 600 % 60), 2)]:[add_zero(num2text(ROUND_TIME / 10 % 60), 2)]</B><BR>"
 		dat += "<B>Emergency shuttle</B><BR>"
-		if(shuttle_master.emergency.mode < SHUTTLE_CALL)
-			dat += "<a href='?src=\ref[src];call_shuttle=1'>Call Shuttle</a><br>"
+		if(SSshuttle.emergency.mode < SHUTTLE_CALL)
+			dat += "<a href='?src=[UID()];call_shuttle=1'>Call Shuttle</a><br>"
 		else
-			var/timeleft = shuttle_master.emergency.timeLeft()
-			if(shuttle_master.emergency.mode < SHUTTLE_DOCKED)
+			var/timeleft = SSshuttle.emergency.timeLeft()
+			if(SSshuttle.emergency.mode < SHUTTLE_DOCKED)
 				dat += "ETA: <a href='?_src_=holder;edit_shuttle_time=1'>[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]</a><BR>"
 				dat += "<a href='?_src_=holder;call_shuttle=2'>Send Back</a><br>"
 			else
 				dat += "ETA: <a href='?_src_=holder;edit_shuttle_time=1'>[(timeleft / 60) % 60]:[add_zero(num2text(timeleft % 60), 2)]</a><BR>"
 
-		dat += "<a href='?src=\ref[src];delay_round_end=1'>[ticker.delay_end ? "End Round Normally" : "Delay Round End"]</a><br>"
+		dat += "<a href='?src=[UID()];delay_round_end=1'>[ticker.delay_end ? "End Round Normally" : "Delay Round End"]</a><br>"
 		if(ticker.mode.syndicates.len)
 			dat += "<br><table cellspacing=5><tr><td><B>Syndicates</B></td><td></td></tr>"
 			for(var/datum/mind/N in ticker.mode.syndicates)
@@ -431,13 +427,13 @@
 				else
 					dat += "<tr><td><i>Nuclear Operative not found!</i></td></tr>"
 			dat += "</table><br><table><tr><td><B>Nuclear Disk(s)</B></td></tr>"
-			for(var/obj/item/weapon/disk/nuclear/N in world)
+			for(var/obj/item/disk/nuclear/N in GLOB.poi_list)
 				dat += "<tr><td>[N.name], "
 				var/atom/disk_loc = N.loc
 				while(!istype(disk_loc, /turf))
 					if(istype(disk_loc, /mob))
 						var/mob/M = disk_loc
-						dat += "carried by <a href='?src=\ref[src];adminplayeropts=\ref[M]'>[M.real_name]</a> "
+						dat += "carried by <a href='?src=[UID()];adminplayeropts=[M.UID()]'>[M.real_name]</a> "
 					if(istype(disk_loc, /obj))
 						var/obj/O = disk_loc
 						dat += "in \a [O.name] "
@@ -468,7 +464,7 @@
 					dat += "<tr><td><i>Head not found!</i></td></tr>"
 			dat += "</table>"
 
-		if(istype(ticker.mode, /datum/game_mode/blob))
+		if(GAMEMODE_IS_BLOB)
 			var/datum/game_mode/blob/mode = ticker.mode
 			dat += "<br><table cellspacing=5><tr><td><B>Blob</B></td><td></td><td></td></tr>"
 			dat += "<tr><td><i>Progress: [blobs.len]/[mode.blobwincount]</i></td></tr>"
@@ -476,7 +472,7 @@
 			for(var/datum/mind/blob in mode.infected_crew)
 				var/mob/M = blob.current
 				if(M)
-					dat += "<tr><td><a href='?_src_=holder;adminplayeropts=\ref[M]'>[M.real_name]</a>[M.client ? "" : " <i>(ghost)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
+					dat += "<tr><td>[ADMIN_PP(M,"[M.real_name]")][M.client ? "" : " <i>(ghost)</i>"][M.stat == 2 ? " <b><font color=red>(DEAD)</font></b>" : ""]</td>"
 					dat += "<td><A href='?priv_msg=[M.ckey]'>PM</A></td>"
 				else
 					dat += "<tr><td><i>Blob not found!</i></td></tr>"
@@ -496,6 +492,11 @@
 
 		if(ticker.mode.cult.len)
 			dat += check_role_table("Cultists", ticker.mode.cult, 0)
+			dat += "<br> use <a href='?src=[UID()];cult_mindspeak=[UID()]'>Cult Mindspeak</a>"
+			if(GAMEMODE_IS_CULT)
+				var/datum/game_mode/cult/cult_round = ticker.mode
+				if(!cult_round.narsie_condition_cleared)
+					dat += "<br><a href='?src=[UID()];cult_nextobj=[UID()]'>complete objective (debug)</a>"
 
 		if(ticker.mode.traitors.len)
 			dat += check_role_table("Traitors", ticker.mode.traitors)
@@ -517,6 +518,9 @@
 
 		if(ticker.mode.vampire_enthralled.len)
 			dat += check_role_table("Vampire Thralls", ticker.mode.vampire_enthralled)
+		
+		if(ticker.mode.devils.len)
+			dat += check_role_table("Devils", ticker.mode.devils)
 
 		if(ticker.mode.xenos.len)
 			dat += check_role_table("Xenos", ticker.mode.xenos)
@@ -530,9 +534,16 @@
 		if(ticker.mode.greyshirts.len)
 			dat += check_role_table("Greyshirts", ticker.mode.greyshirts)
 
-		var/datum/game_mode/mutiny/mutiny = get_mutiny_mode()
-		if(mutiny)
-			dat += mutiny.check_antagonists_ui(src)
+		if(ts_spiderlist.len)
+			var/list/spider_minds = list()
+			for(var/mob/living/simple_animal/hostile/poison/terror_spider/S in ts_spiderlist)
+				if(S.ckey)
+					spider_minds += S.mind
+			if(spider_minds.len)
+				dat += check_role_table("Terror Spiders", spider_minds)
+
+		if(ticker.mode.ert.len)
+			dat += check_role_table("ERT", ticker.mode.ert)
 
 		dat += "</body></html>"
 		usr << browse(dat, "window=roundstatus;size=400x500")
@@ -547,15 +558,15 @@
 	return txt
 
 /datum/admins/proc/check_role_table_row(mob/M, show_objectives)
-	if (!istype(M))
+	if(!istype(M))
 		return "<tr><td><i>Not found!</i></td></tr>"
 
 	var/txt = check_antagonists_line(M, close = 0)
 
-	if (show_objectives)
+	if(show_objectives)
 		txt += {"
 			<td>
-				<a href='?src=\ref[src];traitor=\ref[M]'>Show Objective</a>
+				<a href='?src=[UID()];traitor=[M.UID()]'>Show Objective</a>
 			</td>
 		"}
 

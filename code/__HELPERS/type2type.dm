@@ -10,7 +10,7 @@
 
 //Returns an integer given a hex input
 /proc/hex2num(hex)
-	if (!( istext(hex) ))
+	if(!(istext(hex)))
 		return
 
 	var/num = 0
@@ -59,6 +59,27 @@
 		hex = "0[hex]"
 	return hex || "0"
 
+//Returns an integer value for R of R/G/B given a hex color input.
+/proc/color2R(hex)
+	if(!(istext(hex)))
+		return
+
+	return hex2num(copytext(hex, 2, 4)) //Returning R
+
+//Returns an integer value for G of R/G/B given a hex color input.
+/proc/color2G(hex)
+	if(!(istext(hex)))
+		return
+
+	return hex2num(copytext(hex, 4, 6)) //Returning G
+
+//Returns an integer value for B of R/G/B given a hex color input.
+/proc/color2B(hex)
+	if(!(istext(hex)))
+		return
+
+	return hex2num(copytext(hex, 6, 8)) //Returning B
+
 /proc/text2numlist(text, delimiter="\n")
 	var/list/num_list = list()
 	for(var/x in splittext(text, delimiter))
@@ -79,7 +100,7 @@
 		if(4.0) return EAST
 		if(8.0) return WEST
 		else
-			log_to_dd("UNKNOWN DIRECTION: [direction]")
+			log_runtime(EXCEPTION("UNKNOWN DIRECTION: [direction]"))
 
 /proc/dir2text(direction)
 	switch(direction)
@@ -307,3 +328,55 @@
 	var/e = matrix_list[5]
 	var/f = matrix_list[6]
 	return matrix(a, b, c, d, e, f)
+
+
+//This is a weird one:
+//It returns a list of all var names found in the string
+//These vars must be in the [var_name] format
+//It's only a proc because it's used in more than one place
+
+//Takes a string and a datum
+//The string is well, obviously the string being checked
+//The datum is used as a source for var names, to check validity
+//Otherwise every single word could technically be a variable!
+/proc/string2listofvars(var/t_string, var/datum/var_source)
+	if(!t_string || !var_source)
+		return list()
+
+	. = list()
+
+	var/var_found = findtext(t_string, "\[") //Not the actual variables, just a generic "should we even bother" check
+	if(var_found)
+		//Find var names
+
+		// "A dog said hi [name]!"
+		// splittext() --> list("A dog said hi ","name]!"
+		// jointext() --> "A dog said hi name]!"
+		// splittext() --> list("A","dog","said","hi","name]!")
+
+		t_string = replacetext(t_string, "\[", "\[ ")//Necessary to resolve "word[var_name]" scenarios
+		var/list/list_value = splittext(t_string, "\[")
+		var/intermediate_stage = jointext(list_value, null)
+
+		list_value = splittext(intermediate_stage, " ")
+		for(var/value in list_value)
+			if(findtext(value, "]"))
+				value = splittext(value, "]") //"name]!" --> list("name","!")
+				for(var/A in value)
+					if(var_source.vars.Find(A))
+						. += A
+
+/proc/type2parent(child)
+	var/string_type = "[child]"
+	var/last_slash = findlasttext(string_type, "/")
+	if(last_slash == 1)
+		switch(child)
+			if(/datum)
+				return null
+			if(/obj || /mob)
+				return /atom/movable
+			if(/area || /turf)
+				return /atom
+			else
+				return /datum
+	return text2path(copytext(string_type, 1, last_slash))

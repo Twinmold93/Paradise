@@ -14,14 +14,9 @@
 
 	if(!chosen_dna)
 		return
-	user.dna = chosen_dna.Clone()
-	user.real_name = chosen_dna.real_name
-	user.flavor_text = ""
-	if(ishuman(user))
-		user.set_species()
-	user.UpdateAppearance()
-	domutcheck(user, null)
-	
+
+	transform_dna(user,chosen_dna)
+
 	user.changeling_update_languages(changeling.absorbed_languages)
 
 	feedback_add_details("changeling_powers","TR")

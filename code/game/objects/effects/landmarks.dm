@@ -8,26 +8,10 @@
 /obj/effect/landmark/New()
 
 	..()
-	tag = text("landmark*[]", name)
+	set_tag()
 	invisibility = 101
 
 	switch(name)			//some of these are probably obsolete
-		if("shuttle")
-			shuttle_z = z
-			qdel(src)
-
-		if("airtunnel_stop")
-			airtunnel_stop = x
-
-		if("airtunnel_start")
-			airtunnel_start = x
-
-		if("airtunnel_bottom")
-			airtunnel_bottom = y
-
-		if("monkey")
-			monkeystart += loc
-			qdel(src)
 		if("start")
 			newplayer_start += loc
 			qdel(src)
@@ -35,6 +19,9 @@
 		if("wizard")
 			wizardstart += loc
 			qdel(src)
+
+		if("avatarspawn")
+			avatarspawn += loc
 
 		if("JoinLate")
 			latejoin += loc
@@ -52,29 +39,28 @@
 			latejoin_cyborg += loc
 			qdel(src)
 
-		//prisoners
 		if("prisonwarp")
 			prisonwarp += loc
 			qdel(src)
-	//	if("mazewarp")
-	//		mazewarp += loc
-		if("Holding Facility")
-			holdingfacility += loc
-		if("tdome1")
-			tdome1	+= loc
-		if("tdome2")
-			tdome2 += loc
-		if("tdomeadmin")
-			tdomeadmin	+= loc
-		if("tdomeobserve")
-			tdomeobserve += loc
-		if("aroomwarp")
-			aroomwarp += loc
 
-		//not prisoners
 		if("prisonsecuritywarp")
 			prisonsecuritywarp += loc
 			qdel(src)
+
+		if("tdome1")
+			tdome1	+= loc
+
+		if("tdome2")
+			tdome2 += loc
+
+		if("tdomeadmin")
+			tdomeadmin	+= loc
+
+		if("tdomeobserve")
+			tdomeobserve += loc
+
+		if("aroomwarp")
+			aroomwarp += loc
 
 		if("blobstart")
 			blobstart += loc
@@ -94,13 +80,29 @@
 		if("voxstart")
 			raider_spawn += loc
 
-	landmarks_list += src
+		if("ERT Director")
+			ertdirector += loc
+			qdel(src)
+
+		if("Response Team")
+			emergencyresponseteamspawn += loc
+			qdel(src)
+
+		if("Syndicate Officer")
+			syndicateofficer += loc
+			qdel(src)
+
+	GLOB.landmarks_list += src
 	return 1
 
 /obj/effect/landmark/Destroy()
-	landmarks_list -= src
+	GLOB.landmarks_list -= src
 	..()
 	return QDEL_HINT_HARDDEL_NOW
+
+/obj/effect/landmark/proc/set_tag()
+	tag = text("landmark*[]", name)
+
 
 /obj/effect/landmark/start
 	name = "start"
@@ -108,12 +110,9 @@
 	icon_state = "x"
 	anchored = 1.0
 
-/obj/effect/landmark/start/New()
-	..()
+/obj/effect/landmark/start/set_tag()
 	tag = "start*[name]"
-	invisibility = 101
 
-	return 1
 
 //Costume spawner landmarks
 
@@ -128,7 +127,7 @@
 /obj/effect/landmark/costume/chicken/New()
 	new /obj/item/clothing/suit/chickensuit(src.loc)
 	new /obj/item/clothing/head/chicken(src.loc)
-	new /obj/item/weapon/reagent_containers/food/snacks/egg(src.loc)
+	new /obj/item/reagent_containers/food/snacks/egg(src.loc)
 	qdel(src)
 
 /obj/effect/landmark/costume/gladiator/New()
@@ -172,7 +171,7 @@
 	new /obj/item/clothing/gloves/color/white(src.loc)
 	new /obj/item/clothing/shoes/white(src.loc)
 	new /obj/item/clothing/under/scratch(src.loc)
-	if (prob(30))
+	if(prob(30))
 		new /obj/item/clothing/head/cueball(src.loc)
 	qdel(src)
 
@@ -187,7 +186,7 @@
 	var/CHOICE= pick( /obj/item/clothing/head/bowlerhat, /obj/item/clothing/head/that)
 	new CHOICE(src.loc)
 	new /obj/item/clothing/shoes/black(src.loc)
-	new /obj/item/weapon/cane(src.loc)
+	new /obj/item/cane(src.loc)
 	new /obj/item/clothing/under/sl_suit(src.loc)
 	new /obj/item/clothing/mask/fakemoustache(src.loc)
 	qdel(src)
@@ -222,9 +221,10 @@
 	new /obj/item/clothing/head/ushanka(src.loc)
 	qdel(src)
 
+
 /obj/effect/landmark/costume/imperium_monk/New()
 	new /obj/item/clothing/suit/imperium_monk(src.loc)
-	if (prob(25))
+	if(prob(25))
 		new /obj/item/clothing/mask/gas/cyborg(src.loc)
 	qdel(src)
 
@@ -240,21 +240,60 @@
 /obj/effect/landmark/costume/cutewitch/New()
 	new /obj/item/clothing/under/sundress(src.loc)
 	new /obj/item/clothing/head/witchwig(src.loc)
-	new /obj/item/weapon/twohanded/staff/broom(src.loc)
+	new /obj/item/twohanded/staff/broom(src.loc)
 	qdel(src)
 
 /obj/effect/landmark/costume/fakewizard/New()
 	new /obj/item/clothing/suit/wizrobe/fake(src.loc)
 	new /obj/item/clothing/head/wizard/fake(src.loc)
-	new /obj/item/weapon/twohanded/staff/(src.loc)
+	new /obj/item/twohanded/staff/(src.loc)
 	qdel(src)
 
 /obj/effect/landmark/costume/sexyclown/New()
-	new /obj/item/clothing/mask/gas/sexyclown(src.loc)
-	new /obj/item/clothing/under/sexyclown(src.loc)
+	new /obj/item/clothing/mask/gas/clown_hat/sexy(loc)
+	new /obj/item/clothing/under/rank/clown/sexy(loc)
 	qdel(src)
 
 /obj/effect/landmark/costume/sexymime/New()
 	new /obj/item/clothing/mask/gas/sexymime(src.loc)
 	new /obj/item/clothing/under/sexymime(src.loc)
 	qdel(src)
+
+/obj/effect/landmark/ruin
+	var/datum/map_template/ruin/ruin_template
+
+/obj/effect/landmark/ruin/New(loc, my_ruin_template)
+	name = "ruin_[GLOB.ruin_landmarks.len + 1]"
+	..(loc)
+	ruin_template = my_ruin_template
+	GLOB.ruin_landmarks |= src
+
+/obj/effect/landmark/ruin/Destroy()
+	GLOB.ruin_landmarks -= src
+	ruin_template = null
+	. = ..()
+
+// Damage tiles
+/obj/effect/landmark/damageturf
+	icon_state = "damaged"
+
+/obj/effect/landmark/damageturf/New()
+	..()
+	var/turf/simulated/T = get_turf(src)
+	if(istype(T))
+		T.break_tile()
+
+/obj/effect/landmark/burnturf
+	icon_state = "burned"
+
+/obj/effect/landmark/burnturf/New()
+	..()
+	var/turf/simulated/T = get_turf(src)
+	T.burn_tile()
+
+
+/obj/effect/landmark/battle_mob_point
+	name = "Nanomob Battle Avatar Spawn Point"
+
+/obj/effect/landmark/free_golem_spawn
+	name = "Free Golem Spawn Point"

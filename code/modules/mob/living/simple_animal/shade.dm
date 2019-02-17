@@ -24,32 +24,25 @@
 	status_flags = 0
 	faction = list("cult")
 	status_flags = CANPUSH
-	loot = list(/obj/item/weapon/reagent_containers/food/snacks/ectoplasm)
+	loot = list(/obj/item/reagent_containers/food/snacks/ectoplasm)
+	del_on_death = 1
+	deathmessage = "lets out a contented sigh as their form unwinds."
 
 
-	death()
-		..()
-		for(var/mob/M in viewers(src, null))
-			if((M.client && !( M.blinded )))
-				M.show_message("\red [src] lets out a contented sigh as their form unwinds. ")
-				ghostize()
-		qdel(src)
-
-	attackby(var/obj/item/O as obj, var/mob/user as mob)  //Marker -Agouri
-		if(istype(O, /obj/item/device/soulstone))
-			O.transfer_soul("SHADE", src, user)
+/mob/living/simple_animal/shade/attackby(var/obj/item/O as obj, var/mob/user as mob)  //Marker -Agouri
+	if(istype(O, /obj/item/soulstone))
+		O.transfer_soul("SHADE", src, user)
+	else
+		if(O.force)
+			var/damage = O.force
+			if(O.damtype == STAMINA)
+				damage = 0
+			health -= damage
+			user.visible_message("<span class='boldwarning'>[src] has been attacked with the [O] by [user]. </span>")
 		else
-			if(O.force)
-				var/damage = O.force
-				if (O.damtype == STAMINA)
-					damage = 0
-				health -= damage
-				for(var/mob/M in viewers(src, null))
-					if ((M.client && !( M.blinded )))
-						M.show_message("\red \b [src] has been attacked with the [O] by [user]. ")
-			else
-				to_chat(usr, "\red This weapon is ineffective, it does no damage.")
-				for(var/mob/M in viewers(src, null))
-					if ((M.client && !( M.blinded )))
-						M.show_message("\red [user] gently taps [src] with the [O]. ")
-		return
+			user.visible_message("<span class='warning'>[user] gently taps [src] with the [O]. </span>", "<span class='warning'>This weapon is ineffective, it does no damage.</span>")
+	return
+
+/mob/living/simple_animal/shade/sword
+	universal_speak = 1
+	faction = list("neutral")

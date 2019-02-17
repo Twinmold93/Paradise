@@ -2,7 +2,7 @@
 var/global/Holiday = null
 
 //Just thinking ahead! Here's the foundations to a more robust Holiday event system.
-//It's easy as hell to add stuff. Just set Holiday to something using the switch (or something else)
+//It's easy as hell to add stuff. Just set Holiday to something using the switch(or something else)
 //then use if(Holiday == "MyHoliday") to make stuff happen on that specific day only
 //Please, Don't spam stuff up with easter eggs, I'd rather somebody just delete this than people cause
 //the game to lag even more in the name of one-day content.
@@ -133,7 +133,7 @@ var/global/Holiday = null
 	world.update_status()
 	Holiday_Game_Start()
 
-	message_admins("\blue ADMIN: Event: [key_name_admin(src)] force-set Holiday to \"[Holiday]\"")
+	message_admins("<span class='notice'>ADMIN: Event: [key_name_admin(src)] force-set Holiday to \</span>"[Holiday]\"")
 	log_admin("[key_name(src)] force-set Holiday to \"[Holiday]\"")
 
 
@@ -165,16 +165,16 @@ var/global/Holiday = null
 			var/turf/simulated/floor/F = Floorlist[rand(1,Floorlist.len)]
 			Floorlist = null
 			var/obj/structure/closet/C = locate(/obj/structure/closet) in F
-			var/obj/item/weapon/reagent_containers/food/snacks/chocolateegg/wrapped/Egg
+			var/obj/item/reagent_containers/food/snacks/chocolateegg/wrapped/Egg
 			if( C )			Egg = new(C)
 			else			Egg = new(F)
 */
 /*			var/list/obj/containers = list()
-			for(var/obj/item/weapon/storage/S in world)
-				if(!(S.z in config.station_levels))	continue
+			for(var/obj/item/storage/S in world)
+				if(!is_station_level(S.z))	continue
 				containers += S
 
-			message_admins("\blue DEBUG: Event: Egg spawned at [Egg.loc] ([Egg.x],[Egg.y],[Egg.z])")*/
+			message_admins("<span class='notice'>DEBUG: Event: Egg spawned at [Egg.loc] ([Egg.x],[Egg.y],[Egg.z])</span>")*/
 		if("End of the World")
 			if(prob(eventchance))	GameOver()
 

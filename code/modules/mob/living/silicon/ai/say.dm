@@ -1,5 +1,71 @@
+/*
+ * AI Saycode
+ */
+
+
+/mob/living/silicon/ai/handle_track(var/message, var/verb = "says", var/mob/speaker = null, var/speaker_name, var/atom/follow_target, var/hard_to_hear)
+	if(hard_to_hear)
+		return
+
+	var/jobname // the mob's "job"
+	var/mob/living/carbon/human/impersonating //The crewmember being impersonated, if any.
+	var/changed_voice
+
+	if(ishuman(speaker))
+		var/mob/living/carbon/human/H = speaker
+
+		var/obj/item/card/id/id = H.wear_id
+		if((istype(id) && id.is_untrackable()) && H.HasVoiceChanger())
+			changed_voice = 1
+			var/mob/living/carbon/human/I = locate(speaker_name)
+			if(I)
+				impersonating = I
+				jobname = impersonating.get_assignment()
+			else
+				jobname = "Unknown"
+		else
+			jobname = H.get_assignment()
+
+	else if(iscarbon(speaker)) // Nonhuman carbon mob
+		jobname = "No ID"
+	else if(isAI(speaker))
+		jobname = "AI"
+	else if(isrobot(speaker))
+		jobname = "Cyborg"
+	else if(ispAI(speaker))
+		jobname = "Personal AI"
+	else if(isAutoAnnouncer(speaker))
+		var/mob/living/automatedannouncer/AA = speaker
+		jobname = AA.role
+	else
+		jobname = "Unknown"
+
+	var/track = ""
+	var/mob/mob_to_track = null
+	if(changed_voice)
+		if(impersonating)
+			mob_to_track = impersonating
+		else
+			track = "[speaker_name] ([jobname])"
+	else
+		if(istype(follow_target, /mob/living/simple_animal/bot))
+			track = "<a href='byond://?src=[UID()];trackbot=\ref[follow_target]'>[speaker_name] ([jobname])</a>"
+		else
+			mob_to_track = speaker
+
+	if(mob_to_track)
+		track = "<a href='byond://?src=[UID()];track=\ref[mob_to_track]'>[speaker_name] ([jobname])</a>"
+		track += "<a href='byond://?src=[UID()];open=\ref[mob_to_track]'>\[O\]</a>"
+
+	return track
+
+
+
+/*
+ * AI VOX Announcements
+ */
+
 var/announcing_vox = 0 // Stores the time of the last announcement
-var/const/VOX_CHANNEL = 200
 var/const/VOX_DELAY = 100
 var/const/VOX_PATH = "sound/vox_fem/"
 
@@ -17,7 +83,7 @@ var/const/VOX_PATH = "sound/vox_fem/"
 	var/index = 0
 	for(var/word in vox_sounds)
 		index++
-		dat += "<A href='?src=\ref[src];say_word=[word]'>[capitalize(word)]</A>"
+		dat += "<A href='?src=[UID()];say_word=[word]'>[capitalize(word)]</A>"
 		if(index != vox_sounds.len)
 			dat += " / "
 
@@ -69,23 +135,26 @@ var/const/VOX_PATH = "sound/vox_fem/"
 		play_vox_word(word, src.z, null)
 
 
-/proc/play_vox_word(var/word, var/z_level, var/mob/only_listener)
+/proc/play_vox_word(word, z_level, mob/only_listener)
+
 	word = lowertext(word)
+
 	if(vox_sounds[word])
+
 		var/sound_file = vox_sounds[word]
-		var/sound/voice = sound(sound_file, wait = 1, channel = VOX_CHANNEL)
+		var/sound/voice = sound(sound_file, wait = 1, channel = CHANNEL_VOX)
 		voice.status = SOUND_STREAM
 
 		// If there is no single listener, broadcast to everyone in the same z level
 		if(!only_listener)
 			// Play voice for all mobs in the z level
-			for(var/mob/M in player_list)
+			for(var/mob/M in GLOB.player_list)
 				if(M.client)
 					var/turf/T = get_turf(M)
-					if(T && T.z == z_level && !isdeaf(M))
-						to_chat(M, voice)
+					if(T && T.z == z_level && M.can_hear())
+						M << voice
 		else
-			to_chat(only_listener, voice)
+			only_listener << voice
 		return 1
 	return 0
 

@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
-
 var/global/list/priority_air_alarms = list()
 var/global/list/minor_air_alarms = list()
 
@@ -7,7 +5,7 @@ var/global/list/minor_air_alarms = list()
 /obj/machinery/computer/atmos_alert
 	name = "atmospheric alert computer"
 	desc = "Used to access the station's atmospheric sensors."
-	circuit = /obj/item/weapon/circuitboard/atmos_alert
+	circuit = /obj/item/circuitboard/atmos_alert
 	icon_keyboard = "atmos_key"
 	icon_screen = "alert:0"
 	light_color = LIGHT_COLOR_CYAN
@@ -24,6 +22,13 @@ var/global/list/minor_air_alarms = list()
 	ui_interact(user)
 
 /obj/machinery/computer/atmos_alert/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
+	if(!ui)
+		ui = new(user, src, ui_key, "atmos_alert.tmpl", src.name, 500, 500)
+		ui.open()
+		ui.set_auto_update(1)
+
+/obj/machinery/computer/atmos_alert/ui_data(mob/user, datum/topic_state/state)
 	var/data[0]
 	var/major_alarms[0]
 	var/minor_alarms[0]
@@ -37,12 +42,7 @@ var/global/list/minor_air_alarms = list()
 	data["priority_alarms"] = major_alarms
 	data["minor_alarms"] = minor_alarms
 
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
-	if(!ui)
-		ui = new(user, src, ui_key, "atmos_alert.tmpl", src.name, 500, 500)
-		ui.set_initial_data(data)
-		ui.open()
-		ui.set_auto_update(1)
+	return data
 
 /obj/machinery/computer/atmos_alert/update_icon()
 	var/list/alarms = atmosphere_alarm.major_alarms()

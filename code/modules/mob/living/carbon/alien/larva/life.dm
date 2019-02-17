@@ -1,9 +1,4 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
-
-/mob/living/carbon/alien/larva
-	var/temperature_alert = 0
-
-/mob/living/carbon/alien/larva/Life()
+/mob/living/carbon/alien/larva/Life(seconds, times_fired)
 	if(..()) //still breathing
 		// GROW!
 		if(amount_grown < max_grown)
@@ -16,13 +11,11 @@
 	updatehealth()
 
 	if(stat == DEAD)	//DEAD. BROWN BREAD. SWIMMING WITH THE SPESS CARP
-		blinded = 1
-		silent = 0
+		SetSilence(0)
 	else				//ALIVE. LIGHTS ARE ON
-		if(health < -25 || brain_op_stage == 4.0)
+		if(health < -25 || !get_int_organ(/obj/item/organ/internal/brain))
 			death()
-			blinded = 1
-			silent = 0
+			SetSilence(0)
 			return 1
 
 		//UNCONSCIOUS. NO-ONE IS HOME
@@ -35,16 +28,11 @@
 			Paralyse(3)
 
 		if(paralysis)
-			AdjustParalysis(-2)
-			blinded = 1
 			stat = UNCONSCIOUS
 		else if(sleeping)
-			sleeping = max(sleeping-1, 0)
-			blinded = 1
 			stat = UNCONSCIOUS
-			if( prob(10) && health )
-				spawn(0)
-					emote("hiss_")
+			if(prob(10) && health)
+				emote("hiss_")
 		//CONSCIOUS
 		else
 			stat = CONSCIOUS
@@ -53,36 +41,17 @@
 		if(move_delay_add > 0)
 			move_delay_add = max(0, move_delay_add - rand(1, 2))
 
-		//Eyes
-		if(sdisabilities & BLIND)	//disabled-blind, doesn't get better on its own
-			blinded = 1
-		else if(eye_blind)			//blindness, heals slowly over time
-			eye_blind = max(eye_blind-1,0)
-			blinded = 1
+		if(eye_blind)			//blindness, heals slowly over time
+			AdjustEyeBlind(-1)
 		else if(eye_blurry)	//blurry eyes heal slowly
-			eye_blurry = max(eye_blurry-1, 0)
-
-		//Ears
-		if(sdisabilities & DEAF)	//disabled-deaf, doesn't get better on its own
-			ear_deaf = max(ear_deaf, 1)
-		else if(ear_deaf)			//deafness, heals slowly over time
-			ear_deaf = max(ear_deaf-1, 0)
-		else if(ear_damage < 25)	//ear damage heals slowly under this threshold.
-			ear_damage = max(ear_damage-0.05, 0)
-
-		//Other
-		if(stunned)
-			AdjustStunned(-1)
-
-		if(weakened)
-			weakened = max(weakened-1,0)
+			AdjustEyeBlurry(-1)
 
 		if(stuttering)
-			stuttering = max(stuttering-1, 0)
+			AdjustStuttering(-1)
 
 		if(silent)
-			silent = max(silent-1, 0)
+			AdjustSilence(-1)
 
 		if(druggy)
-			druggy = max(druggy-1, 0)
+			AdjustDruggy(-1)
 	return 1

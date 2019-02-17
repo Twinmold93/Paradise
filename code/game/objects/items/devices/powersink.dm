@@ -1,19 +1,20 @@
 // Powersink - used to drain station power
 
-/obj/item/device/powersink
+/obj/item/powersink
 	name = "power sink"
 	desc = "A nulling power sink which drains energy from electrical systems."
+	icon = 'icons/obj/device.dmi'
 	icon_state = "powersink0"
 	item_state = "electronic"
-	w_class = 4.0
+	w_class = WEIGHT_CLASS_BULKY
 	flags = CONDUCT
 	throwforce = 5
 	throw_speed = 1
 	throw_range = 2
 	materials = list(MAT_METAL=750)
-	origin_tech = "powerstorage=3;syndicate=5"
+	origin_tech = "powerstorage=5;syndicate=5"
 	var/drain_rate = 1600000		// amount of power to drain per tick
-	var/apc_drain_rate = 5000 		// Max. amount drained from single APC. In Watts.
+	var/apc_drain_rate = 50 		// Max. amount drained from single APC. In Watts.
 	var/dissipation_rate = 20000	// Passive dissipation of drained power. In Watts.
 	var/power_drained = 0 			// Amount of power drained.
 	var/max_power = 1e10			// Detonation point.
@@ -24,13 +25,15 @@
 	var/datum/powernet/PN			// Our powernet
 	var/obj/structure/cable/attached		// the attached cable
 
-/obj/item/device/powersink/Destroy()
+/obj/item/powersink/Destroy()
 	processing_objects.Remove(src)
-	processing_power_items.Remove(src)
+	GLOB.processing_power_items.Remove(src)
+	PN = null
+	attached = null
 	return ..()
 
-/obj/item/device/powersink/attackby(var/obj/item/I, var/mob/user)
-	if(istype(I, /obj/item/weapon/screwdriver))
+/obj/item/powersink/attackby(var/obj/item/I, var/mob/user)
+	if(istype(I, /obj/item/screwdriver))
 		if(mode == 0)
 			var/turf/T = loc
 			if(isturf(T) && !T.intact)
@@ -49,9 +52,9 @@
 				to_chat(user, "Device must be placed over an exposed cable to attach to it.")
 				return
 		else
-			if (mode == 2)
+			if(mode == 2)
 				processing_objects.Remove(src) // Now the power sink actually stops draining the station's power if you unhook it. --NeoFite
-				processing_power_items.Remove(src)
+				GLOB.processing_power_items.Remove(src)
 			anchored = 0
 			mode = 0
 			src.visible_message("<span class='notice'>[user] detaches [src] from the cable!</span>")
@@ -62,10 +65,10 @@
 	else
 		..()
 
-/obj/item/device/powersink/attack_ai()
+/obj/item/powersink/attack_ai()
 	return
 
-/obj/item/device/powersink/attack_hand(var/mob/user)
+/obj/item/powersink/attack_hand(var/mob/user)
 	switch(mode)
 		if(0)
 			..()
@@ -74,16 +77,16 @@
 			mode = 2
 			icon_state = "powersink1"
 			processing_objects.Add(src)
-			processing_power_items.Add(src)
+			GLOB.processing_power_items.Add(src)
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
 			src.visible_message("<span class='notice'>[user] deactivates [src]!</span>")
 			mode = 1
 			set_light(0)
 			icon_state = "powersink0"
 			processing_objects.Remove(src)
-			processing_power_items.Remove(src)
+			GLOB.processing_power_items.Remove(src)
 
-/obj/item/device/powersink/pwr_drain()
+/obj/item/powersink/pwr_drain()
 	if(!attached)
 		return 0
 
@@ -110,15 +113,15 @@
 			if(istype(T.master, /obj/machinery/power/apc))
 				var/obj/machinery/power/apc/A = T.master
 				if(A.operating && A.cell)
-					var/cur_charge = A.cell.charge / CELLRATE
-					var/drain_val = min(apc_drain_rate, cur_charge)
-					A.cell.use(drain_val * CELLRATE)
-					drained += drain_val
+					A.cell.charge = max(0, A.cell.charge - apc_drain_rate)
+					drained += apc_drain_rate
+					if(A.charging == 2) // If the cell was full
+						A.charging = 1 // It's no longer full
 	power_drained += drained
 	return 1
 
 
-/obj/item/device/powersink/process()
+/obj/item/powersink/process()
 	drained_this_tick = 0
 	power_drained -= min(dissipation_rate, power_drained)
 	if(power_drained > max_power * 0.98)

@@ -3,7 +3,7 @@
 	icon = 'icons/obj/computer.dmi'
 	icon_keyboard = "rd_key"
 	icon_screen = "ai-fixer"
-	circuit = /obj/item/weapon/circuitboard/aifixer
+	circuit = /obj/item/circuitboard/aifixer
 	req_access = list(access_captain, access_robotics, access_heads)
 	var/mob/living/silicon/ai/occupant = null
 	var/active = 0
@@ -11,12 +11,13 @@
 	light_color = LIGHT_COLOR_PURPLE
 
 /obj/machinery/computer/aifixer/attackby(I as obj, user as mob, params)
-	if(occupant && istype(I, /obj/item/weapon/screwdriver))
-		if(stat & (NOPOWER|BROKEN))
+	if(occupant && istype(I, /obj/item/screwdriver))
+		if(stat & BROKEN)
+			..()
+		if(stat & NOPOWER)
 			to_chat(user, "<span class='warning'>The screws on [name]'s screen won't budge.</span>")
 		else
-			to_chat(user, "<span class='warning'>The screws on [name]'s screen won't budge and it emits a warning beep.</span>")
-		return
+			to_chat(user, "<span class='warning'>The screws on [name]'s screen won't budge and it emits a warning beep!.</span>")
 	else
 		..()
 
@@ -32,6 +33,14 @@
 			to_chat(user, "<span class='warning'>You have been locked out from this console!</span>")
 
 /obj/machinery/computer/aifixer/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
+
+	if(!ui)
+		ui = new(user, src, ui_key, "ai_fixer.tmpl", "AI System Integrity Restorer", 550, 500)
+		ui.open()
+		ui.set_auto_update(1)
+
+/obj/machinery/computer/aifixer/ui_data(mob/user, datum/topic_state/state)
 	var/data[0]
 	if(occupant)
 		data["occupant"] = occupant.name
@@ -43,39 +52,31 @@
 		data["radio"] = occupant.aiRadio.disabledAi
 
 		var/laws[0]
-		for (var/datum/ai_law/law in occupant.laws.all_laws())
+		for(var/datum/ai_law/law in occupant.laws.all_laws())
 			laws.Add(list(list("law" = law.law, "number" = law.get_index())))
 
 		data["laws"] = laws
 
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
-
-	if (!ui)
-		ui = new(user, src, ui_key, "ai_fixer.tmpl", "AI System Integrity Restorer", 550, 500)
-		ui.set_initial_data(data)
-		ui.open()
-		ui.set_auto_update(1)
+	return data
 
 /obj/machinery/computer/aifixer/Topic(href, href_list)
 	if(..())
 		return 1
 
 	if(href_list["fix"])
-		src.active = 1
-		while (src.occupant.health < 100)
-			src.occupant.adjustOxyLoss(-1)
-			src.occupant.adjustFireLoss(-1)
-			src.occupant.adjustToxLoss(-1)
-			src.occupant.adjustBruteLoss(-1)
-			src.occupant.updatehealth()
-			if (src.occupant.health >= 0 && src.occupant.stat == 2)
-				src.occupant.stat = 0
-				src.occupant.lying = 0
-				dead_mob_list -= src.occupant
-				living_mob_list += src.occupant
+		active = 1
+		while(occupant.health < 100)
+			occupant.adjustOxyLoss(-1, FALSE)
+			occupant.adjustFireLoss(-1, FALSE)
+			occupant.adjustToxLoss(-1, FALSE)
+			occupant.adjustBruteLoss(-1, FALSE)
+			occupant.updatehealth()
+			if(occupant.health >= 0 && occupant.stat == DEAD)
+				occupant.update_revive()
+				occupant.lying = 0
 			sleep(10)
-		src.active = 0
-		src.add_fingerprint(usr)
+		active = 0
+		add_fingerprint(usr)
 
 	if(href_list["wireless"])
 		var/wireless = text2num(href_list["wireless"])
@@ -87,7 +88,7 @@
 		if(radio == 0 || radio == 1)
 			occupant.aiRadio.disabledAi = radio
 
-	nanomanager.update_uis(src)
+	SSnanoui.update_uis(src)
 	update_icon()
 	return
 
@@ -99,16 +100,16 @@
 		var/overlay_layer = LIGHTING_LAYER+0.2 // +0.1 from the default computer overlays
 		if(active)
 			overlays += image(icon,"ai-fixer-on",overlay_layer)
-		if (occupant)
-			switch (occupant.stat)
-				if (0)
+		if(occupant)
+			switch(occupant.stat)
+				if(0)
 					overlays += image(icon,"ai-fixer-full",overlay_layer)
-				if (2)
+				if(2)
 					overlays += image(icon,"ai-fixer-404",overlay_layer)
 		else
 			overlays += image(icon,"ai-fixer-empty",overlay_layer)
 
-/obj/machinery/computer/aifixer/transfer_ai(var/interaction, var/mob/user, var/mob/living/silicon/ai/AI, var/obj/item/device/aicard/card)
+/obj/machinery/computer/aifixer/transfer_ai(var/interaction, var/mob/user, var/mob/living/silicon/ai/AI, var/obj/item/aicard/card)
 	if(!..())
 		return
 	//Downloading AI from card to terminal.
@@ -131,7 +132,20 @@
 			occupant.loc = card
 			occupant = null
 			update_icon()
-		else if (active)
+		else if(active)
 			to_chat(user, "<span class='boldannounce'>ERROR</span>: Reconstruction in progress.")
-		else if (!occupant)
+		else if(!occupant)
 			to_chat(user, "<span class='boldannounce'>ERROR</span>: Unable to locate artificial intelligence.")
+
+/obj/machinery/computer/aifixer/Destroy()
+	if(occupant)
+		occupant.ghostize()
+		QDEL_NULL(occupant)
+	return ..()
+
+/obj/machinery/computer/aifixer/emp_act()
+	if(occupant)
+		occupant.ghostize()
+		QDEL_NULL(occupant)
+	else
+		..()

@@ -1,7 +1,6 @@
 #define EXTERNAL_PRESSURE_BOUND ONE_ATMOSPHERE
 #define INTERNAL_PRESSURE_BOUND 0
 #define PRESSURE_CHECKS 1
-#undefine
 
 /obj/machinery/atmospherics/unary/vent_pump
 	icon = 'icons/atmos/vent_pump.dmi'
@@ -9,7 +8,7 @@
 
 	name = "air vent"
 	desc = "Has a valve and pump attached to it"
-	use_power = 1
+	use_power = IDLE_POWER_USE
 
 	can_unwrench = 1
 	var/open = 0
@@ -38,7 +37,7 @@
 
 	var/welded = 0 // Added for aliens -- TLE
 
-	var/frequency = 1439
+	var/frequency = ATMOS_VENTSCRUB
 	var/datum/radio_frequency/radio_connection
 	Mtoollink = 1
 	var/advcontrol = 0//does this device listen to the AAC
@@ -60,13 +59,14 @@
 	icon_state = "map_vent_in"
 
 /obj/machinery/atmospherics/unary/vent_pump/New()
+	..()
+	GLOB.all_vent_pumps += src
 	icon = null
 	initial_loc = get_area(loc)
 	area_uid = initial_loc.uid
-	if (!id_tag)
+	if(!id_tag)
 		assign_uid()
 		id_tag = num2text(uid)
-	..()
 
 /obj/machinery/atmospherics/unary/vent_pump/high_volume
 	name = "large air vent"
@@ -98,7 +98,9 @@
 	else
 		vent_icon += "[on ? "[pump_direction ? "out" : "in"]" : "off"]"
 
-	overlays += icon_manager.get_atmos_icon("device", , , vent_icon)
+	overlays += GLOB.pipe_icon_manager.get_atmos_icon("device", , , vent_icon)
+
+	update_pipe_image()
 
 /obj/machinery/atmospherics/unary/vent_pump/update_underlays()
 	if(..())
@@ -118,10 +120,11 @@
 	update_icon()
 	update_underlays()
 
-/obj/machinery/atmospherics/unary/vent_pump/process()
-	if(!..() || (stat & (NOPOWER|BROKEN)))
+/obj/machinery/atmospherics/unary/vent_pump/process_atmos()
+	..()
+	if((stat & (NOPOWER|BROKEN)))
 		return 0
-	if (!node)
+	if(!node)
 		on = 0
 	//broadcast_status() // from now air alarm/control computer should request update purposely --rastaf0
 	if(!on)
@@ -143,7 +146,7 @@
 
 		if(pressure_delta > 0.5)
 			if(air_contents.temperature > 0)
-				var/transfer_moles = pressure_delta*environment.volume/(air_contents.temperature * R_IDEAL_GAS_EQUATION)
+				var/transfer_moles = pressure_delta*environment.volume/(air_contents.temperature * R_IDEAL_GAS_EQUATION) / 5
 
 				var/datum/gas_mixture/removed = air_contents.remove(transfer_moles)
 
@@ -161,10 +164,10 @@
 
 		if(pressure_delta > 0.5)
 			if(environment.temperature > 0)
-				var/transfer_moles = pressure_delta*air_contents.volume/(environment.temperature * R_IDEAL_GAS_EQUATION)
+				var/transfer_moles = pressure_delta*air_contents.volume/(environment.temperature * R_IDEAL_GAS_EQUATION) / 5
 
 				var/datum/gas_mixture/removed = loc.remove_air(transfer_moles)
-				if (isnull(removed)) //in space
+				if(isnull(removed)) //in space
 					return
 
 				air_contents.merge(removed)
@@ -181,7 +184,7 @@
 	frequency = new_frequency
 	if(frequency)
 		radio_connection = radio_controller.add_object(src, frequency,radio_filter_in)
-	if(frequency != 1439)
+	if(frequency != ATMOS_VENTSCRUB)
 		initial_loc.air_vent_info -= id_tag
 		initial_loc.air_vent_names -= id_tag
 		name = "vent pump"
@@ -208,7 +211,7 @@
 		"timestamp" = world.time,
 		"sigtype" = "status"
 	)
-	if(frequency == 1439)//We're on the frequency the air alarms and stuff use
+	if(frequency == ATMOS_VENTSCRUB)
 		if(!initial_loc.air_vent_names[id_tag])
 			var/new_name = "[initial_loc.name] Vent Pump #[initial_loc.air_vent_names.len+1]"
 			initial_loc.air_vent_names[id_tag] = new_name
@@ -220,12 +223,12 @@
 	return 1
 
 
-/obj/machinery/atmospherics/unary/vent_pump/initialize()
+/obj/machinery/atmospherics/unary/vent_pump/atmos_init()
 	..()
 
 	//some vents work his own special way
-	radio_filter_in = frequency==1439?(RADIO_FROM_AIRALARM):null
-	radio_filter_out = frequency==1439?(RADIO_TO_AIRALARM):null
+	radio_filter_in = frequency==ATMOS_VENTSCRUB?(RADIO_FROM_AIRALARM):null
+	radio_filter_out = frequency==ATMOS_VENTSCRUB?(RADIO_TO_AIRALARM):null
 	if(frequency)
 		set_frequency(frequency)
 		src.broadcast_status()
@@ -252,7 +255,7 @@
 		on = !on
 
 	if(signal.data["checks"] != null)
-		if (signal.data["checks"] == "default")
+		if(signal.data["checks"] == "default")
 			pressure_checks = pressure_checks_default
 		else
 			pressure_checks = text2num(signal.data["checks"])
@@ -264,7 +267,7 @@
 		pump_direction = text2num(signal.data["direction"])
 
 	if(signal.data["set_internal_pressure"] != null)
-		if (signal.data["set_internal_pressure"] == "default")
+		if(signal.data["set_internal_pressure"] == "default")
 			internal_pressure_bound = internal_pressure_bound_default
 		else
 			internal_pressure_bound = between(
@@ -274,7 +277,7 @@
 			)
 
 	if(signal.data["set_external_pressure"] != null)
-		if (signal.data["set_external_pressure"] == "default")
+		if(signal.data["set_external_pressure"] == "default")
 			external_pressure_bound = external_pressure_bound_default
 		else
 			external_pressure_bound = between(
@@ -318,13 +321,13 @@
 	return !welded
 
 /obj/machinery/atmospherics/unary/vent_pump/attackby(obj/item/W, mob/user, params)
-	if(istype(W, /obj/item/weapon/weldingtool))
-		var/obj/item/weapon/weldingtool/WT = W
-		if (WT.remove_fuel(0,user))
+	if(istype(W, /obj/item/weldingtool))
+		var/obj/item/weldingtool/WT = W
+		if(WT.remove_fuel(0,user))
 			to_chat(user, "<span class='notice'>Now welding the vent.</span>")
-			if(do_after(user, 20, target = src))
+			if(do_after(user, 20 * WT.toolspeed, target = src))
 				if(!src || !WT.isOn()) return
-				playsound(src.loc, 'sound/items/Welder2.ogg', 50, 1)
+				playsound(src.loc, WT.usesound, 50, 1)
 				if(!welded)
 					user.visible_message("[user] welds the vent shut.", "You weld the vent shut.", "You hear welding.")
 					welded = 1
@@ -334,25 +337,27 @@
 					welded = 0
 					update_icon()
 			else
-
 				to_chat(user, "<span class='notice'>The welding tool needs to be on to start this task.</span>")
+			return 1
 		else
 			to_chat(user, "<span class='notice'>You need more welding fuel to complete this task.</span>")
 			return 1
-	if(istype(W, /obj/item/weapon/screwdriver))
+	if(istype(W, /obj/item/screwdriver))
 		if(!welded)
 			if(open)
-				to_chat(user, "<span class='notice'> Now closing the vent.</span>")
-				if (do_after(user, 20, target = src))
+				to_chat(user, "<span class='notice'>Now closing the vent.</span>")
+				if(do_after(user, 20 * W.toolspeed, target = src))
+					playsound(loc, W.usesound, 100, 1)
 					open = 0
 					user.visible_message("[user] screwdrivers the vent shut.", "You screwdriver the vent shut.", "You hear a screwdriver.")
 			else
-				to_chat(user, "<span class='notice'> Now opening the vent.</span>")
-				if (do_after(user, 20, target = src))
+				to_chat(user, "<span class='notice'>Now opening the vent.</span>")
+				if(do_after(user, 20 * W.toolspeed, target = src))
+					playsound(loc, W.usesound, 100, 1)
 					open = 1
-					user.visible_message("[user] screwdrivers the vent shut.", "You screwdriver the vent shut.", "You hear a screwdriver.")
+					user.visible_message("[user] screwdrivers the vent open.", "You screwdriver the vent open.", "You hear a screwdriver.")
 		return
-	if(istype(W, /obj/item/weapon/paper))
+	if(istype(W, /obj/item/paper))
 		if(!welded)
 			if(open)
 				user.drop_item(W)
@@ -361,12 +366,12 @@
 				to_chat(user, "You can't shove that down there when it is closed")
 		else
 			to_chat(user, "The vent is welded.")
-		return
-	if(istype(W, /obj/item/device/multitool))
+		return 1
+	if(istype(W, /obj/item/multitool))
 		update_multitool_menu(user)
 		return 1
-	if (istype(W, /obj/item/weapon/wrench))
-		if (!(stat & NOPOWER) && on)
+	if(istype(W, /obj/item/wrench))
+		if(!(stat & NOPOWER) && on)
 			to_chat(user, "<span class='danger'>You cannot unwrench this [src], turn it off first.</span>")
 			return 1
 
@@ -375,7 +380,9 @@
 /obj/machinery/atmospherics/unary/vent_pump/attack_hand()
 	if(!welded)
 		if(open)
-			for(var/obj/item/weapon/W in src)
+			for(var/obj/item/W in src)
+				if(istype(W, /obj/item/pipe))
+					continue
 				W.forceMove(get_turf(src))
 
 
@@ -394,37 +401,41 @@
 /obj/machinery/atmospherics/unary/vent_pump/interact(mob/user as mob)
 	update_multitool_menu(user)
 
-/obj/machinery/atmospherics/unary/vent_pump/multitool_menu(var/mob/user,var/obj/item/device/multitool/P)
+/obj/machinery/atmospherics/unary/vent_pump/multitool_menu(var/mob/user,var/obj/item/multitool/P)
 	return {"
 	<ul>
-		<li><b>Frequency:</b> <a href="?src=\ref[src];set_freq=-1">[format_frequency(frequency)] GHz</a> (<a href="?src=\ref[src];set_freq=[1439]">Reset</a>)</li>
+		<li><b>Frequency:</b> <a href="?src=[UID()];set_freq=-1">[format_frequency(frequency)] GHz</a> (<a href="?src=[UID()];set_freq=[ATMOS_VENTSCRUB]">Reset</a>)</li>
 		<li>[format_tag("ID Tag","id_tag","set_id")]</li>
-		<li><b>AAC Acces:</b> <a href="?src=\ref[src];toggleadvcontrol=1">[advcontrol ? "Allowed" : "Blocked"]</a>
+		<li><b>AAC Acces:</b> <a href="?src=[UID()];toggleadvcontrol=1">[advcontrol ? "Allowed" : "Blocked"]</a>
 		</ul>
 	"}
 
 /obj/machinery/atmospherics/unary/vent_pump/multitool_topic(var/mob/user, var/list/href_list, var/obj/O)
 	if("toggleadvcontrol" in href_list)
 		advcontrol = !advcontrol
-		return MT_UPDATE
+		return TRUE
 
 	if("set_id" in href_list)
 		var/newid = copytext(reject_bad_text(input(usr, "Specify the new ID tag for this machine", src, src.id_tag) as null|text), 1, MAX_MESSAGE_LEN)
 		if(!newid)
 			return
-		if(frequency == 1439)
+		if(frequency == ATMOS_VENTSCRUB)
 			initial_loc.air_vent_info -= id_tag
 			initial_loc.air_vent_names -= id_tag
 
 		id_tag = newid
 		broadcast_status()
 
-		return MT_UPDATE
+		return TRUE
 
 	return ..()
 
 /obj/machinery/atmospherics/unary/vent_pump/Destroy()
+	GLOB.all_vent_pumps -= src
 	if(initial_loc)
 		initial_loc.air_vent_info -= id_tag
 		initial_loc.air_vent_names -= id_tag
+	if(radio_controller)
+		radio_controller.remove_object(src, frequency)
+	radio_connection = null
 	return ..()

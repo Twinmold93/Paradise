@@ -12,9 +12,9 @@
 	range = 7
 	cooldown_min = 30 //30 deciseconds reduction per rank
 	selection_type = "range"
-	var/list/compatible_mobs = list(/mob/living/carbon/human)
 
 	action_icon_state = "barn"
+	sound = 'sound/magic/HorseHead_curse.ogg'
 
 /obj/effect/proc_holder/spell/targeted/horsemask/cast(list/targets, mob/user = usr)
 	if(!targets.len)
@@ -26,7 +26,8 @@
 	if(!target)
 		return
 
-	if((target.type in compatible_mobs) || ishuman(target))
+
+	if(!ishuman(target))
 		to_chat(user, "<span class='notice'>It'd be stupid to curse [target] with a horse's head!</span>")
 		return
 

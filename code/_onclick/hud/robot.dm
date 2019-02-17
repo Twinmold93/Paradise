@@ -70,6 +70,14 @@
 		var/mob/living/silicon/robot/R = usr
 		R.control_headlamp()
 
+/obj/screen/robot/thrusters
+	name = "ion thrusters"
+	icon_state = "ionpulse0"
+
+/obj/screen/robot/thrusters/Click()
+	var/mob/living/silicon/robot/R = usr
+	R.toggle_ionpulse()
+
 /obj/screen/robot/panel
 	name = "installed modules"
 	icon_state = "panel"
@@ -88,6 +96,11 @@
 
 	var/obj/screen/using
 	var/mob/living/silicon/robot/mymobR = mymob
+
+//Language menu
+	using = new /obj/screen/language_menu
+	using.screen_loc = ui_borg_lanugage_menu
+	static_inventory += using
 
 //Radio
 	using = new /obj/screen/robot/radio()
@@ -150,6 +163,11 @@
 	mymobR.lamp_button.screen_loc = ui_borg_lamp
 	static_inventory += mymobR.lamp_button
 
+//Thrusters
+	using = new /obj/screen/robot/thrusters()
+	using.screen_loc = ui_borg_thrusters
+	static_inventory += using
+	mymobR.thruster_button = using
 
 /datum/hud/proc/toggle_show_robot_modules()
 	if(!isrobot(mymob))
@@ -193,7 +211,7 @@
 		//Unfortunately adding the emag module to the list of modules has to be here. This is because a borg can
 		//be emagged before they actually select a module. - or some situation can cause them to get a new module
 		// - or some situation might cause them to get de-emagged or something.
-		if(R.emagged)
+		if(R.emagged || R.weapons_unlock)
 			if(!(R.module.emag in R.module.modules))
 				R.module.modules.Add(R.module.emag)
 		else
@@ -209,6 +227,7 @@
 				else
 					A.screen_loc = "CENTER+[x]:16,SOUTH+[y]:7"
 				A.layer = 20
+				A.plane = HUD_PLANE
 
 				x++
 				if(x == 4)

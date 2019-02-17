@@ -14,11 +14,11 @@
 									 "You don't want to buy anything? Yeah, well I didn't want to buy your mom either.")
 
 /datum/event/brand_intelligence/announce()
-	command_announcement.Announce("Rampant brand intelligence has been detected aboard [station_name()], please stand-by. The origin is believed to be \a [originMachine.name].", "Machine Learning Alert")
+	event_announcement.Announce("Rampant brand intelligence has been detected aboard [station_name()], please stand-by. The origin is believed to be \a [originMachine.name].", "Machine Learning Alert")
 
 /datum/event/brand_intelligence/start()
-	for(var/obj/machinery/vending/V in machines)
-		if(V.z != 1)	continue
+	for(var/obj/machinery/vending/V in GLOB.machines)
+		if(!is_station_level(V.z))	continue
 		vendingMachines.Add(V)
 
 	if(!vendingMachines.len)
@@ -29,9 +29,10 @@
 	vendingMachines.Remove(originMachine)
 	originMachine.shut_up = 0
 	originMachine.shoot_inventory = 1
+	log_debug("Original brand intelligence machine: [originMachine] ([ADMIN_VV(originMachine,"VV")]) [ADMIN_JMP(originMachine)]")
 
 /datum/event/brand_intelligence/tick()
-	if(!originMachine || !isnull(originMachine.gcDestroyed) || originMachine.shut_up || originMachine.wires.IsAllCut())	//if the original vending machine is missing or has it's voice switch flipped
+	if(!originMachine || QDELETED(originMachine) || originMachine.shut_up || originMachine.wires.IsAllCut())	//if the original vending machine is missing or has it's voice switch flipped
 		for(var/obj/machinery/vending/saved in infectedMachines)
 			saved.shoot_inventory = 0
 		if(originMachine)
@@ -42,7 +43,7 @@
 
 	if(!vendingMachines.len)	//if every machine is infected
 		for(var/obj/machinery/vending/upriser in infectedMachines)
-			if(prob(70) && isnull(upriser.gcDestroyed))
+			if(prob(70) && !QDELETED(upriser))
 				var/mob/living/simple_animal/hostile/mimic/copy/M = new(upriser.loc, upriser, null, 1) // it will delete upriser on creation and override any machine checks
 				M.faction = list("profit")
 				M.speak = rampant_speeches.Copy()

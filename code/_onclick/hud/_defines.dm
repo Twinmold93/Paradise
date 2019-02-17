@@ -22,6 +22,7 @@
 //Middle left indicators
 #define ui_lingchemdisplay "WEST:6,CENTER-1:15"
 #define ui_lingstingdisplay "WEST:6,CENTER-3:11"
+#define ui_devilsouldisplay "WEST:6,CENTER-1:15"
 
 //Lower center, persistant menu
 #define ui_sstore1 "CENTER-5:10,SOUTH:5"
@@ -35,7 +36,6 @@
 #define ui_swaphand2 "CENTER: 16,SOUTH+1:5"
 #define ui_storage1 "CENTER+1:18,SOUTH:5"
 #define ui_storage2 "CENTER+2:20,SOUTH:5"
-
 #define ui_pda "CENTER+3:22,SOUTH:5"
 
 #define ui_alien_head "4:12,1:5"	//aliens
@@ -43,6 +43,7 @@
 
 #define ui_borg_sensor "CENTER-3:16, SOUTH:5"	//borgs
 #define ui_borg_lamp "CENTER-4:16, SOUTH:5"		//borgs
+#define ui_borg_thrusters "CENTER-5:16, SOUTH:5"//borgs
 #define ui_inv1 "CENTER-2:16,SOUTH:5"			//borgs
 #define ui_inv2 "CENTER-1  :16,SOUTH:5"			//borgs
 #define ui_inv3 "CENTER  :16,SOUTH:5"			//borgs
@@ -55,6 +56,8 @@
 
 #define ui_alien_storage_l "CENTER-2:14,SOUTH:5"//alien
 #define ui_alien_storage_r "CENTER+1:18,SOUTH:5"//alien
+#define ui_alien_language_menu "EAST-3:25,SOUTH+1:7"//alien
+#define ui_alienlarva_language_menu "EAST-3:26,SOUTH:5"//alien
 
 //Lower right, persistant menu
 //#define ui_dropbutton "11:22,1:5"
@@ -65,9 +68,13 @@
 #define ui_zonesel "EAST-1:28,SOUTH:5"
 #define ui_acti_alt "EAST-1:28,SOUTH:5" //alternative intent switcher for when the interface is hidden (F12)
 
+#define ui_crafting	"EAST:-5,SOUTH+2:7"
+#define ui_language_menu "EAST:-22,SOUTH+2:7"
+
 #define ui_borg_pull "EAST-2:26,SOUTH+1:7"
 #define ui_borg_radio "EAST-1:28,SOUTH+1:7"
 #define ui_borg_intents "EAST-2:26,SOUTH:5"
+#define ui_borg_lanugage_menu "EAST-2:26,SOUTH+1:7"
 
 //Upper-middle right (alerts)
 #define ui_alert1 "EAST-1:28,CENTER+5:27"
@@ -106,6 +113,7 @@
 
 
 #define ui_construct_pull "EAST-1:28,SOUTH+1:10" //above the zone_sel icon
+#define ui_construct_health "EAST,CENTER:15" //same height as humans, hugging the right border
 
 //Pop-up inventory
 #define ui_shoes "WEST+1:8,SOUTH:5"
@@ -139,6 +147,8 @@
 #define ui_ai_take_picture "SOUTH:6,WEST+12"
 #define ui_ai_view_images "SOUTH:6,WEST+13"
 #define ui_ai_sensor "SOUTH:6,WEST+14"
+#define ui_ai_multicam "SOUTH+1:6,WEST+13"
+#define ui_ai_add_multicam "SOUTH+1:6,WEST+14"
 
 // Bots
 #define ui_bot_radio "EAST-1:28,SOUTH:7"
@@ -154,3 +164,8 @@
 //1 = standard hud
 //2 = reduced hud (just hands and intent switcher)
 //3 = no hud (for screenshots)
+
+
+#define HUD_LAYER_SCREEN 20
+
+#define HUD_LAYER_BUILDMODE 30
