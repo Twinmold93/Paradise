@@ -4,7 +4,7 @@
 	desc = "A brave janitor cyborg gave its life to produce such an amazing combination of speed and utility."
 	icon_state = "pussywagon"
 	keytype = /obj/item/key/janitor
-	var/obj/item/weapon/storage/bag/trash/mybag = null
+	var/obj/item/storage/bag/trash/mybag = null
 	var/floorbuffer = 0
 
 
@@ -36,7 +36,7 @@
 	desc = "An upgrade for mobile janicarts."
 	icon = 'icons/obj/vehicles.dmi'
 	icon_state = "upgrade"
-
+	origin_tech = "materials=3;engineering=4"
 
 /obj/vehicle/janicart/Move(atom/OldLoc, Dir)
 	..()
@@ -60,7 +60,7 @@
 
 
 /obj/vehicle/janicart/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/weapon/storage/bag/trash))
+	if(istype(I, /obj/item/storage/bag/trash))
 		if(keytype == /obj/item/key/janitor)
 			if(!user.drop_item())
 				return

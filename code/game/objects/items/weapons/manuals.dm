@@ -1,38 +1,38 @@
 /*********************MANUALS (BOOKS)***********************/
 
 //Oh god what the fuck I am not good at computer
-/obj/item/weapon/book/manual
+/obj/item/book/manual
 	icon = 'icons/obj/library.dmi'
 	due_date = 0 // Game time in 1/10th seconds
 	unique = 1   // 0 - Normal book, 1 - Should not be treated as normal book, unable to be copied, unable to be modified
 
 
-/obj/item/weapon/book/manual/engineering_construction
+/obj/item/book/manual/engineering_construction
 	name = "Station Repairs and Construction"
 	icon_state ="bookEngineering"
 	author = "Engineering Encyclopedia"		 // Who wrote the thing, can be changed by pen or PC. It is not automatically assigned
 	title = "Station Repairs and Construction"
-	/*dat = {"
+	dat = {"
 
 		<html><head>
 		</head>
 
 		<body>
-		<iframe width='100%' height='97%' src="http://wiki.nanotrasen.com/index.php?title=Guide_to_construction&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
+		<iframe width='100%' height='97%' src="https://Nanotrasen.se/wiki/index.php?title=Guide_to_Construction&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
 		</body>
 
 		</html>
 
-		"}*/
+		"}
 
-/obj/item/weapon/book/manual/engineering_particle_accelerator
+/obj/item/book/manual/engineering_particle_accelerator
 	name = "Particle Accelerator User's Guide"
 	icon_state ="bookParticleAccelerator"
 	author = "Engineering Encyclopedia"		 // Who wrote the thing, can be changed by pen or PC. It is not automatically assigned
 	title = "Particle Accelerator User's Guide"
 //big pile of shit below.
 
-	/*dat = {"<html>
+	dat = {"<html>
 				<head>
 				<style>
 				h1 {font-size: 18px; margin: 15px 0px 5px;}
@@ -65,10 +65,10 @@
 				</ol>
 
 				</body>
-				</html>"}*/
+				</html>"}
 
 
-/obj/item/weapon/book/manual/supermatter_engine
+/obj/item/book/manual/supermatter_engine
 	name = "Supermatter Engine User's Guide"
 	icon_state = "bookParticleAccelerator"   //TEMP FIXME
 	author = "Waleed Asad"
@@ -151,34 +151,34 @@
 
 			-Waleed Asad, Senior Engine Technician."}
 
-/obj/item/weapon/book/manual/engineering_hacking
+/obj/item/book/manual/engineering_hacking
 	name = "Hacking"
 	icon_state ="bookHacking"
 	author = "Engineering Encyclopedia"		 // Who wrote the thing, can be changed by pen or PC. It is not automatically assigned
 	title = "Hacking"
 //big pile of shit below.
 
-	/*dat = {"
+	dat = {"
 
 		<html><head>
 		</head>
 
 		<body>
-		<iframe width='100%' height='97%' src="http://wiki.nanotrasen.com/index.php?title=Hacking&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
+		<iframe width='100%' height='97%' src="https://Nanotrasen.se/wiki/index.php?title=Hacking&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
 		</body>
 
 		</html>
 
-		"}*/
+		"}
 
-/obj/item/weapon/book/manual/engineering_singularity_safety
+/obj/item/book/manual/engineering_singularity_safety
 	name = "Singularity Safety in Special Circumstances"
 	icon_state ="bookEngineeringSingularitySafety"
 	author = "Engineering Encyclopedia"		 // Who wrote the thing, can be changed by pen or PC. It is not automatically assigned
 	title = "Singularity Safety in Special Circumstances"
 //big pile of shit below.
 
-	/*dat = {"<html>
+	dat = {"<html>
 				<head>
 				<style>
 				h1 {font-size: 18px; margin: 15px 0px 5px;}
@@ -217,14 +217,14 @@
 				Step one: <b>GET THE FUCK OUT OF THERE!!! FORGET THE WOMEN AND CHILDREN, SAVE YOURSELF!!!</b><br>
 				</body>
 				</html>
-				"}*/
+				"}
 
-/obj/item/weapon/book/manual/hydroponics_pod_people
+/obj/item/book/manual/hydroponics_pod_people
 	name = "The Human Harvest - From seed to market"
 	icon_state ="bookHydroponicsPodPeople"
 	author = "Farmer John"
 	title = "The Human Harvest - From seed to market"
-	/*dat = {"<html>
+	dat = {"<html>
 				<head>
 				<style>
 				h1 {font-size: 18px; margin: 15px 0px 5px;}
@@ -252,16 +252,16 @@
 
 				</body>
 				</html>
-				"}*/
+				"}
 
-/obj/item/weapon/book/manual/medical_cloning
+/obj/item/book/manual/medical_cloning
 	name = "Cloning techniques of the 26th century"
 	icon_state ="bookCloning"
 	author = "Medical Journal, volume 3"		 // Who wrote the thing, can be changed by pen or PC. It is not automatically assigned
 	title = "Cloning techniques of the 26th century"
 //big pile of shit below.
 
-	/*dat = {"<html>
+	dat = {"<html>
 				<head>
 				<style>
 				h1 {font-size: 18px; margin: 15px 0px 5px;}
@@ -329,17 +329,17 @@
 
 				</body>
 				</html>
-				"}*/
+				"}
 
 
-/obj/item/weapon/book/manual/ripley_build_and_repair
+/obj/item/book/manual/ripley_build_and_repair
 	name = "APLU \"Ripley\" Construction and Operation Manual"
 	icon_state ="book"
 	author = "Weyland-Yutani Corp"		 // Who wrote the thing, can be changed by pen or PC. It is not automatically assigned
 	title = "APLU \"Ripley\" Construction and Operation Manual"
 //big pile of shit below.
 
-	/*dat = {"<html>
+	dat = {"<html>
 				<head>
 				<style>
 				h1 {font-size: 18px; margin: 15px 0px 5px;}
@@ -405,9 +405,9 @@
 
 				<h2>Operation</h2>
 				Coming soon...
-			"}*/
+			"}
 
-/obj/item/weapon/book/manual/experimentor
+/obj/item/book/manual/experimentor
 	name = "Mentoring your Experiments"
 	icon_state = "rdbook"
 	author = "Dr. H.P. Kritz"
@@ -539,12 +539,12 @@
 	</html>
 	"}
 
-/obj/item/weapon/book/manual/research_and_development
+/obj/item/book/manual/research_and_development
 	name = "Research and Development 101"
 	icon_state = "rdbook"
 	author = "Dr. L. Ight"
 	title = "Research and Development 101"
-	/*dat = {"
+	dat = {"
 	<html>
 				<head>
 				<style>
@@ -587,15 +587,15 @@
 				Many machines produces from circuit boards and inserted into a machine frame require a variety of parts to construct. These are parts like capacitors, batteries, matter bins, and so forth. As your knowledge of science improves, more advanced versions are unlocked. If you use these parts when constructing something, its attributes may be improved. For example, if you use an advanced matter bin when constructing an autolathe (rather then a regular one), it'll hold more materials. Experiment around with stock parts of various qualities to see how they affect the end results! Be warned, however: Tier 3 and higher stock parts don't have 100% reliability and their low reliability may affect the reliability of the end machine.
 				</body>
 				</html>
-			"}*/
+			"}
 
 
-/obj/item/weapon/book/manual/robotics_cyborgs
+/obj/item/book/manual/robotics_cyborgs
 	name = "Cyborgs for Dummies"
 	icon_state = "borgbook"
 	author = "XISC"
 	title = "Cyborgs for Dummies"
-	/*dat = {"<html>
+	dat = {"<html>
 				<head>
 				<style>
 				h1 {font-size: 21px; margin: 15px 0px 5px;}
@@ -790,12 +790,13 @@
 
         </body>
 		</html>
-		"}*/
+		"}
 
-/obj/item/weapon/book/manual/security_space_law
+/obj/item/book/manual/security_space_law
 	name = "Space Law"
 	desc = "A set of Nanotrasen guidelines for keeping law and order on their space stations."
 	icon_state = "bookSpaceLaw"
+	force = 4 //advanced magistrate tactics
 	author = "Nanotrasen"
 	title = "Space Law"
 	dat = {"
@@ -804,42 +805,42 @@
 		</head>
 
 		<body>
-		<iframe width='100%' height='97%' src="http://nanotrasen.se/wiki/index.php?title=Space_law&printable=yes" frameborder="0" id="main_frame"></iframe>		</body>
+		<iframe width='100%' height='97%' src="https://Nanotrasen.se/wiki/index.php?title=Space_law&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>		</body>
 
 		</html>
 
 		"}
 
-/obj/item/weapon/book/manual/security_space_law/black
+/obj/item/book/manual/security_space_law/black
 	name = "Space Law - Limited Edition"
 	desc = "A leather-bound, immaculately-written copy of JUSTICE."
 	icon_state = "bookSpaceLawblack"
 	title = "Space Law - Limited Edition"
 
-/obj/item/weapon/book/manual/engineering_guide
+/obj/item/book/manual/engineering_guide
 	name = "Engineering Textbook"
 	icon_state ="bookEngineering2"
 	author = "Engineering Encyclopedia"
 	title = "Engineering Textbook"
-	/*dat = {"
+	dat = {"
 
 		<html><head>
 		</head>
 
 		<body>
-		<iframe width='100%' height='97%' src="http://wiki.nanotrasen.com/index.php?title=Guide_to_engineering&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>		</body>
+		<iframe width='100%' height='97%' src="https://Nanotrasen.se/wiki/index.php?title=Guide_to_Engineering&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>		</body>
 
 		</html>
 
-		"}*/
+		"}
 
 
-/obj/item/weapon/book/manual/chef_recipes
+/obj/item/book/manual/chef_recipes
 	name = "Chef Recipes"
 	icon_state = "cooked_book"
 	author = "Victoria Ponsonby"
 	title = "Chef Recipes"
-	/*dat = {"<html>
+	dat = {"<html>
 				<head>
 				<style>
 				h1 {font-size: 18px; margin: 15px 0px 5px;}
@@ -887,14 +888,14 @@
 
 				</body>
 				</html>
-			"}*/
+			"}
 
-/obj/item/weapon/book/manual/barman_recipes
+/obj/item/book/manual/barman_recipes
 	name = "Barman Recipes"
 	icon_state = "barbook"
 	author = "Sir John Rose"
 	title = "Barman Recipes"
-	/*dat = {"<html>
+	dat = {"<html>
 				<head>
 				<style>
 				h1 {font-size: 18px; margin: 15px 0px 5px;}
@@ -939,15 +940,15 @@
 
 				</body>
 				</html>
-			"}*/
+			"}
 
 
-/obj/item/weapon/book/manual/detective
+/obj/item/book/manual/detective
 	name = "The Film Noir: Proper Procedures for Investigations"
 	icon_state ="bookDetective"
 	author = "Nanotrasen"
 	title = "The Film Noir: Proper Procedures for Investigations"
-	/*dat = {"<html>
+	dat = {"<html>
 			<head>
 			<style>
 			h1 {font-size: 18px; margin: 15px 0px 5px;}
@@ -981,14 +982,14 @@
 			It really is that easy! Good luck!
 
 			</body>
-			</html>"}*/
+			</html>"}
 
-/obj/item/weapon/book/manual/nuclear
+/obj/item/book/manual/nuclear
 	name = "Fission Mailed: Nuclear Sabotage 101"
 	icon_state ="bookNuclear"
 	author = "Syndicate"
 	title = "Fission Mailed: Nuclear Sabotage 101"
-	/*dat = {"<html>
+	dat = {"<html>
 			Nuclear Explosives 101:<br>
 			Hello and thank you for choosing the Syndicate for your nuclear information needs.<br>
 			Today's crash course will deal with the operation of a Fusion Class Nanotrasen made Nuclear Device.<br>
@@ -1016,9 +1017,9 @@
 			<b>Disk, Code, Safety, Timer, Disk, RUN!</b><br>
 			Intelligence Analysts believe that normal Nanotrasen procedure is for the Captain to secure the nuclear authorisation disk.<br>
 			Good luck!
-			</html>"}*/
+			</html>"}
 
-/obj/item/weapon/book/manual/atmospipes
+/obj/item/book/manual/atmospipes
 	name = "Pipes and You: Getting To Know Your Scary Tools"
 	icon_state = "pipingbook"
 	author = "Maria Crash, Senior Atmospherics Technician"
@@ -1115,7 +1116,7 @@
 				</html>
 			"}
 
-/obj/item/weapon/book/manual/evaguide
+/obj/item/book/manual/evaguide
 	name = "EVA Gear and You: Not Spending All Day Inside"
 	icon_state = "evabook"
 	author = "Maria Crash, Senior Atmospherics Technician"
@@ -1184,11 +1185,11 @@
 				</html>
 			"}
 
-/obj/item/weapon/book/manual/faxes
+/obj/item/book/manual/faxes
 	name = "A Guide to Faxes"
-	desc = "A NanoTrasen-approved guide to writing faxes"
+	desc = "A Nanotrasen-approved guide to writing faxes"
 	icon_state = "book6"
-	author = "NanoTrasen"
+	author = "Nanotrasen"
 	title = "A Guide to Faxes"
 	dat = {"
 
@@ -1216,14 +1217,14 @@
 				<li>Faxes are your main method of communicating with the NAS Trurl, better known as Central Command.</li>
 				<li>Faxes allow personnel on the station to maintain open lines of communication with the NAS Trurl, allowing for vital information to flow both ways.</li>
 				<li>Being written communications, proper grammar, syntax and typography is required, in addition to a signature and, if applicable, a stamp. Failure to sign faxes will lead to an automatic rejection.</li>
-				<li>We at NanoTrasen provide Fax Machines to every Head of Staff, in addition to the Magistrate, NanoTrasen Representative, and Internal Affairs Agents.</li>
+				<li>We at Nanotrasen provide Fax Machines to every Head of Staff, in addition to the Magistrate, Nanotrasen Representative, and Internal Affairs Agents.</li>
 				<li>This means that we trust the recipients of these fax machines to only use them in the proper circumstances (see <B>When to Fax?</B>).</li>
 
 				<h1><a name="when"><B>When to Fax?</B></a></h1><BR>
 				<li>While it is up to the discretion of each individual person to decide when to fax Central Command, there are some simple guidelines on when to do this.</li>
 				<li>Firstly, any situation that can reasonably be solved on-site, <I>should</I> be handled on-site. Knowledge of Standard Operating Procedure is <B>mandatory</B> for everyone with access to a fax machine.</li>
 				<li>Resolving issues on-site not only leads to more expedient problem-solving, it also frees up company resources and provides valuable work experience for all parties involved.</li>
-				<li>This means that you should work with the Heads of Staff concerning personnel and workplace issues, and attempt to resolve situations with them. If, for whatever reason, the relevent Head of Staff is not available or receptive, consider speaking with the Captain and/or NanoTrasen Representative.</li>
+				<li>This means that you should work with the Heads of Staff concerning personnel and workplace issues, and attempt to resolve situations with them. If, for whatever reason, the relevent Head of Staff is not available or receptive, consider speaking with the Captain and/or Nanotrasen Representative.</li>
 				<li>If, for whatever reason, these issues cannot be solved on-site, either due to incompetence or just plain refusal to cooperate, faxing Central Command becomes a viable option.</li>
 				<li>Secondly, station status reports should be sent occasionally, but never at the start of the shift. Remember, we assign personnel to the station. We do not need a repeat of what we just signed off on.</li>
 				<li>Thirdly, staff/departmental evaluations are always welcome, especially in cases of noticeable (in)competence. Just as a brilliant coworker can be rewarded, an incompetent one can be punished.</li>
@@ -1243,7 +1244,7 @@
 
 		"}
 
-/obj/item/weapon/book/manual/sop_science
+/obj/item/book/manual/sop_science
 	name = "Science Standard Operating Procedures"
 	desc = "A set of guidelines aiming at the safe conduct of all scientific activities."
 	icon_state = "book6"
@@ -1399,7 +1400,7 @@
 
 		"}
 
-/obj/item/weapon/book/manual/sop_medical
+/obj/item/book/manual/sop_medical
 	name = "Medical Standard Operating Procedures"
 	desc = "A set of guidelines aiming at the safe conduct of all medical activities."
 	icon_state = "book7"
@@ -1593,7 +1594,7 @@
 
 		"}
 
-/obj/item/weapon/book/manual/sop_engineering
+/obj/item/book/manual/sop_engineering
 	name = "Engineering Standard Operating Procedures"
 	desc = "A set of guidelines aiming at the safe conduct of all engineering activities."
 	icon_state = "book3"
@@ -1636,7 +1637,7 @@
                     <li>The Chief Engineer is bound to the same rules regarding the axe as Atmospheric Technicians;</li>
                     <li>The Chief Engineer is permitted to carry a telescopic baton and a flash; </li>
                     <li>The Chief Engineer is responsible for maintaining the integrity of the Gravitational Singularity Engine and/or the Supermatter Engine and/or the Tesla Engine. Neglecting this duty is grounds for termination should the Engine malfunction;</li>
-                    <li>The Chief Engineer is responsible for maintaining the integrity of the Cyberiad's Atmospherics System. Failure to maintain this integrity is grounds for termination;</li>
+                    <li>The Chief Engineer is responsible for maintaining the integrity of the station's Atmospherics System. Failure to maintain this integrity is grounds for termination;</li>
                     <li>The Chief Engineer may declare an area "Condemned", if it is damaged to the point where repairs cannot reasonably be completed within an acceptable frame of time;</li>
                     <li>The Chief Engineer is permitted to grant Building Permits to crewmembers, but must keep the Station Blueprints in a safe location at all times.</li>
 				</ol>
@@ -1652,7 +1653,7 @@
                     <li>Engineers must constantly monitor the Supermatter Engine, if it is the chosen method of power generation, if it is currently active (ie, under Emitter Fire). This is not negotiable;</li>
                     <li>Engineers must respond promptly to breaches, regardless of size. Failure to report within fifteen (15) minutes will be considered a breach of Standard Operating Procedure, unless there are no spare Engineers to report or an Atmospheric Technician has arrived on scene first. All Hazard Zones must be cordoned off with Engineering Tape, for the sake of everyone else;</li>
                     <li>Engineers are permitted to hack doors to gain unauthorized access to locations if said locations happen to require urgent repairs;</li>
-                    <li>Engineers are to maintain the integrity of the Cyberiad's Power Network. In addition, hotwiring the Gravitational Singularity Engine, Supermatter Engine or Tesla Engine is strictly forbidden;</li>
+                    <li>Engineers are to maintain the integrity of the station's Power Network. In addition, hotwiring the Gravitational Singularity Engine, Supermatter Engine or Tesla Engine is strictly forbidden;</li>
                     <li>Engineers must ensure there is at least one (1) engineering hardsuit available on the station at all times, unless there is an emergency that requires the use of all suits.</li>
 				</ol>
                 <br><br>
@@ -1682,7 +1683,7 @@
 
 		"}
 
-/obj/item/weapon/book/manual/sop_service
+/obj/item/book/manual/sop_service
 	name = "Service Standard Operating Procedures"
 	desc = "A set of guidelines aiming at the safe conduct of all service activities."
 	icon_state = "book4"
@@ -1810,7 +1811,7 @@
 
 		"}
 
-/obj/item/weapon/book/manual/sop_supply
+/obj/item/book/manual/sop_supply
 	name = "Supply Standard Operating Procedures"
 	desc = "A set of guidelines aiming at the safe conduct of all supply activities."
 	icon_state = "book1"
@@ -1889,7 +1890,7 @@
 
 		"}
 
-/obj/item/weapon/book/manual/sop_security
+/obj/item/book/manual/sop_security
 	name = "Security Standard Operating Procedures"
 	desc = "A set of guidelines aiming at the safe conduct of all security activities."
 	icon_state = "book2"
@@ -2063,7 +2064,7 @@
 					<li>The Security Pod Pilot is not permitted to use the Laser Module during arrests, and must switch to the Disabler Module;</li>
 					<li>The Security Pod Pilot must carry around a spare set of tools and energy cell, for their own sake;</li>
 					<li>The Security Pod Pilot may immediately, and without warning, conduct arrests on individuals attempting to perform E.V.A actions near the AI Satellite. Exception is made if the AI Unit is malfunctioning;</li>
-					<li>The Security Pod Pilot is not permitted to explore the area surrounding the station, and must therefore be confined to the immediate orbital area of the NSS Cyberiad, the NXS Klapaucius (the Telecomms Satellite) and the Mining/Research Asteroid. Exception is made if the Head of Security permits otherwise.</li>
+					<li>The Security Pod Pilot is not permitted to explore the area surrounding the station, and must therefore be confined to the immediate orbital area of the station, the NXS Klapaucius (the Telecomms Satellite) and the Mining/Research Asteroid. Exception is made if the Head of Security permits otherwise.</li>
 				</ol><BR>
 
 				<h style='color: darkblue'>Code Blue</h>
@@ -2119,7 +2120,7 @@
 
 		"}
 
-/obj/item/weapon/book/manual/sop_legal
+/obj/item/book/manual/sop_legal
 	name = "Legal Standard Operating Procedures"
 	desc = "A set of guidelines aiming at the safe conduct of all legal activities."
 	icon_state = "book1"
@@ -2224,7 +2225,7 @@
 
 		"}
 
-/obj/item/weapon/book/manual/sop_general
+/obj/item/book/manual/sop_general
 	name = "Standard Operating Procedures"
 	desc = "A set of guidelines aiming at the safe conduct of all station activities."
 	icon_state = "book1"
@@ -2465,7 +2466,7 @@
 
 		"}
 
-/obj/item/weapon/book/manual/sop_command
+/obj/item/book/manual/sop_command
 	name = "Command Standard Operating Procedures"
 	desc = "A set of guidelines aiming at the safe conduct of all Command activities."
 	icon_state = "book4"
@@ -2490,7 +2491,7 @@
 					<li><a href="#foreword">Foreword</a></li>
 					<li><a href="#cap">Captain</a></li>
 					<li><a href="#hop">Head of Personnel</a></li>
-					<li><a href="#ntrep">NanoTrasen Representative</a></li>
+					<li><a href="#ntrep">Nanotrasen Representative</a></li>
 					<li><a href="#bs">Blueshield Officer</a></li>
                     <li><a href="#ai">AI</a></li>
 				</ol>
@@ -2506,13 +2507,13 @@
 					<li>The Captain is not permitted to perform regular Security Duty. However, they may still assist Security if they are understaffed, or if they see a crime being committed. However, the Captain is not permitted to take items from the Armory under normal circumstances, unless authorized by the Head of Security. In addition, the Captain may not requisition weaponry for themselves from Cargo and/or Science, unless there's an immediate threat to station and/or crew;</li>
 					<li>If a Department lacks a Head of Staff, the Captain should make reasonable efforts to appoint an Acting Head of Staff, if there are available personnel to fill the position;</li>
 					<li>The Captain is to ensure that Space Law is being correctly applied. This should be done in cooperation with the Head of Security;</li>
-					<li>The Captain is not to leave the NSS Cyberiad unless given specific permission by Central Command, or it happens to be the end of the shift. This includes via space or via the Gateway. To do so is to be considered abandoning their posts and is grounds for termination;</li>
+					<li>The Captain is not to leave the station unless given specific permission by Central Command, or it happens to be the end of the shift. This includes via space or via the Gateway. To do so is to be considered abandoning their posts and is grounds for termination;</li>
 					<li>The Captain must keep the Nuclear Authentication Disk on their person at all times or, failing that, in the possession of the Head of Security or Blueshield;</li>
 					<li>The Captain is to attempt to resolve every issue that arises in Command locally before contacting Central Command;</li>
 					<li>The Captain is not permitted to carry their Antique Laser Gun or Space Armor unless there's an immediate emergency that requires attending to;</li>
-					<li>The Captain, despite being in charge of the Cyberiad, is not independent from NanoTrasen. Any attempts to disregard general company policy are to be considered an instant condition for contract termination;</li>
+					<li>The Captain, despite being in charge of the station, is not independent from Nanotrasen. Any attempts to disregard general company policy are to be considered an instant condition for contract termination;</li>
 					<li>The Captain may only promote personnel to a Acting Head of Staff position if there is no assigned Head of Staff associated with the Department. Said Acting Head of Staff must be a member of the Department they are to lead. See below for more information on Chain of Command;</li>
-                    <li>The Captain may not fire any Head of Staff without reasonable justification (ie, incompetency, criminal activity, or otherwise any action that endangers/compromises the station and/or crew). The Captain may not fire any Central Command VIPs (ie, Blueshield, Magistrate, NanoTrasen Representative) without permission from Central Command, unless they are blatantly acting against the well-being and safety of the crew and station.</li>
+                    <li>The Captain may not fire any Head of Staff without reasonable justification (ie, incompetency, criminal activity, or otherwise any action that endangers/compromises the station and/or crew). The Captain may not fire any Central Command VIPs (ie, Blueshield, Magistrate, Nanotrasen Representative) without permission from Central Command, unless they are blatantly acting against the well-being and safety of the crew and station.</li>
 				</ol><BR>
 
                 <h1><a name="hop"><B>Head of Personnel</B></a></h1><BR>
@@ -2521,7 +2522,7 @@
 					<li>The Head of Personnel may not give any personnel increased access without authorization from the relevant Head of Staff. This includes the Head of Personnel. In addition, the Head of Personnel may only give Captain-Level access to someone if they are the Acting Captain. This access is to be removed when a proper Captain arrives on the station;</li>
 					<li>The Head of Personnel may not increase any Job Openings unless the relevant Head of Staff approves;</li>
 					<li>The Head of Personnel may not fire any personnel without authorization from the relevant Head of Staff, unless other conditions apply (see Space Law and General Standard Operating Procedure);</li>
-					<li>The Head of Personnel may not promote any personnel to the following Jobs without authorization from Central Command: Barber, Brig Physician, NanoTrasen Representative, Blueshield, Security Pod Pilot, Mechanic and Magistrate; (This is due to them being karma locked. Do not promote people to these positions without approval from the Administrators);</li>
+					<li>The Head of Personnel may not promote any personnel to the following Jobs without authorization from Central Command: Barber, Brig Physician, Nanotrasen Representative, Blueshield, Security Pod Pilot, Mechanic and Magistrate; (This is due to them being karma locked. Do not promote people to these positions without approval from the Administrators);</li>
 					<li>The Head of Personnel is free to utilize paperwork at their discretion. However, during major station emergencies, expediency should take precedence over bureaucracy;</li>
 					<li>The Head of Personnel may not leave their office unmanned if there are personnel waiting in line. Failure to respond to personnel with a legitimate request within ten (10) minutes, either via radio or in person, is to be considered a breach of Standard Operating Procedure;</li>
 					<li>Despite nominally being in charge of Supply, the Head of Personnel should allow the Quartermaster to run the Department, unless they prove themselves to be incompetent/dangerous;</li>
@@ -2529,13 +2530,13 @@
                     <li>The Head of Personnel is not permitted to perform Security duty. The Head of Personnel is permitted to carry an Energy Gun, for self-defence only.</li>
 				</ol><BR>
 
-				<h1><a name="ntrep"><B>NanoTrasen Representative</B></a></h1><BR>
+				<h1><a name="ntrep"><B>Nanotrasen Representative</B></a></h1><BR>
 				<ol>
-					<li>The NanoTrasen Representative is to ensure that every Department is following Standard Operating Procedure, up to and including the respective Head of Staff. If a Head of Staff is not available for a Department, the NanoTrasen Representative must ensure that the Captain appoints an Acting Head of Staff for said Department;</li>
-					<li>The NanoTrasen Representative must attempt to resolve any breach of Standard Operating Procedure locally before contacting Central Command. This is an imperative: Standard Operating Procedure should always be followed unless there is a very good reason not to;</li>
-					<li>The NanoTrasen Representative must, together with the Magistrate and Head of Security, ensure that Space Law is being followed and correctly applied;</li>
-					<li>The NanoTrasen Representative may not threaten the use of a fax in order to gain leverage over any personnel, up to and including Command. In addition they may not threaten to fire, or have Central Command, fire anyone, unless they actually possess a demotion note;</li>
-					<li>The NanoTrasen Representative is permitted to carry their Stun-Cane, or a Telescopic Baton if the Stun-Cane is lost.</li>
+					<li>The Nanotrasen Representative is to ensure that every Department is following Standard Operating Procedure, up to and including the respective Head of Staff. If a Head of Staff is not available for a Department, the Nanotrasen Representative must ensure that the Captain appoints an Acting Head of Staff for said Department;</li>
+					<li>The Nanotrasen Representative must attempt to resolve any breach of Standard Operating Procedure locally before contacting Central Command. This is an imperative: Standard Operating Procedure should always be followed unless there is a very good reason not to;</li>
+					<li>The Nanotrasen Representative must, together with the Magistrate and Head of Security, ensure that Space Law is being followed and correctly applied;</li>
+					<li>The Nanotrasen Representative may not threaten the use of a fax in order to gain leverage over any personnel, up to and including Command. In addition they may not threaten to fire, or have Central Command, fire anyone, unless they actually possess a demotion note;</li>
+					<li>The Nanotrasen Representative is permitted to carry their Stun-Cane, or a Telescopic Baton if the Stun-Cane is lost.</li>
 				</ol><BR>
 
                 <h1><a name="bs"><B>Blueshield Officer</B></a></h1><BR>
@@ -2550,12 +2551,12 @@
 				<b><i>The following are procedures for AI Maintenance:</i></b><br>
 				<ol>
 					<li>Only the Captain or Research Director may enter the AI Upload to perform Law Changes (see below), and only the Captain, Research Director or Chief Engineer may enter the AI Core to perform a Carding (see below);</li>
-					<li> No Law Changes are to be performed without approval from the Captain and Research Director. The only Lawsets to be used are those provided by NanoTrasen. Failure to legally perform a Law Change is to be considered Sabotage. Command must be informed prior to the Law Change, and all objections must be taken into consideration. If the number of Command personnel opposing the Law Change is greater than the number of Command personnel in favour, the Law Change is not to be done. If the Law Change is performed, the crew is to be immediately informed of the new Law(s);</li>
+					<li> No Law Changes are to be performed without approval from the Captain and Research Director. The only Lawsets to be used are those provided by Nanotrasen. Failure to legally perform a Law Change is to be considered Sabotage. Command must be informed prior to the Law Change, and all objections must be taken into consideration. If the number of Command personnel opposing the Law Change is greater than the number of Command personnel in favour, the Law Change is not to be done. If the Law Change is performed, the crew is to be immediately informed of the new Law(s);</li>
                     <li>The AI may not be Carded unless it it clearly malfunctioning or subverted. However, any member of Command may card it if the AI agrees to it, either at the end of the shift, or due to external circumstances (such as massive damage to the AI Satellite);</li>
                     <li>The AI Upload and Minisat Antechamber Turrets are to be kept on Non-Lethal in Code Green and Code Blue. The AI Core Turrets are to be kept on Lethal at all times. If a legal Law Change or Carding is occurring, the Turrets are to be disabled;</li>
                     <li>If the AI Unit is not malfunctioning or subverted, any attempt at performing an illegal Carding or Law Change is to be responded to with non-lethal force. If the illegal attempts persist, and the perpetrator is demonstrably hostile, lethal force from Command/Security is permitted;</li>
                     <li>Freeform Laws are only to be added if absolutely necessary due to external circumstances (such as major station emergencies). Adding unnecessary Freeform Laws is not permitted. Exception is made if the AI Unit and majority of Command agree to the Freeform Law that is proposed;</li>
-                    <li>Any use of the "Purge" Module is to be followed by the upload of a NanoTrasen-approved Lawset immediately. AI Units must be bound to a Lawset at all times.</li>
+                    <li>Any use of the "Purge" Module is to be followed by the upload of a Nanotrasen-approved Lawset immediately. AI Units must be bound to a Lawset at all times.</li>
 				</ol><BR>
 				</body>
 				</html>

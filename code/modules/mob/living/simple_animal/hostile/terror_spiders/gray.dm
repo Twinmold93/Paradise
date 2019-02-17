@@ -4,7 +4,7 @@
 // --------------------------------------------------------------------------------
 // -------------: ROLE: ambusher
 // -------------: AI: hides in vents, emerges when prey is near to kill it, then hides again. Intended to scare normal crew.
-// -------------: SPECIAL: invisible when on top of a vent, emerges when prey approaches or gets trapped in webs. Bite silences targets.
+// -------------: SPECIAL: invisible when on top of a vent, emerges when prey approaches or gets trapped in webs.
 // -------------: TO FIGHT IT: shoot it through a window, or make it regret ambushing you
 // -------------: SPRITES FROM: FoS, http://nanotrasen.se/phpBB3/memberlist.php?mode=viewprofile&u=386
 
@@ -21,35 +21,32 @@
 	melee_damage_lower = 10
 	melee_damage_upper = 20
 	regen_points_per_hp = 2 // 50% higher regen speed
-	move_to_delay = 5 // slightly faster than normal
 	stat_attack = 1 // ensures they will target people in crit, too!
 	wander = 0 // wandering defeats the purpose of stealth
 	idle_vision_range = 3 // very low idle vision range
 	delay_web = 20 // double speed
+	web_type = /obj/structure/spider/terrorweb/gray
 
 
 /mob/living/simple_animal/hostile/poison/terror_spider/gray/spider_specialattack(mob/living/carbon/human/L, poisonable)
-	if(!poisonable)
-		..()
-		return
-	if(L.silent >= 10)
-		L.attack_animal(src)
+	var/obj/structure/spider/terrorweb/W = locate() in get_turf(L)
+	if(W)
+		melee_damage_lower = initial(melee_damage_lower) * 2
+		melee_damage_upper = initial(melee_damage_upper) * 2
+		visible_message("<span class='danger'>[src] savagely mauls [target] while [L.p_theyre()] stuck in the web!</span>")
 	else
-		var/inject_target = pick("chest","head")
-		if(L.stunned || L.can_inject(null,0,inject_target,0))
-			L.Silence(20) // instead of having a venom that only lasts seconds, we just add the silence directly.
-			visible_message("<span class='danger'>[src] buries grey fangs deep into the [inject_target] of [target]!</span>")
-		else
-			visible_message("<span class='danger'>[src] bites [target], but cannot inject venom into their [inject_target]!</span>")
-		L.attack_animal(src)
+		melee_damage_lower = initial(melee_damage_lower)
+		melee_damage_upper = initial(melee_damage_upper)
+		visible_message("<span class='danger'>[src] bites [target]!</span>")
+	L.attack_animal(src)
 
 /mob/living/simple_animal/hostile/poison/terror_spider/gray/adjustBruteLoss(damage)
-	..(damage)
+	. = ..(damage)
 	if(invisibility > 0)
 		GrayDeCloak()
 
 /mob/living/simple_animal/hostile/poison/terror_spider/gray/adjustFireLoss(damage)
-	..(damage)
+	. = ..(damage)
 	if(invisibility > 0)
 		GrayDeCloak()
 
@@ -140,3 +137,8 @@
 				if(get_dist(src,temp_vent) > 0 && get_dist(src,temp_vent) < 5)
 					step_to(src,temp_vent)
 					// if you're bumped off your vent, try to get back to it
+
+/obj/structure/spider/terrorweb/gray
+	alpha = 100
+	name = "transparent web"
+	desc = "This web is partly transparent, making it harder to see, and easier to get caught by."

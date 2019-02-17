@@ -7,7 +7,8 @@
 	icon = 'icons/mob/slimes.dmi'
 	icon_state = "grey slime extract"
 	force = 1
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
+	container_type = INJECTABLE | DRAWABLE
 	throwforce = 0
 	throw_speed = 3
 	throw_range = 6
@@ -121,10 +122,10 @@
 /obj/item/slimepotion
 	name = "slime potion"
 	desc = "A hard yet gelatinous capsule excreted by a slime, containing mysterious substances."
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	origin_tech = "biotech=4"
 
-/obj/item/slimepotion/afterattack(obj/item/weapon/reagent_containers/target, mob/user, proximity_flag)
+/obj/item/slimepotion/afterattack(obj/item/reagent_containers/target, mob/user, proximity_flag)
 	if(!proximity_flag)
 		return
 	if(istype(target))
@@ -140,46 +141,34 @@
 
 /obj/item/slimepotion/docility/attack(mob/living/carbon/slime/M, mob/user)
 	if(!isslime(M))
-		to_chat(user, "<span class='warning'> The potion only works on slimes!</span>")
+		to_chat(user, "<span class='warning'>The potion only works on slimes!</span>")
 		return
 	if(M.stat)
-		to_chat(user, "<span class='warning'> The slime is dead!</span>")
-		return
-	if(M.mind)
-		to_chat(user, "<span class='warning'> The slime resists!</span>")
+		to_chat(user, "<span class='warning'>The slime is dead!</span>")
 		return
 	if(being_used)
-		to_chat(user, "<span class='warning'> You're already using this on another slime!</span>")
+		to_chat(user, "<span class='warning'>You're already using this on another slime!</span>")
 		return
 
-	var/mob/living/simple_animal/slime/pet
-	if(M.is_adult)
-		pet = new /mob/living/simple_animal/slime/adult(M.loc)
-		pet.icon_state = "[M.colour] adult slime"
-		pet.icon_living = "[M.colour] adult slime"
-	else
-		pet = new /mob/living/simple_animal/slime(M.loc)
-		pet.icon_state = "[M.colour] baby slime"
-		pet.icon_living = "[M.colour] baby slime"
-	pet.icon_dead = "[M.colour] baby slime dead"
-	pet.colour = "[M.colour]"
-	qdel(M)
+	M.docile = 1
+	M.nutrition = 700
+	to_chat(M, "<span class='warning'>You absorb the potion and feel your intense desire to feed melt away.</span>")
+	to_chat(user, "<span class='notice'>You feed the slime the potion, removing its hunger and calming it.</span>")
 	being_used = 1
 	var/newname = sanitize(copytext(input(user, "Would you like to give the slime a name?", "Name your new pet", "pet slime") as null|text,1,MAX_NAME_LEN))
 
 	if(!newname)
 		newname = "pet slime"
-	pet.name = newname
-	pet.real_name = newname
+	M.name = newname
+	M.real_name = newname
 	qdel(src)
-	to_chat(user, "You feed the slime the potion, removing it's powers and calming it.")
 
 /obj/item/slimepotion/sentience
 	name = "sentience potion"
 	desc = "A miraculous chemical mix that can raise the intelligence of creatures to human levels."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "bottle19"
-	origin_tech = "biotech=5"
+	origin_tech = "biotech=6"
 	var/list/not_interested = list()
 	var/being_used = 0
 	var/sentience_type = SENTIENCE_ORGANIC
@@ -217,7 +206,9 @@
 		SM.master_commander = user
 		SM.sentience_act()
 		to_chat(SM, "<span class='warning'>All at once it makes sense: you know what you are and who you are! Self awareness is yours!</span>")
-		to_chat(SM, "<span class='userdanger'>You are grateful to be self aware and owe [user] a great debt. Serve [user], and assist them in completing their goals at any cost.</span>")
+		to_chat(SM, "<span class='userdanger'>You are grateful to be self aware and owe [user] a great debt. Serve [user], and assist [user.p_them()] in completing [user.p_their()] goals at any cost.</span>")
+		if(SM.flags_2 & HOLOGRAM_2) //Check to see if it's a holodeck creature
+			to_chat(SM, "<span class='userdanger'>You also become depressingly aware that you are not a real creature, but instead a holoform. Your existence is limited to the parameters of the holodeck.</span>")
 		to_chat(user, "<span class='notice'>[M] accepts the potion and suddenly becomes attentive and aware. It worked!</span>")
 		qdel(src)
 	else
@@ -350,6 +341,7 @@
 	desc = "A potent chemical mix that will remove the slowdown from any item."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "bottle3"
+	origin_tech = "biotech=5"
 
 /obj/item/slimepotion/speed/afterattack(obj/item/C, mob/user, proximity_flag)
 	if(!proximity_flag)
@@ -371,6 +363,7 @@
 	desc = "A potent chemical mix that will fireproof any article of clothing. Has three uses."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "bottle17"
+	origin_tech = "biotech=5"
 	var/uses = 3
 
 /obj/item/slimepotion/fireproof/afterattack(obj/item/clothing/C, mob/user, proximity_flag)
@@ -396,84 +389,6 @@
 	if(!uses)
 		qdel(src)
 
-////////Adamantine Golem stuff I dunno where else to put it
-
-/obj/effect/golemrune
-	anchored = 1
-	desc = "a strange rune used to create golems. It glows when spirits are nearby."
-	name = "rune"
-	icon = 'icons/obj/rune.dmi'
-	icon_state = "golem"
-	unacidable = 1
-	layer = TURF_LAYER
-	var/list/mob/dead/observer/ghosts[0]
-
-/obj/effect/golemrune/New()
-	..()
-	processing_objects.Add(src)
-
-/obj/effect/golemrune/process()
-	if(ghosts.len>0)
-		icon_state = "golem2"
-	else
-		icon_state = "golem"
-
-/obj/effect/golemrune/attack_hand(mob/living/user)
-	var/mob/dead/observer/ghost
-	for(var/mob/dead/observer/O in loc)
-		if(!check_observer(O))
-			to_chat(O, "<span class='warning'>You are not eligible to become a golem.</span>")
-			continue
-		ghost = O
-		break
-	if(!ghost)
-		to_chat(user, "The rune fizzles uselessly. There is no spirit nearby.")
-		return
-	var/mob/living/carbon/human/golem/G = new /mob/living/carbon/human/golem
-	G.change_gender(pick(MALE,FEMALE))
-	G.loc = src.loc
-	G.key = ghost.key
-	add_logs(user, G, "summoned", null, "as a golem")
-	to_chat(G, "You are an adamantine golem. You move slowly, but are highly resistant to heat and cold as well as blunt trauma. You are unable to wear clothes, but can still use most tools. Serve [user], and assist them in completing their goals at any cost.")
-	qdel(src)
-
-/obj/effect/golemrune/Topic(href,href_list)
-	if("signup" in href_list)
-		var/mob/dead/observer/O = locate(href_list["signup"])
-		volunteer(O)
-
-/obj/effect/golemrune/attack_ghost(var/mob/dead/observer/O)
-	if(!O)
-		return
-	volunteer(O)
-
-/obj/effect/golemrune/proc/check_observer(var/mob/dead/observer/O)
-	if(!O)
-		return FALSE
-	if(!O.client)
-		return FALSE
-	if(O.mind && O.mind.current && O.mind.current.stat != DEAD)
-		return FALSE
-	if(!O.can_reenter_corpse)
-		return FALSE
-	if(O.has_enabled_antagHUD == 1 && config.antag_hud_restricted)
-		return FALSE
-	return TRUE
-
-/obj/effect/golemrune/proc/volunteer(var/mob/dead/observer/O)
-	if(O in ghosts)
-		ghosts.Remove(O)
-		to_chat(O, "<span class='warning'>You are no longer signed up to be a golem.</span>")
-	else
-		if(!check_observer(O))
-			to_chat(O, "<span class='warning'>You are not eligible to become a golem.</span>")
-			return
-		ghosts.Add(O)
-		to_chat(O, "<span class='notice'>You are signed up to be a golem.</span>")
-
-
-
-
 /obj/effect/timestop
 	anchored = 1
 	name = "chronofield"
@@ -484,7 +399,7 @@
 	pixel_x = -64
 	pixel_y = -64
 	unacidable = 1
-	mouse_opacity = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	var/mob/living/immune = list() // the one who creates the timestop is immune
 	var/list/stopped_atoms = list()
 	var/freezerange = 2
@@ -493,13 +408,13 @@
 
 /obj/effect/timestop/New()
 	..()
-	for(var/mob/living/M in player_list)
+	for(var/mob/living/M in GLOB.player_list)
 		for(var/obj/effect/proc_holder/spell/aoe_turf/conjure/timestop/T in M.mind.spell_list) //People who can stop time are immune to timestop
 			immune |= M
 
 
 /obj/effect/timestop/proc/timestop()
-	playsound(get_turf(src), 'sound/magic/TIMEPARADOX2.ogg', 100, 1, -1)
+	playsound(get_turf(src), 'sound/magic/timeparadox2.ogg', 100, 1, -1)
 	for(var/i in 1 to duration-1)
 		for(var/A in orange (freezerange, loc))
 			if(isliving(A))
@@ -552,7 +467,7 @@
 	singular_name = "floor tile"
 	desc = "Through a series of micro-teleports, these tiles let people move at incredible speeds."
 	icon_state = "tile-bluespace"
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	force = 6
 	materials = list(MAT_METAL=500)
 	throwforce = 10
@@ -575,7 +490,7 @@
 	singular_name = "floor tile"
 	desc = "Time seems to flow very slowly around these tiles."
 	icon_state = "tile-sepia"
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	force = 6
 	materials = list(MAT_METAL=500)
 	throwforce = 10
@@ -587,16 +502,16 @@
 
 /obj/item/areaeditor/blueprints/slime
 	name = "cerulean prints"
-	desc = "A one use set of blueprints made of jelly like organic material. Renaming an area to 'Xenobiology Lab' will extend the reach of the management console."
+	desc = "A one use set of blueprints made of jelly like organic material. Extends the reach of the management console."
 	color = "#2956B2"
 
 /obj/item/areaeditor/blueprints/slime/edit_area()
-	. = ..()
+	..()
 	var/area/A = get_area(src)
-	if(.)
-		for(var/turf/T in A)
-			T.color = "#2956B2"
-		qdel(src)
+	for(var/turf/T in A)
+		T.color = "#2956B2"
+	A.xenobiology_compatible = TRUE
+	qdel(src)
 
 /turf/simulated/floor/sepia
 	slowdown = 2

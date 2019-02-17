@@ -11,10 +11,10 @@
 	var/check_flags = 0
 	var/processing = 0
 	var/obj/screen/movable/action_button/button = null
-	var/button_icon = 'icons/mob/actions.dmi'
+	var/button_icon = 'icons/mob/actions/actions.dmi'
 	var/background_icon_state = "bg_default"
 
-	var/icon_icon = 'icons/mob/actions.dmi'
+	var/icon_icon = 'icons/mob/actions/actions.dmi'
 	var/button_icon_state = "default"
 	var/mob/owner
 
@@ -44,12 +44,14 @@
 	M.update_action_buttons()
 
 /datum/action/proc/Remove(mob/M)
+	owner = null
+	if(!M)
+		return
 	if(M.client)
 		M.client.screen -= button
 	button.moved = FALSE //so the button appears in its normal position when given to another owner.
 	M.actions -= src
 	M.update_action_buttons()
-	owner = null
 
 /datum/action/proc/Trigger()
 	if(!IsAvailable())
@@ -101,37 +103,43 @@
 //Presets for item actions
 /datum/action/item_action
 	check_flags = AB_CHECK_RESTRAINED|AB_CHECK_STUNNED|AB_CHECK_LYING|AB_CHECK_CONSCIOUS
-
-/datum/action/item_action/New(Target)
+	var/use_itemicon = TRUE
+/datum/action/item_action/New(Target, custom_icon, custom_icon_state)
 	..()
 	var/obj/item/I = target
 	I.actions += src
+	if(custom_icon && custom_icon_state)
+		use_itemicon = FALSE
+		icon_icon = custom_icon
+		button_icon_state = custom_icon_state
 
 /datum/action/item_action/Destroy()
 	var/obj/item/I = target
 	I.actions -= src
 	return ..()
 
-/datum/action/item_action/Trigger()
+/datum/action/item_action/Trigger(attack_self = TRUE) //Maybe we don't want to click the thing itself
 	if(!..())
 		return 0
-	if(target)
+	if(target && attack_self)
 		var/obj/item/I = target
 		I.ui_action_click(owner, type)
 	return 1
 
 /datum/action/item_action/ApplyIcon(obj/screen/movable/action_button/current_button)
-	current_button.overlays.Cut()
-	if(target)
-		var/obj/item/I = target
-		var/old_layer = I.layer
-		var/old_plane = I.plane
-		I.layer = 21
-		I.plane = HUD_PLANE
-		current_button.overlays += I
-		I.layer = old_layer
-		I.plane = old_plane
-
+	if(use_itemicon)
+		current_button.overlays.Cut()
+		if(target)
+			var/obj/item/I = target
+			var/old_layer = I.layer
+			var/old_plane = I.plane
+			I.layer = HUD_LAYER_SCREEN + 1
+			I.plane = HUD_PLANE
+			current_button.overlays += I
+			I.layer = old_layer
+			I.plane = old_plane
+	else
+		..()
 /datum/action/item_action/toggle_light
 	name = "Toggle Light"
 
@@ -197,8 +205,8 @@
 		UpdateButtonIcon()
 
 /datum/action/item_action/toggle_unfriendly_fire/UpdateButtonIcon()
-	if(istype(target, /obj/item/weapon/hierophant_staff))
-		var/obj/item/weapon/hierophant_staff/H = target
+	if(istype(target, /obj/item/hierophant_staff))
+		var/obj/item/hierophant_staff/H = target
 		if(H.friendly_fire_check)
 			button_icon_state = "vortex_ff_off"
 			name = "Toggle Friendly Fire \[OFF\]"
@@ -209,14 +217,27 @@
 			button.name = name
 	..()
 
+/datum/action/item_action/synthswitch
+	name = "Change Synthesizer Instrument"
+	desc = "Change the type of instrument your synthesizer is playing as."
+
+/datum/action/item_action/synthswitch/Trigger()
+	if(istype(target, /obj/item/instrument/piano_synth))
+		var/obj/item/instrument/piano_synth/synth = target
+		var/chosen = input("Choose the type of instrument you want to use", "Instrument Selection", "piano") as null|anything in synth.insTypes
+		if(!synth.insTypes[chosen])
+			return
+		return synth.changeInstrument(chosen)
+	return ..()
+
 /datum/action/item_action/vortex_recall
 	name = "Vortex Recall"
 	desc = "Recall yourself, and anyone nearby, to an attuned hierophant rune at any time.<br>If no such rune exists, will produce a rune at your location."
 	button_icon_state = "vortex_recall"
 
 /datum/action/item_action/vortex_recall/IsAvailable()
-	if(istype(target, /obj/item/weapon/hierophant_staff))
-		var/obj/item/weapon/hierophant_staff/H = target
+	if(istype(target, /obj/item/hierophant_staff))
+		var/obj/item/hierophant_staff/H = target
 		if(H.teleporting)
 			return 0
 	return ..()
@@ -298,6 +319,14 @@
 /datum/action/item_action/toggle_helmet
 	name = "Toggle Helmet"
 
+/datum/action/item_action/remove_tape
+	name = "Remove Duct Tape"
+
+/datum/action/item_action/remove_tape/Trigger(attack_self = FALSE)
+	if(..())
+		GET_COMPONENT_FROM(DT, /datum/component/ducttape, target)
+		DT.remove_tape(target, usr)
+
 /datum/action/item_action/toggle_jetpack
 	name = "Toggle Jetpack"
 
@@ -305,7 +334,7 @@
 	name = "Toggle Jetpack Stabilization"
 
 /datum/action/item_action/jetpack_stabilization/IsAvailable()
-	var/obj/item/weapon/tank/jetpack/J = target
+	var/obj/item/tank/jetpack/J = target
 	if(!istype(J) || !J.on)
 		return 0
 	return ..()
@@ -336,6 +365,18 @@
 	if(button_icon && button_icon_state)
 		var/image/img = image(button_icon, current_button, "scan_mode")
 		current_button.overlays += img
+
+/datum/action/item_action/instrument
+	name = "Use Instrument"
+	desc = "Use the instrument specified"
+
+/datum/action/item_action/instrument/Trigger()
+	if(istype(target, /obj/item/instrument))
+		var/obj/item/instrument/I = target
+		I.interact(usr)
+		return
+	return ..()
+
 
 /datum/action/item_action/remove_badge
 	name = "Remove Holobadge"
@@ -415,6 +456,9 @@
 	if(!target)
 		return 0
 	var/obj/effect/proc_holder/spell/spell = target
+
+	if(spell.special_availability_check)
+		return 1
 
 	if(owner)
 		return spell.can_cast(owner)

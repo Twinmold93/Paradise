@@ -1,25 +1,28 @@
-/obj/item/device/soulstone
+/obj/item/soulstone
 	name = "Soul Stone Shard"
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "soulstone"
 	item_state = "electronic"
 	desc = "A fragment of the legendary treasure known simply as the 'Soul Stone'. The shard still flickers with a fraction of the full artifact's power."
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	slot_flags = SLOT_BELT
-	origin_tech = "bluespace=4;materials=4"
+	origin_tech = "bluespace=4;materials=5"
 	var/imprinted = "empty"
 
+	var/optional = FALSE //does this soulstone ask the victim whether they want to be turned into a shade
 	var/usability = TRUE // Can this soul stone be used by anyone, or only cultists/wizards?
 	var/reusable = TRUE // Can this soul stone be used more than once?
 	var/spent = FALSE // If the soul stone can only be used once, has it been used?
 
-/obj/item/device/soulstone/proc/can_use(mob/living/user)
+	var/opt_in = FALSE // for tracking during the 'optional' bit
+
+/obj/item/soulstone/proc/can_use(mob/living/user)
 	if(iscultist(user) || iswizard(user) || usability)
 		return TRUE
 
 	return FALSE
 
-/obj/item/device/soulstone/proc/was_used()
+/obj/item/soulstone/proc/was_used()
 	if(!reusable)
 		spent = TRUE
 		name = "dull [name]"
@@ -27,21 +30,22 @@
 			the 'Soul Stone'. The shard lies still, dull and lifeless; \
 			whatever spark it once held long extinguished."
 
-/obj/item/device/soulstone/anybody
+/obj/item/soulstone/anybody
 	usability = TRUE
 
-/obj/item/device/soulstone/anybody/chaplain
+/obj/item/soulstone/anybody/chaplain
 	name = "mysterious old shard"
 	reusable = FALSE
+	optional = TRUE
 
-/obj/item/device/soulstone/pickup(mob/living/user)
+/obj/item/soulstone/pickup(mob/living/user)
 	..()
 	if(!can_use(user))
 		to_chat(user, "<span class='danger'>An overwhelming feeling of dread comes over you as you pick up the soulstone. It would be wise to be rid of this quickly.</span>")
 		user.Dizzy(120)
 
 //////////////////////////////Capturing////////////////////////////////////////////////////////
-/obj/item/device/soulstone/attack(mob/living/carbon/human/M as mob, mob/user as mob)
+/obj/item/soulstone/attack(mob/living/carbon/human/M as mob, mob/user as mob)
 	if(!can_use(user))
 		user.Paralyse(5)
 		to_chat(user, "<span class='userdanger'>Your body is wracked with debilitating pain!</span>")
@@ -63,21 +67,62 @@
 		return ..()
 
 	if(iscultist(user) && iscultist(M))
-		to_chat(user, "<span class='cultlarge'>\"Come now, do not capture your fellow's soul.\</span>")
+		to_chat(user, "<span class='cultlarge'>\"Come now, do not capture your fellow's soul.\"</span>")
 		return ..()
 
 		M.create_attack_log("<font color='orange'>Has had their soul captured with [src.name] by [key_name(user)]</font>")
 		user.create_attack_log("<font color='red'>Used the [src.name] to capture the soul of [key_name(M)]</font>")
 
-	M.create_attack_log("<font color='orange'>Has had their soul captured with [src.name] by [key_name(user)]</font>")
-	user.create_attack_log("<font color='red'>Used the [src.name] to capture the soul of [key_name(M)]</font>")
-	log_attack("<font color='red'>[key_name(user)] used the [src.name] to capture the soul of [key_name(M)]</font>")
+	if(optional)
+		if(!M.ckey)
+			to_chat(user, "<span class='warning'>They have no soul!</span>")
+			return
 
+		to_chat(user, "<span class='warning'>You attempt to channel [M]'s soul into [src]. You must give the soul some time to react and stand still...</span>")
+
+		var/mob/player_mob = M
+		if(M.get_ghost())//in case our player ghosted and we need to throw the alert at their ghost instead
+			player_mob = M.get_ghost()
+		var/client/player_client = player_mob.client
+		to_chat(player_mob, "<span class='warning'>[user] is trying to capture your soul into [src]! Click the button in the top right of the game window to respond.</span>")
+		player_client << 'sound/misc/notice2.ogg'
+		window_flash(player_client)
+
+		var/obj/screen/alert/notify_soulstone/A = player_mob.throw_alert("\ref[src]_soulstone_thingy", /obj/screen/alert/notify_soulstone)
+		if(player_client.prefs && player_client.prefs.UI_style)
+			A.icon = ui_style2icon(player_client.prefs.UI_style)
+
+		//pass the stuff to the alert itself
+		A.stone = src
+		A.stoner = user.real_name
+
+		//layer shenanigans to make the alert display the soulstone
+		var/old_layer = layer
+		var/old_plane = plane
+		layer = FLOAT_LAYER
+		plane = FLOAT_PLANE
+		A.overlays += src
+		layer = old_layer
+		plane = old_plane
+
+		//give the victim 10 seconds to respond
+		sleep(10 SECONDS)
+
+		if(!opt_in)
+			to_chat(user, "<span class='warning'>The soul resists your attempts at capturing it!</span>")
+			return
+
+		opt_in = FALSE
+
+		if(spent)//checking one more time against shenanigans
+			return
+
+	add_attack_logs(user, M, "Stolestone'd with [name]")
 	transfer_soul("VICTIM", M, user)
 	return
 
 ///////////////////Options for using captured souls///////////////////////////////////////
-/obj/item/device/soulstone/attack_self(mob/user)
+/obj/item/soulstone/attack_self(mob/user)
 	if(!in_range(src, user))
 		return
 
@@ -97,7 +142,7 @@
 	onclose(user, "aicard")
 	return
 
-/obj/item/device/soulstone/Topic(href, href_list)
+/obj/item/soulstone/Topic(href, href_list)
 	var/mob/U = usr
 	if(!in_range(src, U) || U.machine != src || !can_use(usr))
 		U << browse(null, "window=aicard")
@@ -122,9 +167,9 @@
 				icon_state = "soulstone"
 				name = initial(name)
 				if(iswizard(usr) || usability)
-					to_chat(A, "<b>You have been released from your prison, but you are still bound to [usr.real_name]'s will. Help them succeed in their goals at all costs.</b>")
+					to_chat(A, "<b>You have been released from your prison, but you are still bound to [usr.real_name]'s will. Help [usr.p_them()] succeed in [usr.p_their()] goals at all costs.</b>")
 				else if(iscultist(usr))
-					to_chat(A, "<b>You have been released from your prison, but you are still bound to the cult's will. Help them succeed in their goals at all costs.</b>")
+					to_chat(A, "<b>You have been released from your prison, but you are still bound to the cult's will. Help [usr.p_them()] succeed in [usr.p_their()] goals at all costs.</b>")
 				was_used()
 	attack_self(U)
 
@@ -132,7 +177,7 @@
 /obj/structure/constructshell
 	name = "empty shell"
 	icon = 'icons/obj/wizard.dmi'
-	icon_state = "construct"
+	icon_state = "construct-cult"
 	desc = "A wicked machine used by those skilled in magical arts. It is inactive"
 
 /obj/structure/constructshell/examine(mob/user)
@@ -145,8 +190,8 @@
 			to_chat(user, "<span class='cult'>A <b>Juggernaut</b>, which is very hard to kill and can produce temporary walls, but is slow.</span>")
 
 /obj/structure/constructshell/attackby(obj/item/O as obj, mob/user as mob, params)
-	if(istype(O, /obj/item/device/soulstone))
-		var/obj/item/device/soulstone/SS = O
+	if(istype(O, /obj/item/soulstone))
+		var/obj/item/soulstone/SS = O
 		if(!SS.can_use(user))
 			to_chat(user, "<span class='danger'>An overwhelming feeling of dread comes over you as you attempt to place the soulstone into the shell. It would be wise to be rid of this quickly.</span>")
 			user.Dizzy(120)
@@ -158,10 +203,10 @@
 
 ////////////////////////////Proc for moving soul in and out off stone//////////////////////////////////////
 
-/obj/item/proc/transfer_soul(var/choice as text, var/target, var/mob/U as mob).
+/obj/item/proc/transfer_soul(var/choice as text, var/target, var/mob/U as mob)
 	switch(choice)
 		if("FORCE")
-			var/obj/item/device/soulstone/C = src
+			var/obj/item/soulstone/C = src
 			if(!iscarbon(target))		//TODO: Add sacrifice stoning for non-organics, just because you have no body doesnt mean you dont have a soul
 				return 0
 			if(contents.len)
@@ -178,7 +223,7 @@
 
 		if("VICTIM")
 			var/mob/living/carbon/human/T = target
-			var/obj/item/device/soulstone/C = src
+			var/obj/item/soulstone/C = src
 			if(C.imprinted != "empty")
 				to_chat(U, "<span class='danger'>Capture failed!</span>: The soul stone has already been imprinted with [C.imprinted]'s mind!")
 			else
@@ -198,7 +243,7 @@
 							qdel(T)
 		if("SHADE")
 			var/mob/living/simple_animal/shade/T = target
-			var/obj/item/device/soulstone/C = src
+			var/obj/item/soulstone/C = src
 			if(T.stat == DEAD)
 				to_chat(U, "<span class='danger'>Capture failed!</span>: The shade has already been banished!")
 			else
@@ -218,7 +263,7 @@
 						to_chat(U, "<span class='notice'>Capture successful!</span>: [T.name]'s has been recaptured and stored within the soul stone.")
 		if("CONSTRUCT")
 			var/obj/structure/constructshell/T = target
-			var/obj/item/device/soulstone/C = src
+			var/obj/item/soulstone/C = src
 			var/mob/living/simple_animal/shade/A = locate() in C
 			if(A)
 				var/construct_class = alert(U, "Please choose which type of construct you wish to create.",,"Juggernaut","Wraith","Artificer")
@@ -235,7 +280,7 @@
 							ticker.mode.update_cult_icons_added(Z.mind)
 						qdel(T)
 						to_chat(Z, "<B>You are a Juggernaut. Though slow, your shell can withstand extreme punishment, create shield walls and even deflect energy weapons, and rip apart enemies and walls alike.</B>")
-						to_chat(Z, "<B>You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.</B>")
+						to_chat(Z, "<B>You are still bound to serve your creator, follow [U.p_their()] orders and help [U.p_them()] complete [U.p_their()] goals at all costs.</B>")
 						Z.cancel_camera()
 						qdel(C)
 
@@ -251,7 +296,7 @@
 							ticker.mode.update_cult_icons_added(Z.mind)
 						qdel(T)
 						to_chat(Z, "<B>You are a Wraith. Though relatively fragile, you are fast, deadly, and even able to phase through walls.</B>")
-						to_chat(Z, "<B>You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.</B>")
+						to_chat(Z, "<B>You are still bound to serve your creator, follow [U.p_their()] orders and help [U.p_them()] complete [U.p_their()] goals at all costs.</B>")
 						Z.cancel_camera()
 						qdel(C)
 
@@ -267,7 +312,7 @@
 							ticker.mode.update_cult_icons_added(Z.mind)
 						qdel(T)
 						to_chat(Z, "<B>You are an Artificer. You are incredibly weak and fragile, but you are able to construct fortifications, use magic missile, repair allied constructs (by clicking on them), </B><I>and most important of all create new constructs</I><B> (Use your Artificer spell to summon a new construct shell and Summon Soulstone to create a new soulstone).</B>")
-						to_chat(Z, "<B>You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.</B>")
+						to_chat(Z, "<B>You are still bound to serve your creator, follow [U.p_their()] orders and help [U.p_them()] complete [U.p_their()] goals at all costs.</B>")
 						Z.cancel_camera()
 						qdel(C)
 			else
@@ -287,14 +332,14 @@
 			ticker.mode.cult+=newstruct.mind
 		ticker.mode.update_cult_icons_added(newstruct.mind)
 	if(stoner && iswizard(stoner))
-		to_chat(newstruct, "<B>You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.</B>")
+		to_chat(newstruct, "<B>You are still bound to serve your creator, follow [stoner.p_their()] orders and help [stoner.p_them()] complete [stoner.p_their()] goals at all costs.</B>")
 	else if(stoner && iscultist(stoner))
-		to_chat(newstruct, "<B>You are still bound to serve the cult, follow their orders and help them complete their goals at all costs.</B>")
+		to_chat(newstruct, "<B>You are still bound to serve the cult, follow [stoner.p_their()] orders and help [stoner.p_them()] complete [stoner.p_their()] goals at all costs.</B>")
 	else
-		to_chat(newstruct, "<B>You are still bound to serve your creator, follow their orders and help them complete their goals at all costs.</B>")
+		to_chat(newstruct, "<B>You are still bound to serve your creator, follow [stoner.p_their()] orders and help [stoner.p_them()] complete [stoner.p_their()] goals at all costs.</B>")
 	newstruct.cancel_camera()
 
-/obj/item/device/soulstone/proc/init_shade(mob/living/carbon/human/T, mob/U, vic = 0)
+/obj/item/soulstone/proc/init_shade(mob/living/carbon/human/T, mob/U, vic = 0)
 	new /obj/effect/decal/remains/human(T.loc) //Spawns a skeleton
 	T.invisibility = 101
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( T.loc )
@@ -317,16 +362,16 @@
 	name = "soulstone: Shade of [T.real_name]"
 	icon_state = "soulstone2"
 	if(U && iswizard(U))
-		to_chat(S, "Your soul has been captured! You are now bound to [U.real_name]'s will. Help them succeed in their goals at all costs.")
+		to_chat(S, "Your soul has been captured! You are now bound to [U.real_name]'s will. Help [U.p_them()] succeed in their goals at all costs.")
 	else if(U && iscultist(U))
-		to_chat(S, "Your soul has been captured! You are now bound to the cult's will. Help them succeed in their goals at all costs.")
+		to_chat(S, "Your soul has been captured! You are now bound to the cult's will. Help [U.p_them()] succeed in their goals at all costs.")
 	if(vic && U)
-		to_chat(U, "<span class='info'><b>Capture successful!</b>:</span> [T.real_name]'s soul has been ripped from their body and stored within the soul stone.")
+		to_chat(U, "<span class='info'><b>Capture successful!</b>:</span> [T.real_name]'s soul has been ripped from [U.p_their()] body and stored within the soul stone.")
 
-/obj/item/device/soulstone/proc/getCultGhost(mob/living/carbon/human/T, mob/U)
+/obj/item/soulstone/proc/getCultGhost(mob/living/carbon/human/T, mob/U)
 	var/mob/dead/observer/chosen_ghost
 
-	for(var/mob/dead/observer/ghost in player_list) //We put them back in their body
+	for(var/mob/dead/observer/ghost in GLOB.player_list) //We put them back in their body
 		if(ghost.mind && ghost.mind.current == T && ghost.client)
 			chosen_ghost = ghost
 			break

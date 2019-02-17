@@ -1,6 +1,7 @@
 /mob/living/simple_animal/hostile
 	faction = list("hostile")
 	stop_automated_movement_when_pulled = 0
+	obj_damage = 40
 	environment_smash = 1 //Set to 1 to break closets,tables,racks, etc; 2 for walls; 3 for rwalls
 	var/atom/target
 	var/ranged = 0
@@ -40,6 +41,8 @@
 	/obj/structure/grille,
 	/obj/structure/girder,
 	/obj/structure/rack,
+	/obj/structure/computerframe,
+	/obj/machinery/constructable_frame,
 	/obj/structure/barricade) //turned into a typecache in New()
 	var/atom/targets_from = null //all range/attack/etc. calculations should be done from this atom, defaults to the mob itself, useful for Vehicles and such
 	var/list/emote_taunt = list()
@@ -56,7 +59,7 @@
 	target = null
 	return ..()
 
-/mob/living/simple_animal/hostile/Life()
+/mob/living/simple_animal/hostile/Life(seconds, times_fired)
 	. = ..()
 	if(!.)
 		walk(src, 0)
@@ -98,10 +101,8 @@
 
 
 /mob/living/simple_animal/hostile/proc/ListTargets()//Step 1, find out what we can see
-	. = list()
 	if(!search_objects)
-		var/list/Mobs = hearers(vision_range, targets_from) - src //Remove self, so we don't suicide
-		. += Mobs
+		. = hearers(vision_range, targets_from) - src //Remove self, so we don't suicide
 
 		var/static/hostile_machines = typecacheof(list(/obj/machinery/porta_turret, /obj/mecha, /obj/spacepod))
 
@@ -109,8 +110,7 @@
 			if(can_see(targets_from, HM, vision_range))
 				. += HM
 	else
-		var/list/Objects = oview(vision_range, targets_from)
-		. += Objects
+		. = oview(vision_range, targets_from)
 
 /mob/living/simple_animal/hostile/proc/FindTarget(var/list/possible_targets, var/HasTargetsList = 0)//Step 2, filter down possible targets to things we actually care about
 	. = list()
@@ -180,7 +180,7 @@
 
 		if(ishuman(the_target))
 			var/mob/living/carbon/human/H = the_target
-			if(is_type_in_list(src, H.species.ignored_by))
+			if(is_type_in_list(src, H.dna.species.ignored_by))
 				return 0
 
 		if(istype(the_target, /obj/mecha))
@@ -244,7 +244,7 @@
 		if(target.loc != null && get_dist(targets_from, target.loc) <= vision_range) //We can't see our target, but he's in our vision range still
 			if(ranged_ignores_vision && ranged_cooldown <= world.time) //we can't see our target... but we can fire at them!
 				OpenFire(target)
-			if(environment_smash >= 2) //If we're capable of smashing through walls, forget about vision completely after finding our target
+			if((environment_smash & ENVIRONMENT_SMASH_WALLS) || (environment_smash & ENVIRONMENT_SMASH_RWALLS)) //If we're capable of smashing through walls, forget about vision completely after finding our target
 				Goto(target,move_to_delay,minimum_distance)
 				FindHidden()
 				return 1
@@ -291,8 +291,11 @@
 //////////////END HOSTILE MOB TARGETTING AND AGGRESSION////////////
 
 /mob/living/simple_animal/hostile/death(gibbed)
+	// Only execute the below if we successfully died
+	. = ..(gibbed)
+	if(!.)
+		return FALSE
 	LoseTarget()
-	..(gibbed)
 
 /mob/living/simple_animal/hostile/proc/summon_backup(distance)
 	do_alert_animation(src)

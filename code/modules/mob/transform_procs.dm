@@ -20,7 +20,7 @@
 
 /mob/proc/AIize()
 	if(client)
-		src << sound(null, repeat = 0, wait = 0, volume = 85, channel = 1)// stop the jams for AIs
+		stop_sound_channel(CHANNEL_LOBBYMUSIC)
 
 	var/mob/living/silicon/ai/O = new (loc,,,1)//No MMI but safety is in effect.
 	O.invisibility = 0
@@ -86,11 +86,11 @@
 
 	if(O.mind && O.mind.assigned_role == "Cyborg")
 		if(O.mind.role_alt_title == "Android")
-			O.mmi = new /obj/item/device/mmi/posibrain(O)
+			O.mmi = new /obj/item/mmi/robotic_brain(O)
 		else if(O.mind.role_alt_title == "Robot")
 			O.mmi = null //Robots do not have removable brains.
 		else
-			O.mmi = new /obj/item/device/mmi(O)
+			O.mmi = new /obj/item/mmi(O)
 
 		if(O.mmi) O.mmi.transfer_identity(src) //Does not transfer key/client.
 
@@ -128,7 +128,7 @@
 		if("Drone")
 			new_xeno = new /mob/living/carbon/alien/humanoid/drone(loc)
 
-	new_xeno.a_intent = I_HARM
+	new_xeno.a_intent = INTENT_HARM
 	new_xeno.key = key
 
 	to_chat(new_xeno, "<B>You are now an alien.</B>")
@@ -187,7 +187,7 @@
 		qdel(t)
 
 	var/mob/living/simple_animal/pet/corgi/new_corgi = new /mob/living/simple_animal/pet/corgi (loc)
-	new_corgi.a_intent = I_HARM
+	new_corgi.a_intent = INTENT_HARM
 	new_corgi.key = key
 
 	to_chat(new_corgi, "<B>You are now a Corgi. Yap Yap!</B>")
@@ -218,7 +218,7 @@
 	var/mob/new_mob = new mobpath(src.loc)
 
 	new_mob.key = key
-	new_mob.a_intent = I_HARM
+	new_mob.a_intent = INTENT_HARM
 
 
 	to_chat(new_mob, "You suddenly feel more... animalistic.")
@@ -235,7 +235,7 @@
 	var/mob/new_mob = new mobpath(src.loc)
 
 	new_mob.key = key
-	new_mob.a_intent = I_HARM
+	new_mob.a_intent = INTENT_HARM
 	to_chat(new_mob, "You feel more... animalistic")
 	new_mob.update_pipe_vision()
 
@@ -255,7 +255,7 @@
 	for(var/t in bodyparts)	//this really should not be necessary
 		qdel(t)
 
-	var/obj/item/device/paicard/card = new(loc)
+	var/obj/item/paicard/card = new(loc)
 	var/mob/living/silicon/pai/pai = new(card)
 	pai.key = key
 	card.setPersonality(pai)
@@ -274,6 +274,9 @@
 	if(!MP)
 		return 0
 
+	if(!GAMEMODE_IS_NUCLEAR)
+		if(ispath(MP, /mob/living/simple_animal/pet/cat/Syndi))
+			return 0
 	if(ispath(MP, /mob/living/simple_animal/pet/cat))
 		return 1
 	if(ispath(MP, /mob/living/simple_animal/pet/corgi))
@@ -288,6 +291,9 @@
 		return 1
 	if(ispath(MP, /mob/living/simple_animal/pony))
 		return 1
+	if(!GAMEMODE_IS_NUCLEAR)
+		if(ispath(MP, /mob/living/simple_animal/pet/fox/Syndifox))
+			return 0
 	if(ispath(MP, /mob/living/simple_animal/pet/fox))
 		return 1
 	if(ispath(MP, /mob/living/simple_animal/chick))

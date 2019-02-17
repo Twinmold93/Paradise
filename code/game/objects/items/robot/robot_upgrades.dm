@@ -6,6 +6,7 @@
 	desc = "Protected by FRM."
 	icon = 'icons/obj/module.dmi'
 	icon_state = "cyborg_upgrade"
+	origin_tech = "programming=2"
 	var/locked = 0
 	var/installed = 0
 	var/require_module = 0
@@ -33,11 +34,11 @@
 	R.notify_ai(2)
 
 	R.uneq_all()
+	R.sight_mode = null
 	R.hands.icon_state = "nomod"
 	R.icon_state = "robot"
 	R.module.remove_subsystems_and_actions(R)
-	qdel(R.module)
-	R.module = null
+	QDEL_NULL(R.module)
 
 	R.camera.network.Remove(list("Engineering", "Medical", "Mining Outpost"))
 	R.rename_character(R.real_name, R.get_default_name("Default"))
@@ -68,6 +69,9 @@
 /obj/item/borg/upgrade/rename/action(var/mob/living/silicon/robot/R)
 	if(..())
 		return
+	if(!R.allow_rename)
+		to_chat(R, "<span class='warning'>Internal diagnostic error: incompatible upgrade module detected.</span>");
+		return 0
 	R.notify_ai(3, R.name, heldname)
 	R.name = heldname
 	R.custom_name = heldname
@@ -86,13 +90,13 @@
 		return 0
 
 	if(!R.key)
-		for(var/mob/dead/observer/ghost in player_list)
+		for(var/mob/dead/observer/ghost in GLOB.player_list)
 			if(ghost.mind && ghost.mind.current == R)
 				R.key = ghost.key
 
 	R.stat = CONSCIOUS
-	dead_mob_list -= R //please never forget this ever kthx
-	living_mob_list += R
+	GLOB.dead_mob_list -= R //please never forget this ever kthx
+	GLOB.living_mob_list += R
 	R.notify_ai(1)
 
 	return 1
@@ -103,6 +107,7 @@
 	desc = "Used to kick in a robot's VTEC systems, increasing their speed."
 	icon_state = "cyborg_upgrade2"
 	require_module = 1
+	origin_tech = "engineering=4;materials=5;programming=4"
 
 /obj/item/borg/upgrade/vtec/action(var/mob/living/silicon/robot/R)
 	if(..())
@@ -120,14 +125,15 @@
 	name = "cyborg rapid disabler cooling module"
 	desc = "Used to cool a mounted disabler, increasing the potential current in it and thus its recharge rate."
 	icon_state = "cyborg_upgrade3"
+	origin_tech = "engineering=4;powerstorage=4;combat=4"
 	require_module = 1
-	module_type = /obj/item/weapon/robot_module/security
+	module_type = /obj/item/robot_module/security
 
 /obj/item/borg/upgrade/disablercooler/action(mob/living/silicon/robot/R)
 	if(..())
 		return
 
-	var/obj/item/weapon/gun/energy/disabler/cyborg/T = locate() in R.module.modules
+	var/obj/item/gun/energy/disabler/cyborg/T = locate() in R.module.modules
 	if(!T)
 		to_chat(usr, "<span class='notice'>There's no disabler in this unit!</span>")
 		return
@@ -144,6 +150,7 @@
 	name = "ion thruster upgrade"
 	desc = "A energy-operated thruster system for cyborgs."
 	icon_state = "cyborg_upgrade3"
+	origin_tech = "engineering=4;powerstorage=4"
 
 /obj/item/borg/upgrade/thrusters/action(mob/living/silicon/robot/R)
 	if(..())
@@ -160,19 +167,20 @@
 	name = "mining cyborg diamond drill"
 	desc = "A diamond drill replacement for the mining module's standard drill."
 	icon_state = "cyborg_upgrade3"
+	origin_tech = "engineering=4;materials=5"
 	require_module = 1
-	module_type = /obj/item/weapon/robot_module/miner
+	module_type = /obj/item/robot_module/miner
 
 /obj/item/borg/upgrade/ddrill/action(mob/living/silicon/robot/R)
 	if(..())
 		return
 
-	for(var/obj/item/weapon/pickaxe/drill/cyborg/D in R.module.modules)
+	for(var/obj/item/pickaxe/drill/cyborg/D in R.module.modules)
 		qdel(D)
-	for(var/obj/item/weapon/shovel/S in R.module.modules)
+	for(var/obj/item/shovel/S in R.module.modules)
 		qdel(S)
 
-	R.module.modules += new /obj/item/weapon/pickaxe/drill/cyborg/diamond(R.module)
+	R.module.modules += new /obj/item/pickaxe/drill/cyborg/diamond(R.module)
 	R.module.rebuild()
 
 	return 1
@@ -181,25 +189,27 @@
 	name = "mining cyborg satchel of holding"
 	desc = "A satchel of holding replacement for mining cyborg's ore satchel module."
 	icon_state = "cyborg_upgrade3"
+	origin_tech = "engineering=4;materials=4;bluespace=4"
 	require_module = 1
-	module_type = /obj/item/weapon/robot_module/miner
+	module_type = /obj/item/robot_module/miner
 
 /obj/item/borg/upgrade/soh/action(mob/living/silicon/robot/R)
 	if(..())
 		return
 
-	for(var/obj/item/weapon/storage/bag/ore/cyborg/S in R.module.modules)
+	for(var/obj/item/storage/bag/ore/cyborg/S in R.module.modules)
 		qdel(S)
 
-	R.module.modules += new /obj/item/weapon/storage/bag/ore/holding(R.module)
+	R.module.modules += new /obj/item/storage/bag/ore/holding(R.module)
 	R.module.rebuild()
 
 	return 1
 
 /obj/item/borg/upgrade/syndicate
 	name = "illegal equipment module"
-	desc = "Unlocks the hidden, deadlier functions of a cyborg"
+	desc = "Unlocks the hidden, deadlier functions of a cyborg. Also prevents emag subversion."
 	icon_state = "cyborg_upgrade3"
+	origin_tech = "combat=4;syndicate=1"
 	require_module = 1
 
 /obj/item/borg/upgrade/syndicate/action(mob/living/silicon/robot/R)
@@ -207,6 +217,10 @@
 		return
 
 	if(R.emagged)
+		return
+
+	if(R.weapons_unlock)
+		to_chat(R, "<span class='warning'>Internal diagnostic error: incompatible upgrade module detected.</span>");
 		return
 
 	R.emagged = 1
@@ -288,14 +302,12 @@
 
 		if(cyborg.health < cyborg.maxHealth)
 			if(cyborg.health < 0)
-				repair_amount = -2.5
+				repair_amount = 2.5
 				powercost = 30
 			else
-				repair_amount = -1
+				repair_amount = 1
 				powercost = 10
-			cyborg.adjustBruteLoss(repair_amount)
-			cyborg.adjustFireLoss(repair_amount)
-			cyborg.updatehealth()
+			cyborg.heal_overall_damage(repair_amount, repair_amount)
 			cyborg.cell.use(powercost)
 		else
 			cyborg.cell.use(5)

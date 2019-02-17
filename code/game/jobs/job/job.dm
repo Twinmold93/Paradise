@@ -52,8 +52,11 @@
 	var/exp_requirements = 0
 	var/exp_type = ""
 
+	var/disabilities_allowed = 1
+
 	var/admin_only = 0
 	var/spawn_ert = 0
+	var/syndicate_command = 0
 
 	var/outfit = null
 
@@ -72,12 +75,12 @@
 	if(!H)
 		return 0
 
-	H.species.before_equip_job(src, H, visualsOnly)
+	H.dna.species.before_equip_job(src, H, visualsOnly)
 
 	if(outfit)
 		H.equipOutfit(outfit, visualsOnly)
 
-	H.species.after_equip_job(src, H, visualsOnly)
+	H.dna.species.after_equip_job(src, H, visualsOnly)
 
 	if(!visualsOnly && announce)
 		announce(H)
@@ -110,6 +113,18 @@
 
 	return max(0, minimal_player_age - C.player_age)
 
+/datum/job/proc/barred_by_disability(client/C)
+	if(!C)
+		return 0
+	if(disabilities_allowed)
+		return 0
+	var/list/prohibited_disabilities = list(DISABILITY_FLAG_BLIND, DISABILITY_FLAG_DEAF, DISABILITY_FLAG_MUTE, DISABILITY_FLAG_DIZZY)
+	for(var/i = 1, i < prohibited_disabilities.len, i++)
+		var/this_disability = prohibited_disabilities[i]
+		if(C.prefs.disabilities & this_disability)
+			return 1
+	return 0
+
 /datum/job/proc/is_position_available()
 	return (current_positions < total_positions) || (total_positions == -1)
 
@@ -122,18 +137,16 @@
 	var/jobtype = null
 
 	uniform = /obj/item/clothing/under/color/grey
-	id = /obj/item/weapon/card/id
-	l_ear = /obj/item/device/radio/headset
-	back = /obj/item/weapon/storage/backpack
+	id = /obj/item/card/id
+	l_ear = /obj/item/radio/headset
+	back = /obj/item/storage/backpack
 	shoes = /obj/item/clothing/shoes/black
-	pda = /obj/item/device/pda
+	pda = /obj/item/pda
 
-	var/list/implants = null
-
-	var/backpack = /obj/item/weapon/storage/backpack
-	var/satchel = /obj/item/weapon/storage/backpack/satchel_norm
-	var/dufflebag = /obj/item/weapon/storage/backpack/duffel
-	var/box = /obj/item/weapon/storage/box/survival
+	var/backpack = /obj/item/storage/backpack
+	var/satchel = /obj/item/storage/backpack/satchel_norm
+	var/dufflebag = /obj/item/storage/backpack/duffel
+	var/box = /obj/item/storage/box/survival
 
 	var/tmp/list/gear_leftovers = list()
 
@@ -141,13 +154,13 @@
 	if(allow_backbag_choice)
 		switch(H.backbag)
 			if(GBACKPACK)
-				back = /obj/item/weapon/storage/backpack //Grey backpack
+				back = /obj/item/storage/backpack //Grey backpack
 			if(GSATCHEL)
-				back = /obj/item/weapon/storage/backpack/satchel_norm //Grey satchel
+				back = /obj/item/storage/backpack/satchel_norm //Grey satchel
 			if(GDUFFLEBAG)
-				back = /obj/item/weapon/storage/backpack/duffel //Grey Dufflebag
+				back = /obj/item/storage/backpack/duffel //Grey Dufflebag
 			if(LSATCHEL)
-				back = /obj/item/weapon/storage/backpack/satchel //Leather Satchel
+				back = /obj/item/storage/backpack/satchel //Leather Satchel
 			if(DSATCHEL)
 				back = satchel //Department satchel
 			if(DDUFFLEBAG)
@@ -156,8 +169,11 @@
 				back = backpack //Department backpack
 
 	if(box)
-		backpack_contents.Insert(1, box) // Box always takes a first slot in backpack
-		backpack_contents[box] = 1
+		var/spawnbox = box
+		if(H.dna.species.speciesbox)
+			spawnbox = H.dna.species.speciesbox
+		backpack_contents.Insert(1, spawnbox) // Box always takes a first slot in backpack
+		backpack_contents[spawnbox] = 1
 
 	if(allow_loadout && H.client && (H.client.prefs.gear && H.client.prefs.gear.len))
 		for(var/gear in H.client.prefs.gear)
@@ -171,7 +187,7 @@
 				else
 					permitted = TRUE
 
-				if(G.whitelisted && (G.whitelisted != H.species.name || !is_alien_whitelisted(H, G.whitelisted)))
+				if(G.whitelisted && (G.whitelisted != H.dna.species.name || !is_alien_whitelisted(H, G.whitelisted)))
 					permitted = FALSE
 
 				if(!permitted)
@@ -196,25 +212,20 @@
 
 	imprint_pda(H)
 
-	if(implants)
-		for(var/implant_type in implants)
-			var/obj/item/weapon/implant/I = new implant_type(H)
-			I.implant(H)
-
 	if(gear_leftovers.len)
 		for(var/datum/gear/G in gear_leftovers)
 			var/atom/placed_in = H.equip_or_collect(G.spawn_item(null, H.client.prefs.gear[G.display_name]))
 			if(istype(placed_in))
 				if(isturf(placed_in))
-					to_chat(H, "<span class='notice'>Placing \the [G] on [placed_in]!</span>")
+					to_chat(H, "<span class='notice'>Placing [G.display_name] on [placed_in]!</span>")
 				else
-					to_chat(H, "<span class='noticed'>Placing \the [G] in [placed_in.name]")
+					to_chat(H, "<span class='notice'>Placing [G.display_name] in [placed_in.name].</span>")
 				continue
 			if(H.equip_to_appropriate_slot(G))
-				to_chat(H, "<span class='notice'>Placing \the [G] in your inventory!</span>")
+				to_chat(H, "<span class='notice'>Placing [G.display_name] in your inventory!</span>")
 				continue
 			if(H.put_in_hands(G))
-				to_chat(H, "<span class='notice'>Placing \the [G] in your hands!</span>")
+				to_chat(H, "<span class='notice'>Placing [G.display_name] in your hands!</span>")
 				continue
 			to_chat(H, "<span class='danger'>Failed to locate a storage object on your mob, either you spawned with no hands free and no backpack or this is a bug.</span>")
 			qdel(G)
@@ -232,7 +243,7 @@
 	if(H.mind)
 		alt_title = H.mind.role_alt_title
 
-	var/obj/item/weapon/card/id/C = H.wear_id
+	var/obj/item/card/id/C = H.wear_id
 	if(istype(C))
 		C.access = J.get_access()
 		C.registered_name = H.real_name
@@ -247,8 +258,8 @@
 			C.associated_account_number = H.mind.initial_account.account_number
 
 /datum/outfit/job/proc/imprint_pda(mob/living/carbon/human/H)
-	var/obj/item/device/pda/PDA = H.wear_pda
-	var/obj/item/weapon/card/id/C = H.wear_id
+	var/obj/item/pda/PDA = H.wear_pda
+	var/obj/item/card/id/C = H.wear_id
 	if(istype(PDA) && istype(C))
 		PDA.owner = H.real_name
 		PDA.ownjob = C.assignment

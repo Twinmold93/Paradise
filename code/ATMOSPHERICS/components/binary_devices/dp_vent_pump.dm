@@ -23,7 +23,7 @@
 	var/input_pressure_min = 0
 	var/output_pressure_max = 0
 
-	var/frequency = 1439
+	var/frequency = ATMOS_VENTSCRUB
 	var/id_tag = null
 	var/datum/radio_frequency/radio_connection
 	var/advcontrol = 0//does this device listen to the AAC
@@ -42,7 +42,13 @@
 		id_tag = num2text(uid)
 	icon = null
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/initialize()
+/obj/machinery/atmospherics/binary/dp_vent_pump/Destroy()
+	if(radio_controller)
+		radio_controller.remove_object(src, frequency)
+	radio_connection = null
+	return ..()
+
+/obj/machinery/atmospherics/binary/dp_vent_pump/atmos_init()
 	..()
 	if(frequency)
 		set_frequency(frequency)
@@ -84,7 +90,7 @@
 	else
 		vent_icon += "[on ? "[pump_direction ? "out" : "in"]" : "off"]"
 
-	overlays += icon_manager.get_atmos_icon("device", , , vent_icon)
+	overlays += GLOB.pipe_icon_manager.get_atmos_icon("device", , , vent_icon)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/update_underlays()
 	if(..())
@@ -104,8 +110,9 @@
 			else
 				add_underlay(T, node2, dir)
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/process()
-	if(!..() || !on)
+/obj/machinery/atmospherics/binary/dp_vent_pump/process_atmos()
+	..()
+	if(!on)
 		return 0
 
 	var/datum/gas_mixture/environment = loc.return_air()
@@ -233,16 +240,16 @@
 	update_icon()
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/attackby(var/obj/item/W as obj, var/mob/user as mob)
-	if(istype(W, /obj/item/device/multitool))
+	if(istype(W, /obj/item/multitool))
 		update_multitool_menu(user)
 		return 1
 
 	return ..()
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/multitool_menu(var/mob/user,var/obj/item/device/multitool/P)
+/obj/machinery/atmospherics/binary/dp_vent_pump/multitool_menu(var/mob/user,var/obj/item/multitool/P)
 	return {"
 	<ul>
-		<li><b>Frequency:</b> <a href="?src=[UID()];set_freq=-1">[format_frequency(frequency)] GHz</a> (<a href="?src=[UID()];set_freq=[1439]">Reset</a>)</li>
+		<li><b>Frequency:</b> <a href="?src=[UID()];set_freq=-1">[format_frequency(frequency)] GHz</a> (<a href="?src=[UID()];set_freq=[ATMOS_VENTSCRUB]">Reset</a>)</li>
 		<li><b>ID Tag:</b> <a href="?src=[UID()];set_id=1">[id_tag]</a></li>
 		<li><b>AAC Acces:</b> <a href="?src=[UID()];toggleadvcontrol=1">[advcontrol ? "Allowed" : "Blocked"]</a></li>
 	</ul>
@@ -254,4 +261,4 @@
 		return .
 	if("toggleadvcontrol" in href_list)
 		advcontrol = !advcontrol
-		return MT_UPDATE
+		return TRUE

@@ -31,7 +31,7 @@
 	response_disarm = "shoves"
 	response_harm = "hits"
 	turns_per_move = 10
-	speed = -1
+	speed = 0
 	maxHealth = 20
 	health = 20
 
@@ -45,7 +45,7 @@
 	minbodytemp = 0
 
 	faction = list("undead") // did I mention ghost
-	loot = list(/obj/item/weapon/reagent_containers/food/snacks/ectoplasm)
+	loot = list(/obj/item/reagent_containers/food/snacks/ectoplasm)
 	del_on_death = 1
 
 /mob/living/simple_animal/hostile/retaliate/ghost/Process_Spacemove(var/check_drift = 0)
@@ -56,7 +56,7 @@
 	if(.)
 		custom_emote(1, "wails at [.]")
 
-/mob/living/simple_animal/hostile/retaliate/ghost/Life()
+/mob/living/simple_animal/hostile/retaliate/ghost/Life(seconds, times_fired)
 	if(target)
 		invisibility = pick(0,0,60,invisibility)
 	else
@@ -74,7 +74,7 @@
 	response_help = "shakes hands with"
 	response_disarm = "shoves"
 	response_harm = "hits"
-	speed = -1
+	speed = 0
 	maxHealth = 20
 	health = 20
 

@@ -11,29 +11,29 @@
 
 /datum/event/disease_outbreak/start()
 	if(!virus_type)
-		virus_type = pick(/datum/disease/advance/flu, /datum/disease/advance/cold, /datum/disease/brainrot, /datum/disease/magnitis)
+		virus_type = pick(/datum/disease/advance/flu, /datum/disease/advance/cold, /datum/disease/brainrot, /datum/disease/magnitis, /datum/disease/beesease, /datum/disease/anxiety, /datum/disease/fake_gbs, /datum/disease/fluspanish, /datum/disease/pierrot_throat, /datum/disease/lycan)
 
-	for(var/mob/living/carbon/human/H in shuffle(living_mob_list))
+	for(var/mob/living/carbon/human/H in shuffle(GLOB.living_mob_list))
 		if(issmall(H)) //don't infect monkies; that's a waste
 			continue
 		if(!H.client)
 			continue
-		if(H.species.virus_immune) //don't let virus immune things get diseases they're not supposed to get.
+		if(VIRUSIMMUNE in H.dna.species.species_traits) //don't let virus immune things get diseases they're not supposed to get.
 			continue
 		var/turf/T = get_turf(H)
 		if(!T)
 			continue
 		if(!is_station_level(T.z))
 			continue
-		var/foundAlready = 0	// don't infect someone that already has the virus
-		for(var/datum/disease/D in H.viruses)
-			foundAlready = 1
+		var/foundAlready = FALSE	// don't infect someone that already has the virus
+		for(var/thing in H.viruses)
+			foundAlready = TRUE
 			break
 		if(H.stat == DEAD || foundAlready)
 			continue
 
 		var/datum/disease/D
 		D = new virus_type()
-		D.carrier = 1
+		D.carrier = TRUE
 		H.AddDisease(D)
 		break

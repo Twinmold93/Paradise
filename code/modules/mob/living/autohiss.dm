@@ -1,10 +1,10 @@
-/mob/living/proc/handle_autohiss(message, datum/language/L)
+/mob/proc/handle_autohiss(message, datum/language/L)
 	return message // no autohiss at this level
 
 /mob/living/carbon/human/handle_autohiss(message, datum/language/L)
 	if(!client || client.prefs.autohiss_mode == AUTOHISS_OFF) // no need to process if there's no client or they have autohiss off
 		return message
-	return species.handle_autohiss(message, L, client.prefs.autohiss_mode)
+	return dna.species.handle_autohiss(message, L, client.prefs.autohiss_mode)
 
 /client/verb/toggle_autohiss()
 	set name = "Toggle Auto-Accent"
@@ -57,6 +57,16 @@
 			"s" = list("z", "zs", "zzz", "zzsz")
 		)
 	autohiss_exempt = list("Chittin")
+
+/datum/species/drask
+	autohiss_basic_map = list(
+			"o" = list ("oo", "ooo"),
+			"u" = list ("uu", "uuu")			
+		)
+	autohiss_extra_map = list(
+			"m" = list ("mm", "mmm")
+		)
+	autohiss_exempt = list("Orluum")
 
 
 /datum/species/proc/handle_autohiss(message, datum/language/lang, mode)

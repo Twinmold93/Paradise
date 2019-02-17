@@ -8,11 +8,16 @@
 // Used in preferences.
 #define DISABILITY_FLAG_NEARSIGHTED 1
 #define DISABILITY_FLAG_FAT         2
-#define DISABILITY_FLAG_EPILEPTIC   4
-#define DISABILITY_FLAG_DEAF        8
-#define DISABILITY_FLAG_BLIND       16
-#define DISABILITY_FLAG_MUTE        32
-#define DISABILITY_FLAG_COLOURBLIND 64
+#define DISABILITY_FLAG_BLIND       4
+#define DISABILITY_FLAG_MUTE        8
+#define DISABILITY_FLAG_COLOURBLIND 16
+#define DISABILITY_FLAG_WINGDINGS   32
+#define DISABILITY_FLAG_NERVOUS     64
+#define DISABILITY_FLAG_SWEDISH     128
+#define DISABILITY_FLAG_LISP        256
+#define DISABILITY_FLAG_DIZZY       512
+#define DISABILITY_FLAG_CHAV        1024
+#define DISABILITY_FLAG_DEAF        2048
 
 ///////////////////////////////////////
 // MUTATIONS
@@ -20,7 +25,7 @@
 
 // Generic mutations:
 #define	TK				1
-#define RESIST_COLD		2
+#define COLDRES			2
 #define XRAY			3
 #define HULK			4
 #define CLUMSY			5
@@ -28,22 +33,24 @@
 #define HUSK			7
 #define NOCLONE			8
 
-
 // Extra powers:
 #define LASER			9 	// harm intent - click anywhere to shoot lasers from eyes
+
+//species mutation
+#define WINGDINGS		10	// Ayy lmao
 
 //2spooky
 #define SKELETON 29
 #define PLANT 30
 
 // Other Mutations:
-#define NO_BREATH		100 	// no need to breathe
+#define BREATHLESS		100		// no breathing
 #define REMOTE_VIEW		101 	// remote viewing
 #define REGEN			102 	// health regen
 #define RUN				103 	// no slowdown
 #define REMOTE_TALK		104 	// remote talking
 #define MORPH			105 	// changing appearance
-#define RESIST_HEAT		106 	// heat resistance
+#define HEATRES			106 	// heat resistance
 #define HALLUCINATE		107 	// hallucinations
 #define FINGERPRINTS	108 	// no fingerprints
 #define NO_SHOCK		109 	// insulated hands
@@ -51,11 +58,11 @@
 
 // Goon muts
 #define OBESITY       	200		// Decreased metabolism
-#define TOXIC_FARTS   	201		// Duh
+// 201 undefined
 #define STRONG        	202		// (Nothing)
 #define SOBER         	203		// Increased alcohol metabolism
 #define PSY_RESIST    	204		// Block remoteview
-#define SUPER_FART    	205		// Duh
+// 205 undefined
 #define EMPATH			206		//Read minds
 #define COMIC			207		//Comic Sans
 
@@ -96,8 +103,10 @@
 #define NUTRITION_LEVEL_FED 350
 #define NUTRITION_LEVEL_HUNGRY 250
 #define NUTRITION_LEVEL_STARVING 150
+#define NUTRITION_LEVEL_CURSED 0
 
 //Blood levels
+#define BLOOD_VOLUME_MAXIMUM		2000
 #define BLOOD_VOLUME_NORMAL			560
 #define BLOOD_VOLUME_SAFE			501
 #define BLOOD_VOLUME_OKAY			336
@@ -116,3 +125,25 @@
 
 #define CLONER_FRESH_CLONE "fresh"
 #define CLONER_MATURE_CLONE "mature"
+
+//Species traits.
+
+#define IS_WHITELISTED 	1
+#define LIPS			2
+#define NO_BLOOD		3
+#define NO_BREATHE 		4
+#define NO_DNA			5
+#define NO_SCAN 		6
+#define NO_PAIN 		7
+#define IS_PLANT 		8
+#define CAN_BE_FAT 		9
+#define NO_INTORGANS	10
+#define RADIMMUNE		11
+#define NOGUNS			12
+#define NOTRANSSTING	13
+#define VIRUSIMMUNE		14
+#define NOCRITDAMAGE	15
+#define RESISTHOT		16
+#define RESISTCOLD		17
+#define NO_EXAMINE		18
+#define CAN_WINGDINGS	19

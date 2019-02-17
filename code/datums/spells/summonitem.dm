@@ -76,16 +76,25 @@
 								var/obj/item/brain/B = new /obj/item/brain(target.loc)
 								B.transfer_identity(C)
 								C.death()
-								add_logs(target, C, "magically debrained", addition="INTENT: [uppertext(target.a_intent)]")*/
+								add_attack_logs(target, C, "Magically debrained INTENT: [uppertext(target.a_intent)]")*/
 						if(C.stomach_contents && item_to_retrive in C.stomach_contents)
 							C.stomach_contents -= item_to_retrive
+						for(var/X in C.bodyparts)
+							var/obj/item/organ/external/part = X
+							if(item_to_retrive in part.embedded_objects)
+								part.embedded_objects -= item_to_retrive
+								to_chat(C, "<span class='warning'>The [item_to_retrive] that was embedded in your [part] has mysteriously vanished. How fortunate!</span>")
+								if(!C.has_embedded_objects())
+									C.clear_alert("embeddedobject")
+								break
 
 				else
 					if(istype(item_to_retrive.loc,/obj/machinery/portable_atmospherics/)) //Edge cases for moved machinery
 						var/obj/machinery/portable_atmospherics/P = item_to_retrive.loc
 						P.disconnect()
 						P.update_icon()
-
+					if(istype(item_to_retrive.loc, /obj/structure/disposalholder) || istype(item_to_retrive.loc, /obj/machinery/disposal))//fixes the breaking of disposals. No more bluespace connected disposal bins!
+						break
 					item_to_retrive = item_to_retrive.loc
 
 				infinite_recursion += 1
@@ -107,10 +116,10 @@
 			if(butterfingers)
 				item_to_retrive.loc = target.loc
 				item_to_retrive.loc.visible_message("<span class='caution'>The [item_to_retrive.name] suddenly appears!</span>")
-				playsound(get_turf(target),'sound/magic/SummonItems_generic.ogg',50,1)
+				playsound(get_turf(target),'sound/magic/summonitems_generic.ogg',50,1)
 			else
 				item_to_retrive.loc.visible_message("<span class='caution'>The [item_to_retrive.name] suddenly appears in [target]'s hand!</span>")
-				playsound(get_turf(target),'sound/magic/SummonItems_generic.ogg',50,1)
+				playsound(get_turf(target),'sound/magic/summonitems_generic.ogg',50,1)
 
 		if(message)
 			to_chat(target, message)

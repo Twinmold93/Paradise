@@ -23,9 +23,8 @@
 						<A href='?src=[UID()];secretsadmin=showgm'>Show Game Mode</A>&nbsp;&nbsp;
 						<A href='?src=[UID()];secretsadmin=manifest'>Show Crew Manifest</A><br>
 						<A href='?src=[UID()];secretsadmin=check_antagonist'>Show current traitors and objectives</A><BR>
+						<a href='?src=[UID()];secretsadmin=night_shift_set'>Set Night Shift Mode</a><br>
 						<B>Bombs</b><br>
-						<A href='?src=[UID()];secretsadmin=list_bombers'>Bombing List</A>&nbsp;&nbsp;
-						<A href='?src=[UID()];secretsadmin=clear_bombs'>Remove all bombs currently in existence</A>
 						[check_rights(R_SERVER, 0) ? "&nbsp;&nbsp;<A href='?src=[UID()];secretsfun=togglebombcap'>Toggle bomb cap</A><br>" : "<br>"]
 						<B>Lists</b><br>
 						<A href='?src=[UID()];secretsadmin=list_signalers'>Show last [length(lastsignalers)] signalers</A>&nbsp;&nbsp;
@@ -68,9 +67,10 @@
 					<h2><B>IC Events</B></h2>
 					<b>Teams</b><br>
 					<A href='?src=[UID()];secretsfun=infiltrators_syndicate'>Send SIT - Syndicate Infiltration Team</A>&nbsp;&nbsp;
-					<BR><A href='?src=[UID()];secretsfun=striketeam'>Send in the Deathsquad</A>&nbsp;&nbsp;
 					<A href='?src=[UID()];secretsfun=striketeam_syndicate'>Send in a Syndie Strike Team</A>&nbsp;&nbsp;
+					<BR><A href='?src=[UID()];secretsfun=striketeam'>Send in the Deathsquad</A>&nbsp;&nbsp;
 					<A href='?src=[UID()];secretsfun=honksquad'>Send in a HONKsquad</A><BR>
+					<A href='?src=[UID()];secretsfun=gimmickteam'>Send in a Gimmick Team</A><BR>
 					<b>Change Security Level</b><BR>
 					<A href='?src=[UID()];secretsfun=securitylevel0'>Security Level - Green</A>&nbsp;&nbsp;
 					<A href='?src=[UID()];secretsfun=securitylevel1'>Security Level - Blue</A>&nbsp;&nbsp;
@@ -80,7 +80,6 @@
 					<A href='?src=[UID()];secretsfun=securitylevel5'>Security Level - Delta</A><BR>
 					<b>Create Weather</b><BR>
 					<A href='?src=[UID()];secretsfun=weatherashstorm'>Weather - Ash Storm</A>&nbsp;&nbsp;
-					<A href='?src=[UID()];secretsfun=weatherdarkness'>Weather - Advanced Darkness</A>&nbsp;&nbsp;
 					<BR>
 					</center>"}
 
@@ -128,5 +127,3 @@
 	var/datum/browser/popup = new(usr, "secrets", "<div align='center'>Admin Secrets</div>", 630, 670)
 	popup.set_content(dat)
 	popup.open(0)
-
-

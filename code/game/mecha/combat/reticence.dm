@@ -8,6 +8,7 @@
 	health = 150
 	deflect_chance = 30
 	damage_absorption = list("brute"=0.75,"fire"=1,"bullet"=0.8,"laser"=0.7,"energy"=0.85,"bomb"=1)
+	armor = list(melee = 25, bullet = 20, laser = 30, energy = 15, bomb = 0, bio = 0, rad = 0)
 	max_temperature = 15000
 	wreckage = /obj/effect/decal/mecha_wreckage/reticence
 	operation_req_access = list(access_mime)
@@ -15,8 +16,10 @@
 	internal_damage_threshold = 60
 	max_equip = 3
 	step_energy_drain = 3
+	normal_step_energy_drain = 3
 	stepsound = null
 	turnsound = null
+	starting_voice = /obj/item/mecha_modkit/voice/silent
 
 /obj/mecha/combat/reticence/loaded/New()
 	..()

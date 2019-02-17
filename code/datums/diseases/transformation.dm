@@ -50,7 +50,7 @@
 		affected_mob.overlays.Cut()
 		affected_mob.invisibility = 101
 		for(var/obj/item/W in affected_mob)
-			if(istype(W, /obj/item/weapon/implant))
+			if(istype(W, /obj/item/implant))
 				qdel(W)
 				continue
 			W.layer = initial(W.layer)
@@ -78,7 +78,6 @@
 	permeability_mod = 1
 	cure_chance = 1
 	disease_flags = CAN_CARRY|CAN_RESIST
-	longevity = 30
 	desc = "Monkeys with this disease will bite humans, causing humans to mutate into a monkey."
 	severity = BIOHAZARD
 	stage_prob = 4
@@ -187,7 +186,7 @@
 	stage3	= list("<span class='danger'>Your appendages are melting away.</span>", "<span class='danger'>Your limbs begin to lose their shape.</span>")
 	stage4	= list("<span class='danger'>You are turning into a slime.</span>")
 	stage5	= list("<span class='danger'>You have become a slime.</span>")
-	new_form = /mob/living/simple_animal/slime
+	new_form = /mob/living/carbon/slime/random
 
 /datum/disease/transformation/slime/stage_act()
 	..()
@@ -195,13 +194,13 @@
 		if(1)
 			if(ishuman(affected_mob))
 				var/mob/living/carbon/human/H = affected_mob
-				if(H.species.name == "Slime People")
+				if(isslimeperson(H))
 					stage = 5
 		if(3)
 			if(ishuman(affected_mob))
 				var/mob/living/carbon/human/human = affected_mob
-				if(human.species.name != "Slime People")
-					human.set_species("Slime People")
+				if(!isslimeperson(human))
+					human.set_species(/datum/species/slime)
 
 /datum/disease/transformation/corgi
 	name = "The Barkening"

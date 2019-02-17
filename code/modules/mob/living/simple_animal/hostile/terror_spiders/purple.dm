@@ -20,38 +20,32 @@
 	health = 200
 	melee_damage_lower = 15
 	melee_damage_upper = 25
-	move_to_delay = 6
 	spider_tier = TS_TIER_2
+	move_to_delay = 5 // at 20ticks/sec, this is 4 tile/sec movespeed, same as a human. Faster than a normal spider, so it can intercept attacks on queen.
+	speed = 0 // '0' (also the default for human mobs) converts to 2.5 total delay, or 4 tiles/sec.
 	spider_opens_doors = 2
 	ventcrawler = 0
 	ai_ventcrawls = 0
-	environment_smash = 3
+	environment_smash = ENVIRONMENT_SMASH_RWALLS
 	idle_ventcrawl_chance = 0 // stick to the queen!
+	web_type = /obj/structure/spider/terrorweb/purple
+	ai_spins_webs = FALSE
 	var/dcheck_counter = 0
 	var/queen_visible = 1
 	var/cycles_noqueen = 0
 
-
 /mob/living/simple_animal/hostile/poison/terror_spider/purple/death(gibbed)
-	if(spider_myqueen)
+	if(can_die() && spider_myqueen)
 		var/mob/living/simple_animal/hostile/poison/terror_spider/queen/Q = spider_myqueen
 		if(Q.stat != DEAD && !Q.ckey)
 			if(get_dist(src,Q) > 20)
 				if(!degenerate && !Q.degenerate)
 					degenerate = 1
-					Q.DoLayTerrorEggs(/mob/living/simple_animal/hostile/poison/terror_spider/purple,1,0)
+					Q.DoLayTerrorEggs(/mob/living/simple_animal/hostile/poison/terror_spider/purple, 1)
 					visible_message("<span class='notice'>[src] chitters in the direction of [Q]!</span>")
-	. = ..()
+	return ..()
 
-/mob/living/simple_animal/hostile/poison/terror_spider/purple/spider_specialattack(mob/living/carbon/human/L, poisonable)
-	if(cycles_noqueen < 6 && prob(10))
-		visible_message("<span class='danger'>[src] rams into [L], knocking them to the floor!</span>")
-		L.Weaken(5)
-		L.Stun(5)
-	else
-		..()
-
-/mob/living/simple_animal/hostile/poison/terror_spider/purple/Life()
+/mob/living/simple_animal/hostile/poison/terror_spider/purple/Life(seconds, times_fired)
 	. = ..()
 	if(.) // if mob is NOT dead
 		if(!degenerate && spider_myqueen)
@@ -95,3 +89,9 @@
 				to_chat(src,"<span class='userdanger'>Your link to your Queen has been broken! Your life force starts to drain away!</span>")
 				melee_damage_lower = 5
 				melee_damage_upper = 10
+
+/obj/structure/spider/terrorweb/purple
+	name = "thick web"
+	desc = "This web is so thick, most cannot see beyond it."
+	opacity = 1
+	health = 40

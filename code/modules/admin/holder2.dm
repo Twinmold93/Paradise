@@ -35,11 +35,11 @@ var/list/admin_datums = list()
 		owner.on_holder_add()
 		owner.add_admin_verbs()	//TODO
 		owner.verbs -= /client/proc/readmin
-		admins |= C
+		GLOB.admins |= C
 
 /datum/admins/proc/disassociate()
 	if(owner)
-		admins -= owner
+		GLOB.admins -= owner
 		owner.remove_admin_verbs()
 		owner.holder = null
 		owner = null
@@ -100,3 +100,9 @@ you will have to do something like if(client.holder.rights & R_ADMIN) yourself.
 			return 0
 		return 1
 	return 0
+
+/datum/admins/vv_edit_var(var_name, var_value)
+	return FALSE // no admin abuse
+
+/datum/admins/can_vv_delete()
+	return FALSE // don't break shit either

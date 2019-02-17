@@ -99,8 +99,8 @@ var/global/list/bad_blocks[0]
 	var/b_type = "A+"  // Should probably change to an integer => string map but I'm lazy.
 	var/real_name          // Stores the real name of the person who originally got this dna datum. Used primarily for changelings,
 
-	// New stuff
-	var/species = "Human"
+	var/datum/species/species = new /datum/species/human //The type of mutant race the player is if applicable (i.e. potato-man)
+	var/list/default_blocks = list() //list of all blocks toggled at roundstart
 
 // Make a copy of this strand.
 // USE THIS WHEN COPYING STUFF OR YOU'LL GET CORRUPTION!
@@ -110,7 +110,7 @@ var/global/list/bad_blocks[0]
 	new_dna.struc_enzymes_original=struc_enzymes_original // will make clone's SE the same as the original, do we want this?
 	new_dna.b_type=b_type
 	new_dna.real_name=real_name
-	new_dna.species=species
+	new_dna.species = new species.type
 	for(var/b=1;b<=DNA_SE_LENGTH;b++)
 		new_dna.SE[b]=SE[b]
 		if(b<=DNA_UI_LENGTH)
@@ -141,7 +141,7 @@ var/global/list/bad_blocks[0]
 	// FIXME:  Species-specific defaults pls
 	var/obj/item/organ/external/head/H = character.get_organ("head")
 	var/obj/item/organ/internal/eyes/eyes_organ = character.get_int_organ(/obj/item/organ/internal/eyes)
-	var/datum/species/S = character.species
+	var/datum/species/S = character.dna.species
 
 	/*// Body Accessory
 	if(!character.body_accessory)
@@ -152,16 +152,16 @@ var/global/list/bad_blocks[0]
 	if(!character.m_styles)
 		character.m_styles = DEFAULT_MARKING_STYLES
 
-	var/head_marks	= marking_styles_list.Find(character.m_styles["head"])
-	var/body_marks	= marking_styles_list.Find(character.m_styles["body"])
-	var/tail_marks	= marking_styles_list.Find(character.m_styles["tail"])
+	var/head_marks	= GLOB.marking_styles_list.Find(character.m_styles["head"])
+	var/body_marks	= GLOB.marking_styles_list.Find(character.m_styles["body"])
+	var/tail_marks	= GLOB.marking_styles_list.Find(character.m_styles["tail"])
 
 	head_traits_to_dna(H)
 	eye_color_to_dna(eyes_organ)
 
-	SetUIValueRange(DNA_UI_SKIN_R,	character.r_skin,		255,	1)
-	SetUIValueRange(DNA_UI_SKIN_G,	character.g_skin,		255,	1)
-	SetUIValueRange(DNA_UI_SKIN_B,	character.b_skin,		255,	1)
+	SetUIValueRange(DNA_UI_SKIN_R,		color2R(character.skin_colour),			255,	1)
+	SetUIValueRange(DNA_UI_SKIN_G,		color2G(character.skin_colour),			255,	1)
+	SetUIValueRange(DNA_UI_SKIN_B,		color2B(character.skin_colour),			255,	1)
 
 	SetUIValueRange(DNA_UI_HEAD_MARK_R,	color2R(character.m_colours["head"]),	255,	1)
 	SetUIValueRange(DNA_UI_HEAD_MARK_G,	color2G(character.m_colours["head"]),	255,	1)
@@ -182,10 +182,10 @@ var/global/list/bad_blocks[0]
 	else
 		SetUIState(DNA_UI_GENDER, pick(0,1), 1)
 
-	/*SetUIValueRange(DNA_UI_BACC_STYLE,	bodyacc,	facial_hair_styles_list.len,	1)*/
-	SetUIValueRange(DNA_UI_HEAD_MARK_STYLE,	head_marks,		marking_styles_list.len,		1)
-	SetUIValueRange(DNA_UI_BODY_MARK_STYLE,	body_marks,		marking_styles_list.len,		1)
-	SetUIValueRange(DNA_UI_TAIL_MARK_STYLE,	tail_marks,		marking_styles_list.len,		1)
+	/*SetUIValueRange(DNA_UI_BACC_STYLE,	bodyacc,	GLOB.facial_hair_styles_list.len,	1)*/
+	SetUIValueRange(DNA_UI_HEAD_MARK_STYLE,	head_marks,		GLOB.marking_styles_list.len,		1)
+	SetUIValueRange(DNA_UI_BODY_MARK_STYLE,	body_marks,		GLOB.marking_styles_list.len,		1)
+	SetUIValueRange(DNA_UI_TAIL_MARK_STYLE,	tail_marks,		GLOB.marking_styles_list.len,		1)
 
 
 	UpdateUI()
@@ -421,7 +421,7 @@ var/global/list/bad_blocks[0]
 	data["UE"] = unique_enzymes
 	data["SE"] = SE.Copy() // This is probably too lazy for my own good
 	data["UI"] = UI.Copy()
-	data["species"] = species // This works because `species` is a string, not a datum
+	data["species"] = species.type
 	// Because old DNA coders were insane or something
 	data["b_type"] = b_type
 	data["real_name"] = real_name
@@ -434,10 +434,7 @@ var/global/list/bad_blocks[0]
 	UI = data["UI"]
 	UpdateUI()
 	UpdateSE()
-	species = data["species"]
+	var/datum/species/S = data["species"]
+	species = new S
 	b_type = data["b_type"]
 	real_name = data["real_name"]
-
-// a nice hook for if/when we refactor species on dna
-/datum/dna/proc/get_species_name()
-	return species

@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
-
 /*
  * A large number of misc global procs.
  */
@@ -172,9 +170,12 @@ Turf and target are seperate in case you want to teleport some distance from a t
 // Checks if doors are open
 /proc/DirBlocked(turf/loc,var/dir)
 	for(var/obj/structure/window/D in loc)
-		if(!D.density)			continue
-		if(D.is_fulltile())	return 1
-		if(D.dir == dir)		return 1
+		if(!D.density)
+			continue
+		if(D.fulltile)
+			return 1
+		if(D.dir == dir)
+			return 1
 
 	for(var/obj/machinery/door/D in loc)
 		if(!D.density)//if the door is open
@@ -247,7 +248,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/pressure = air_contents.return_pressure()
 	var/total_moles = air_contents.total_moles()
 
-	to_chat(user, "<span class='notice'>Results of analysis of [bicon(icon)] [target].</span>")
+	user.show_message("<span class='notice'>Results of analysis of [bicon(icon)] [target].</span>", 1)
 	if(total_moles>0)
 		var/o2_concentration = air_contents.oxygen/total_moles
 		var/n2_concentration = air_contents.nitrogen/total_moles
@@ -256,16 +257,17 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 		var/unknown_concentration =  1-(o2_concentration+n2_concentration+co2_concentration+plasma_concentration)
 
-		to_chat(user, "<span class='notice'>Pressure: [round(pressure,0.1)] kPa</span>")
-		to_chat(user, "<span class='notice'>Nitrogen: [round(n2_concentration*100)] %</span>")
-		to_chat(user, "<span class='notice'>Oxygen: [round(o2_concentration*100)] %</span>")
-		to_chat(user, "<span class='notice'>CO2: [round(co2_concentration*100)] %</span>")
-		to_chat(user, "<span class='notice'>Plasma: [round(plasma_concentration*100)] %</span>")
+		user.show_message("<span class='notice'>Pressure: [round(pressure,0.1)] kPa</span>", 1)
+		user.show_message("<span class='notice'>Nitrogen: [round(n2_concentration*100)] % ([round(air_contents.nitrogen,0.01)] moles)</span>", 1)
+		user.show_message("<span class='notice'>Oxygen: [round(o2_concentration*100)] % ([round(air_contents.oxygen,0.01)] moles)</span>", 1)
+		user.show_message("<span class='notice'>CO2: [round(co2_concentration*100)] % ([round(air_contents.carbon_dioxide,0.01)] moles)</span>", 1)
+		user.show_message("<span class='notice'>Plasma: [round(plasma_concentration*100)] % ([round(air_contents.toxins,0.01)] moles)</span>", 1)
 		if(unknown_concentration>0.01)
-			to_chat(user, "<span class='danger'>Unknown: [round(unknown_concentration*100)] %</span>")
-		to_chat(user, "<span class='notice'>Temperature: [round(air_contents.temperature-T0C)] &deg;C</span>")
+			user.show_message("<span class='danger'>Unknown: [round(unknown_concentration*100)] % ([round(unknown_concentration*total_moles,0.01)] moles)</span>", 1)
+		user.show_message("<span class='notice'>Total: [round(total_moles,0.01)] moles</span>", 1)
+		user.show_message("<span class='notice'>Temperature: [round(air_contents.temperature-T0C)] &deg;C</span>", 1)
 	else
-		to_chat(user, "<span class='notice'>[target] is empty!</span>")
+		user.show_message("<span class='notice'>[target] is empty!</span>", 1)
 	return
 
 //Picks a string of symbols to display as the law number for hacked or ion laws
@@ -276,7 +278,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /proc/freeborg()
 	var/select = null
 	var/list/borgs = list()
-	for(var/mob/living/silicon/robot/A in player_list)
+	for(var/mob/living/silicon/robot/A in GLOB.player_list)
 		if(A.stat == 2 || A.connected_ai || A.scrambledcodes || istype(A,/mob/living/silicon/robot/drone))
 			continue
 		var/name = "[A.real_name] ([A.modtype] [A.braintype])"
@@ -289,7 +291,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //When a borg is activated, it can choose which AI it wants to be slaved to
 /proc/active_ais()
 	. = list()
-	for(var/mob/living/silicon/ai/A in living_mob_list)
+	for(var/mob/living/silicon/ai/A in GLOB.living_mob_list)
 		if(A.stat == DEAD)
 			continue
 		if(A.control_disabled == 1)
@@ -371,7 +373,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Orders mobs by type then by name
 /proc/sortmobs()
 	var/list/moblist = list()
-	var/list/sortmob = sortAtom(mob_list)
+	var/list/sortmob = sortAtom(GLOB.mob_list)
 	for(var/mob/living/silicon/ai/M in sortmob)
 		moblist.Add(M)
 		if(M.eyeobj)
@@ -396,6 +398,16 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		moblist.Add(M)
 	return moblist
 
+// Format a power value in W, kW, MW, or GW.
+/proc/DisplayPower(powerused)
+	if(powerused < 1000) //Less than a kW
+		return "[powerused] W"
+	else if(powerused < 1000000) //Less than a MW
+		return "[round((powerused * 0.001), 0.01)] kW"
+	else if(powerused < 1000000000) //Less than a GW
+		return "[round((powerused * 0.000001), 0.001)] MW"
+	return "[round((powerused * 0.000000001), 0.0001)] GW"
+
 //E = MC^2
 /proc/convert2energy(var/M)
 	var/E = M*(SPEED_OF_LIGHT_SQ)
@@ -416,7 +428,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /proc/get_mob_by_ckey(key)
 	if(!key)
 		return
-	for(var/mob/M in mob_list)
+	for(var/mob/M in GLOB.mob_list)
 		if(M.ckey == key)
 			return M
 
@@ -517,23 +529,6 @@ proc/GaussRand(var/sigma)
 proc/GaussRandRound(var/sigma,var/roundto)
 	return round(GaussRand(sigma),roundto)
 
-proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,flick_anim as text,sleeptime = 0,direction as num)
-//This proc throws up either an icon or an animation for a specified amount of time.
-//The variables should be apparent enough.
-	var/atom/movable/overlay/animation = new(location)
-	if(direction)
-		animation.dir = direction
-	animation.icon = a_icon
-	animation.layer = target:layer+1
-	if(a_icon_state)
-		animation.icon_state = a_icon_state
-	else
-		animation.icon_state = "blank"
-		animation.master = target
-		flick(flick_anim, animation)
-	sleep(max(sleeptime, 15))
-	qdel(animation)
-
 //Will return the contents of an atom recursivly to a depth of 'searchDepth'
 /atom/proc/GetAllContents(searchDepth = 5)
 	var/list/toReturn = list()
@@ -544,6 +539,14 @@ proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,fl
 			toReturn += part.GetAllContents(searchDepth - 1)
 
 	return toReturn
+
+//Searches contents of the atom and returns the sum of all w_class of obj/item within
+/atom/proc/GetTotalContentsWeight(searchDepth = 5)
+	var/weight = 0
+	var/list/content = GetAllContents(searchDepth)
+	for(var/obj/item/I in content)
+		weight += I.w_class
+	return weight
 
 //Step-towards method of determining whether one atom can see another. Similar to viewers()
 /proc/can_see(var/atom/source, var/atom/target, var/length=5) // I couldnt be arsed to do actual raycasting :I This is horribly inaccurate.
@@ -796,15 +799,15 @@ proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,fl
 
 	if(toupdate.len)
 		for(var/turf/simulated/T1 in toupdate)
-			air_master.remove_from_active(T1)
+			SSair.remove_from_active(T1)
 			T1.CalculateAdjacentTurfs()
-			air_master.add_to_active(T1,1)
+			SSair.add_to_active(T1,1)
 
 	if(fromupdate.len)
 		for(var/turf/simulated/T2 in fromupdate)
-			air_master.remove_from_active(T2)
+			SSair.remove_from_active(T2)
 			T2.CalculateAdjacentTurfs()
-			air_master.add_to_active(T2,1)
+			SSair.add_to_active(T2,1)
 
 
 
@@ -960,7 +963,7 @@ proc/anim(turf/location as turf,target as mob|obj,a_icon,a_icon_state as text,fl
 	if(toupdate.len)
 		for(var/turf/simulated/T1 in toupdate)
 			T1.CalculateAdjacentTurfs()
-			air_master.add_to_active(T1,1)
+			SSair.add_to_active(T1,1)
 
 
 	return copiedobjs
@@ -994,7 +997,7 @@ proc/oview_or_orange(distance = world.view , center = usr , type)
 
 proc/get_mob_with_client_list()
 	var/list/mobs = list()
-	for(var/mob/M in mob_list)
+	for(var/mob/M in GLOB.mob_list)
 		if(M.client)
 			mobs += M
 	return mobs
@@ -1053,6 +1056,8 @@ proc/get_mob_with_client_list()
 
 	//Find coordinates
 	var/turf/T = get_turf(AM) //use AM's turfs, as it's coords are the same as AM's AND AM's coords are lost if it is inside another atom
+	if(!T)
+		return null
 	var/final_x = T.x + rough_x
 	var/final_y = T.y + rough_y
 
@@ -1081,15 +1086,30 @@ proc/get_mob_with_client_list()
 	return get_turf(location)
 
 
+//For objects that should embed, but make no sense being is_sharp or is_pointed()
+//e.g: rods
+var/list/can_embed_types = typecacheof(list(
+	/obj/item/stack/rods,
+	/obj/item/pipe))
+
+/proc/can_embed(obj/item/W)
+	if(is_sharp(W))
+		return 1
+	if(is_pointed(W))
+		return 1
+
+	if(is_type_in_typecache(W, can_embed_types))
+		return 1
+
 //Quick type checks for some tools
 var/global/list/common_tools = list(
 /obj/item/stack/cable_coil,
-/obj/item/weapon/wrench,
-/obj/item/weapon/weldingtool,
-/obj/item/weapon/screwdriver,
-/obj/item/weapon/wirecutters,
-/obj/item/device/multitool,
-/obj/item/weapon/crowbar)
+/obj/item/wrench,
+/obj/item/weldingtool,
+/obj/item/screwdriver,
+/obj/item/wirecutters,
+/obj/item/multitool,
+/obj/item/crowbar)
 
 /proc/istool(O)
 	if(O && is_type_in_list(O, common_tools))
@@ -1097,12 +1117,12 @@ var/global/list/common_tools = list(
 	return 0
 
 /proc/iswrench(O)
-	if(istype(O, /obj/item/weapon/wrench))
+	if(istype(O, /obj/item/wrench))
 		return 1
 	return 0
 
 /proc/iswelder(O)
-	if(istype(O, /obj/item/weapon/weldingtool))
+	if(istype(O, /obj/item/weldingtool))
 		return 1
 	return 0
 
@@ -1112,24 +1132,29 @@ var/global/list/common_tools = list(
 	return 0
 
 /proc/iswirecutter(O)
-	if(istype(O, /obj/item/weapon/wirecutters))
+	if(istype(O, /obj/item/wirecutters))
 		return 1
 	return 0
 
 /proc/isscrewdriver(O)
-	if(istype(O, /obj/item/weapon/screwdriver))
+	if(istype(O, /obj/item/screwdriver))
 		return 1
 	return 0
 
 /proc/ismultitool(O)
-	if(istype(O, /obj/item/device/multitool))
+	if(istype(O, /obj/item/multitool))
 		return 1
 	return 0
 
 /proc/iscrowbar(O)
-	if(istype(O, /obj/item/weapon/crowbar))
+	if(istype(O, /obj/item/crowbar))
 		return 1
 	return 0
+
+/proc/ispowertool(O)//used to check if a tool can force powered doors
+	if(istype(O, /obj/item/crowbar/power) || istype(O, /obj/item/mecha_parts/mecha_equipment/medical/rescue_jaw))
+		return TRUE
+	return FALSE
 
 /proc/iswire(O)
 	if(istype(O, /obj/item/stack/cable_coil))
@@ -1137,20 +1162,20 @@ var/global/list/common_tools = list(
 	return 0
 
 /proc/is_hot(obj/item/W as obj)
-	if(istype(W, /obj/item/weapon/weldingtool))
-		var/obj/item/weapon/weldingtool/O = W
+	if(istype(W, /obj/item/weldingtool))
+		var/obj/item/weldingtool/O = W
 		if(O.isOn())
 			return 3800
 		else
 			return 0
-	if(istype(W, /obj/item/weapon/lighter))
-		var/obj/item/weapon/lighter/O = W
+	if(istype(W, /obj/item/lighter))
+		var/obj/item/lighter/O = W
 		if(O.lit)
 			return 1500
 		else
 			return 0
-	if(istype(W, /obj/item/weapon/match))
-		var/obj/item/weapon/match/O = W
+	if(istype(W, /obj/item/match))
+		var/obj/item/match/O = W
 		if(O.lit == 1)
 			return 1000
 		else
@@ -1167,71 +1192,42 @@ var/global/list/common_tools = list(
 			return 1000
 		else
 			return 0
-	if(istype(W, /obj/item/device/flashlight/flare))
-		var/obj/item/device/flashlight/flare/O = W
+	if(istype(W, /obj/item/flashlight/flare))
+		var/obj/item/flashlight/flare/O = W
 		if(O.on)
 			return 1000
 		else
 			return 0
-	if(istype(W, /obj/item/weapon/gun/energy/plasmacutter))
+	if(istype(W, /obj/item/gun/energy/plasmacutter))
 		return 3800
-	if(istype(W, /obj/item/weapon/melee/energy))
-		var/obj/item/weapon/melee/energy/O = W
+	if(istype(W, /obj/item/melee/energy))
+		var/obj/item/melee/energy/O = W
 		if(O.active)
 			return 3500
 		else
 			return 0
-	if(istype(W, /obj/item/device/assembly/igniter))
+	if(istype(W, /obj/item/assembly/igniter))
 		return 1000
 	else
 		return 0
 
 //Whether or not the given item counts as sharp in terms of dealing damage
-/proc/is_sharp(obj/O as obj)
-	if(!O) return 0
-	if(O.sharp) return 1
-	if(O.edge) return 1
+/proc/is_sharp(obj/O)
+	if(!O)
+		return 0
+	if(O.sharp)
+		return 1
 	return 0
-
-//Whether or not the given item counts as cutting with an edge in terms of removing limbs
-/proc/has_edge(obj/O as obj)
-	if(!O) return 0
-	if(O.edge) return 1
-	return 0
-
-//Returns 1 if the given item is capable of popping things like balloons, inflatable barriers, or cutting police tape.
-/proc/can_puncture(obj/item/W as obj)		// For the record, WHAT THE HELL IS THIS METHOD OF DOING IT?
-	if(!istype(W)) return 0
-	if(!W) return 0
-	if(W.sharp) return 1
-	return ( \
-		W.sharp													  || \
-		istype(W, /obj/item/weapon/screwdriver)                   || \
-		istype(W, /obj/item/weapon/pen)                           || \
-		istype(W, /obj/item/weapon/weldingtool)					  || \
-		istype(W, /obj/item/weapon/lighter/zippo)				  || \
-		istype(W, /obj/item/weapon/match)            		      || \
-		istype(W, /obj/item/clothing/mask/cigarette) 		      || \
-		istype(W, /obj/item/weapon/shovel) \
-	)
 
 /proc/is_surgery_tool(obj/item/W as obj)
 	return (	\
-	istype(W, /obj/item/weapon/scalpel)			||	\
-	istype(W, /obj/item/weapon/hemostat)		||	\
-	istype(W, /obj/item/weapon/retractor)		||	\
-	istype(W, /obj/item/weapon/cautery)			||	\
-	istype(W, /obj/item/weapon/bonegel)			||	\
-	istype(W, /obj/item/weapon/bonesetter)
+	istype(W, /obj/item/scalpel)			||	\
+	istype(W, /obj/item/hemostat)		||	\
+	istype(W, /obj/item/retractor)		||	\
+	istype(W, /obj/item/cautery)			||	\
+	istype(W, /obj/item/bonegel)			||	\
+	istype(W, /obj/item/bonesetter)
 	)
-
-//check if mob is lying down on something we can operate him on.
-/proc/can_operate(mob/living/carbon/M)
-	return (locate(/obj/machinery/optable, M.loc) && (M.lying || M.resting)) || \
-	(locate(/obj/structure/stool/bed/roller, M.loc) && 	\
-	(M.buckled || M.lying || M.weakened || M.stunned || M.paralysis || M.sleeping || M.stat)) && prob(75) || 	\
-	(locate(/obj/structure/table/, M.loc) && 	\
-	(M.lying || M.weakened || M.stunned || M.paralysis || M.sleeping || M.stat) && prob(66))
 
 /proc/reverse_direction(var/dir)
 	switch(dir)
@@ -1255,46 +1251,42 @@ var/global/list/common_tools = list(
 /*
 Checks if that loc and dir has a item on the wall
 */
-var/list/WALLITEMS = list(
-	"/obj/machinery/power/apc", "/obj/machinery/alarm", "/obj/item/device/radio/intercom",
-	"/obj/structure/extinguisher_cabinet", "/obj/structure/reagent_dispensers/peppertank",
-	"/obj/machinery/status_display", "/obj/machinery/requests_console", "/obj/machinery/light_switch", "/obj/effect/sign",
-	"/obj/machinery/newscaster", "/obj/machinery/firealarm", "/obj/structure/noticeboard", "/obj/machinery/door_control",
-	"/obj/machinery/computer/security/telescreen", "/obj/machinery/embedded_controller/radio/simple_vent_controller",
-	"/obj/item/weapon/storage/secure/safe", "/obj/machinery/door_timer", "/obj/machinery/flasher", "/obj/machinery/keycard_auth",
-	"/obj/structure/mirror", "/obj/structure/closet/fireaxecabinet", "/obj/machinery/computer/security/telescreen/entertainment",
-	"/obj/structure/sign"
-	)
+var/list/static/global/wall_items = typecacheof(list(/obj/machinery/power/apc, /obj/machinery/alarm,
+	/obj/item/radio/intercom, /obj/structure/extinguisher_cabinet, /obj/structure/reagent_dispensers/peppertank,
+	/obj/machinery/status_display, /obj/machinery/requests_console, /obj/machinery/light_switch, /obj/structure/sign,
+	/obj/machinery/newscaster, /obj/machinery/firealarm, /obj/structure/noticeboard, /obj/machinery/door_control,
+	/obj/machinery/computer/security/telescreen, /obj/machinery/embedded_controller/radio/airlock,
+	/obj/item/storage/secure/safe, /obj/machinery/door_timer, /obj/machinery/flasher, /obj/machinery/keycard_auth,
+	/obj/structure/mirror, /obj/structure/closet/fireaxecabinet, /obj/machinery/computer/security/telescreen/entertainment,
+	/obj/structure/sign))
+
 /proc/gotwallitem(loc, dir)
 	for(var/obj/O in loc)
-		for(var/item in WALLITEMS)
-			if(istype(O, text2path(item)))
-				//Direction works sometimes
-				if(O.dir == dir)
-					return 1
+		if(is_type_in_typecache(O, wall_items))
+			//Direction works sometimes
+			if(O.dir == dir)
+				return 1
 
-				//Some stuff doesn't use dir properly, so we need to check pixel instead
-				switch(dir)
-					if(SOUTH)
-						if(O.pixel_y > 10)
-							return 1
-					if(NORTH)
-						if(O.pixel_y < -10)
-							return 1
-					if(WEST)
-						if(O.pixel_x > 10)
-							return 1
-					if(EAST)
-						if(O.pixel_x < -10)
-							return 1
-
+			//Some stuff doesn't use dir properly, so we need to check pixel instead
+			switch(dir)
+				if(SOUTH)
+					if(O.pixel_y > 10)
+						return 1
+				if(NORTH)
+					if(O.pixel_y < -10)
+						return 1
+				if(WEST)
+					if(O.pixel_x > 10)
+						return 1
+				if(EAST)
+					if(O.pixel_x < -10)
+						return 1
 
 	//Some stuff is placed directly on the wallturf (signs)
 	for(var/obj/O in get_step(loc, dir))
-		for(var/item in WALLITEMS)
-			if(istype(O, text2path(item)))
-				if(abs(O.pixel_x) <= 10 && abs(O.pixel_y) <= 10)
-					return 1
+		if(is_type_in_typecache(O, wall_items))
+			if(abs(O.pixel_x) <= 10 && abs(O.pixel_y) <= 10)
+				return 1
 	return 0
 
 
@@ -1366,7 +1358,7 @@ Standard way to write links -Sayu
 			if(covered_locations & HEAD)
 				return 0
 		if("eyes")
-			if(covered_locations & HEAD || face_covered & HIDEEYES || eyesmouth_covered & GLASSESCOVERSEYES)
+			if(face_covered & HIDEEYES || eyesmouth_covered & GLASSESCOVERSEYES || eyesmouth_covered & HEADCOVERSEYES)
 				return 0
 		if("mouth")
 			if(covered_locations & HEAD || face_covered & HIDEFACE || eyesmouth_covered & MASKCOVERSMOUTH)
@@ -1460,15 +1452,6 @@ atom/proc/GetTypeInAllContents(typepath)
 			colour += temp_col
 	return colour
 
-/proc/get_random_chemical(var/is_plant = 0)
-	var/list/blocked = blocked_chems.Copy()		//blocked_chems list is found in code/_globalvars/lists/reagents.dm
-	if(is_plant)
-		blocked.Add(plant_blocked_chems.Copy())	//plant_blocked_chems list is found in code/_globalvars/lists/reagents.dm
-	var/picked_chem = pick(chemical_reagents_list)
-	if(blocked.Find(picked_chem))
-		return get_random_chemical(is_plant)
-	return picked_chem
-
 /proc/get_distant_turf(var/turf/T,var/direction,var/distance)
 	if(!T || !direction || !distance)	return
 
@@ -1505,21 +1488,41 @@ var/mob/dview/dview_mob = new
 	invisibility = 101
 	density = 0
 
-	anchored = 1
+	move_resist = INFINITY
 	simulated = 0
 
 	see_in_dark = 1e6
 
 /mob/dview/New() //For whatever reason, if this isn't called, then BYOND will throw a type mismatch runtime when attempting to add this to the mobs list. -Fox
 
-/proc/IsValidSrc(var/A)
-	if(istype(A, /datum))
-		var/datum/B = A
-		return isnull(B.gcDestroyed)
-	if(istype(A, /client))
-		return 1
-	return 0
+/mob/dview/Destroy()
+	// should never be deleted
+	return QDEL_HINT_LETMELIVE
 
+/proc/IsValidSrc(A)
+	if(istype(A, /datum))
+		var/datum/D = A
+		return !QDELETED(D)
+	if(istype(A, /client))
+		return TRUE
+	return FALSE
+
+//can a window be here, or is there a window blocking it?
+/proc/valid_window_location(turf/T, dir_to_check)
+	if(!T)
+		return FALSE
+	for(var/obj/O in T)
+		if(istype(O, /obj/machinery/door/window) && (O.dir == dir_to_check || dir_to_check == FULLTILE_WINDOW_DIR))
+			return FALSE
+		if(istype(O, /obj/structure/windoor_assembly))
+			var/obj/structure/windoor_assembly/W = O
+			if(W.ini_dir == dir_to_check || dir_to_check == FULLTILE_WINDOW_DIR)
+				return FALSE
+		if(istype(O, /obj/structure/window))
+			var/obj/structure/window/W = O
+			if(W.ini_dir == dir_to_check || W.ini_dir == FULLTILE_WINDOW_DIR || dir_to_check == FULLTILE_WINDOW_DIR)
+				return FALSE
+	return TRUE
 
 //Get the dir to the RIGHT of dir if they were on a clock
 //NORTH --> NORTHEAST
@@ -1751,53 +1754,152 @@ var/mob/dview/dview_mob = new
 				closest_atom = A
 	return closest_atom
 
-/proc/pick_closest_path(value)
-	var/list/matches = get_fancy_list_of_types()
-	if(!isnull(value) && value!="")
+/proc/pick_closest_path(value, list/matches = get_fancy_list_of_atom_types())
+	if(value == FALSE) //nothing should be calling us with a number, so this is safe
+		value = input("Enter type to find (blank for all, cancel to cancel)", "Search for type") as null|text
+		if(isnull(value))
+			return
+	value = trim(value)
+	if(!isnull(value) && value != "")
 		matches = filter_fancy_list(matches, value)
 
-	if(matches.len==0)
+	if(matches.len == 0)
 		return
 
 	var/chosen
-	if(matches.len==1)
+	if(matches.len == 1)
 		chosen = matches[1]
 	else
-		chosen = input("Select an atom type", "Spawn Atom", matches[1]) as null|anything in matches
+		chosen = input("Select a type", "Pick Type", matches[1]) as null|anything in matches
 		if(!chosen)
 			return
 	chosen = matches[chosen]
 	return chosen
 
+/proc/make_types_fancy(var/list/types)
+	if(ispath(types))
+		types = list(types)
+	. = list()
+	for(var/type in types)
+		var/typename = "[type]"
+		var/static/list/TYPES_SHORTCUTS = list(
+			//longest paths comes first - otherwise they get shadowed by the more generic ones
+			/obj/effect/decal/cleanable = "CLEANABLE",
+			/obj/effect = "EFFECT",
+			/obj/item/ammo_casing = "AMMO",
+			/obj/item/book/manual = "MANUAL",
+			/obj/item/borg/upgrade = "BORG_UPGRADE",
+			/obj/item/cartridge = "PDA_CART",
+			/obj/item/clothing/head/helmet/space = "SPESSHELMET",
+			/obj/item/clothing/head = "HEAD",
+			/obj/item/clothing/under = "UNIFORM",
+			/obj/item/clothing/shoes = "SHOES",
+			/obj/item/clothing/suit = "SUIT",
+			/obj/item/clothing/gloves = "GLOVES",
+			/obj/item/clothing/mask/cigarette = "CIGARRETE", // oof
+			/obj/item/clothing/mask = "MASK",
+			/obj/item/clothing/glasses = "GLASSES",
+			/obj/item/clothing = "CLOTHING",
+			/obj/item/grenade/clusterbuster = "CLUSTERBUSTER",
+			/obj/item/grenade = "GRENADE",
+			/obj/item/gun = "GUN",
+			/obj/item/implant = "IMPLANT",
+			/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack = "MECHA_MISSILE_RACK",
+			/obj/item/mecha_parts/mecha_equipment/weapon = "MECHA_WEAPON",
+			/obj/item/mecha_parts/mecha_equipment = "MECHA_EQUIP",
+			/obj/item/melee = "MELEE",
+			/obj/item/mmi = "MMI",
+			/obj/item/nullrod = "NULLROD",
+			/obj/item/organ/external = "EXT_ORG",
+			/obj/item/organ/internal/cyberimp = "CYBERIMP",
+			/obj/item/organ/internal = "INT_ORG",
+			/obj/item/organ = "ORGAN",
+			/obj/item/pda = "PDA",
+			/obj/item/projectile = "PROJ",
+			/obj/item/radio/headset = "HEADSET",
+			/obj/item/reagent_containers/glass/beaker = "BEAKER",
+			/obj/item/reagent_containers/glass/bottle = "BOTTLE",
+			/obj/item/reagent_containers/food/pill/patch = "PATCH",
+			/obj/item/reagent_containers/food/pill = "PILL",
+			/obj/item/reagent_containers/food/drinks = "DRINK",
+			/obj/item/reagent_containers/food = "FOOD",
+			/obj/item/reagent_containers/syringe = "SYRINGE",
+			/obj/item/reagent_containers = "REAGENT_CONTAINERS",
+			/obj/item/robot_parts = "ROBOT_PARTS",
+			/obj/item/seeds = "SEED",
+			/obj/item/slime_extract = "SLIME_CORE",
+			/obj/item/spacepod_equipment/weaponry = "POD_WEAPON",
+			/obj/item/spacepod_equipment = "POD_EQUIP",
+			/obj/item/stack/sheet/mineral = "MINERAL",
+			/obj/item/stack/sheet = "SHEET",
+			/obj/item/stack/tile = "TILE",
+			/obj/item/stack = "STACK",
+			/obj/item/stock_parts/cell = "POWERCELL",
+			/obj/item/stock_parts = "STOCK_PARTS",
+			/obj/item/storage/firstaid = "FIRSTAID",
+			/obj/item/storage = "STORAGE",
+			/obj/item/tank = "GAS_TANK",
+			/obj/item/toy/crayon = "CRAYON",
+			/obj/item/toy = "TOY",
+			/obj/item = "ITEM",
+			/obj/machinery/atmospherics = "ATMOS_MACH",
+			/obj/machinery/computer = "CONSOLE",
+			/obj/machinery/door/airlock = "AIRLOCK",
+			/obj/machinery/door = "DOOR",
+			/obj/machinery/kitchen_machine = "KITCHEN",
+			/obj/machinery/portable_atmospherics/canister = "CANISTER",
+			/obj/machinery/portable_atmospherics = "PORT_ATMOS",
+			/obj/machinery/power = "POWER",
+			/obj/machinery/telecomms = "TCOMMS",
+			/obj/machinery = "MACHINERY",
+			/obj/mecha = "MECHA",
+			/obj/structure/closet/crate = "CRATE",
+			/obj/structure/closet = "CLOSET",
+			/obj/structure/statue = "STATUE",
+			/obj/structure/chair = "CHAIR", // oh no
+			/obj/structure/bed = "BED",
+			/obj/structure/chair/stool = "STOOL",
+			/obj/structure/table = "TABLE",
+			/obj/structure = "STRUCTURE",
+			/obj/vehicle = "VEHICLE",
+			/obj = "O",
+			/datum = "D",
+			/turf/simulated/floor = "SIM_FLOOR",
+			/turf/simulated/wall = "SIM_WALL",
+			/turf/unsimulated/floor = "UNSIM_FLOOR",
+			/turf/unsimulated/wall = "UNSIM_WALL",
+			/turf = "T",
+			/mob/living/carbon/alien = "XENO",
+			/mob/living/carbon/human = "HUMAN",
+			/mob/living/carbon = "CARBON",
+			/mob/living/silicon/robot = "CYBORG",
+			/mob/living/silicon/ai = "AI",
+			/mob/living/silicon = "SILICON",
+			/mob/living/simple_animal/bot = "BOT",
+			/mob/living/simple_animal = "SIMPLE",
+			/mob/living = "LIVING",
+			/mob = "M"
+		)
+		for(var/tn in TYPES_SHORTCUTS)
+			if(copytext(typename, 1, length("[tn]/") + 1) == "[tn]/")
+				typename = TYPES_SHORTCUTS[tn]+copytext(typename,length("[tn]/"))
+				break
+		.[typename] = type
 
-var/list/TYPES_SHORTCUTS = list(
-	/obj/effect/decal/cleanable = "CLEANABLE",
-	/obj/item/device/radio/headset = "HEADSET",
-	/obj/item/clothing/head/helmet/space = "SPESSHELMET",
-	/obj/item/weapon/book/manual = "MANUAL",
-	/obj/item/weapon/reagent_containers/food/drinks = "DRINK", //longest paths comes first
-	/obj/item/weapon/reagent_containers/food = "FOOD",
-	/obj/item/weapon/reagent_containers = "REAGENT_CONTAINERS",
-	/obj/machinery/atmospherics = "ATMOS",
-	/obj/machinery/portable_atmospherics = "PORT_ATMOS",
-//	/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/launcher/missile_rack = "MECHA_MISSILE_RACK",
-	/obj/item/mecha_parts/mecha_equipment = "MECHA_EQUIP",
-//	/obj/item/organ/internal = "ORGAN_INT",
-)
 
-var/global/list/g_fancy_list_of_types = null
-/proc/get_fancy_list_of_types()
-	if(isnull(g_fancy_list_of_types)) //init
-		var/list/temp = sortList(subtypesof(/atom) - typesof(/area) - /atom/movable)
-		g_fancy_list_of_types = new(temp.len)
-		for(var/type in temp)
-			var/typename = "[type]"
-			for(var/tn in TYPES_SHORTCUTS)
-				if(copytext(typename,1, length("[tn]/")+1)=="[tn]/" /*findtextEx(typename,"[tn]/",1,2)*/ )
-					typename = TYPES_SHORTCUTS[tn]+copytext(typename,length("[tn]/"))
-					break
-			g_fancy_list_of_types[typename] = type
-	return g_fancy_list_of_types
+/proc/get_fancy_list_of_atom_types()
+	var/static/list/pre_generated_list
+	if(!pre_generated_list) //init
+		pre_generated_list = make_types_fancy(typesof(/atom))
+	return pre_generated_list
+
+
+/proc/get_fancy_list_of_datum_types()
+	var/static/list/pre_generated_list
+	if(!pre_generated_list) //init
+		pre_generated_list = make_types_fancy(sortList(typesof(/datum) - typesof(/atom)))
+	return pre_generated_list
+
 
 /proc/filter_fancy_list(list/L, filter as text)
 	var/list/matches = new
@@ -1850,7 +1952,7 @@ var/global/list/g_fancy_list_of_types = null
 		pois[name] = M
 
 	if(!mobs_only)
-		for(var/atom/A in poi_list)
+		for(var/atom/A in GLOB.poi_list)
 			if(!A || !A.loc)
 				continue
 			var/name = A.name
@@ -1892,3 +1994,45 @@ var/global/list/g_fancy_list_of_types = null
 		num_sample -= num
 		result += (1 << num)
 	return result
+
+/proc/pixel_shift_dir(var/dir, var/amount_x = 32, var/amount_y = 32) //Returns a list with pixel_shift values that will shift an object's icon one tile in the direction passed.
+	amount_x = min(max(0, amount_x), 32) //No less than 0, no greater than 32.
+	amount_y = min(max(0, amount_x), 32)
+	var/list/shift = list("x" = 0, "y" = 0)
+	switch(dir)
+		if(NORTH)
+			shift["y"] = amount_y
+		if(SOUTH)
+			shift["y"] = -amount_y
+		if(EAST)
+			shift["x"] = amount_x
+		if(WEST)
+			shift["x"] = -amount_x
+		if(NORTHEAST)
+			shift = list("x" = amount_x, "y" = amount_y)
+		if(NORTHWEST)
+			shift = list("x" = -amount_x, "y" = amount_y)
+		if(SOUTHEAST)
+			shift = list("x" = amount_x, "y" = -amount_y)
+		if(SOUTHWEST)
+			shift = list("x" = -amount_x, "y" = -amount_y)
+
+	return shift
+
+//Return a list of atoms in a location of a given type. Can be refined to look for pixel-shift.
+/proc/get_atoms_of_type(var/atom/here, var/type, var/check_shift, var/shift_x = 0, var/shift_y = 0)
+	. = list()
+	if(here)
+		for(var/atom/thing in here)
+			if(istype(thing, type) && (check_shift && thing.pixel_x == shift_x && thing.pixel_y == shift_y))
+				. += thing
+
+//gives us the stack trace from CRASH() without ending the current proc.
+/proc/stack_trace(msg)
+	CRASH(msg)
+
+/datum/proc/stack_trace(msg)
+	CRASH(msg)
+
+/proc/pass()
+	return

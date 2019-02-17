@@ -51,7 +51,7 @@
 	desc = "This is a one-use permit that allows the user to officially declare a built room as new addition to the station."
 	fluffnotice = "Nanotrasen Engineering requires all on-station construction projects to be approved by a head of staff, as detailed in Nanotrasen Company Regulation 512-C (Mid-Shift Modifications to Company Property). \
 						By submitting this form, you accept any fines, fees, or personal injury/death that may occur during construction."
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 
 /obj/item/areaeditor/permit/attack_self(mob/user)
 	. = ..()
@@ -68,6 +68,22 @@
 	..()
 	qdel(src)
 
+//free golem blueprints, like permit but can claim as much as needed
+
+/obj/item/areaeditor/golem
+	name = "Golem Land Claim"
+	desc = "Used to define new areas in space."
+	fluffnotice = "Praise the Liberator!"
+
+/obj/item/areaeditor/golem/attack_self(mob/user)
+	. = ..()
+	var/area/A = get_area()
+	if(get_area_type() == AREA_STATION)
+		. += "<p>According to the [src], you are now in <b>\"[sanitize(A.name)]\"</b>.</p>"
+	var/datum/browser/popup = new(user, "blueprints", "[src]", 700, 500)
+	popup.set_content(.)
+	popup.open()
+	onclose(usr, "blueprints")
 
 //Station blueprints!!!
 /obj/item/areaeditor/blueprints
@@ -76,7 +92,7 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "blueprints"
 	fluffnotice = "Property of Nanotrasen. For heads of staff only. Store in high-secure storage."
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	var/list/showing = list()
 	var/client/viewing
 
@@ -252,6 +268,8 @@
 		return BORDER_BETWEEN
 	if(istype(T2, /turf/simulated/wall))
 		return BORDER_2NDTILE
+	if(istype(T2, /turf/simulated/mineral))
+		return BORDER_2NDTILE
 	if(!istype(T2, /turf/simulated))
 		return BORDER_BETWEEN
 
@@ -312,3 +330,4 @@
 	name = "station schematics"
 	desc = "A digital copy of the station blueprints stored in your memory."
 	fluffnotice = "Intellectual Property of Nanotrasen. For use in engineering cyborgs only. Wipe from memory upon departure from the station."
+

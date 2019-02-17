@@ -1,5 +1,6 @@
 var/global/list/datum/stack_recipe/rod_recipes = list ( \
 	new/datum/stack_recipe("grille", /obj/structure/grille, 2, time = 10, one_per_turf = 1, on_floor = 1), \
+	new/datum/stack_recipe("table frame", /obj/structure/table_frame, 2, time = 10, one_per_turf = 1, on_floor = 1), \
 	)
 
 /obj/item/stack/rods
@@ -9,7 +10,7 @@ var/global/list/datum/stack_recipe/rod_recipes = list ( \
 	icon_state = "rods"
 	item_state = "rods"
 	flags = CONDUCT
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	force = 9.0
 	throwforce = 10.0
 	throw_speed = 3
@@ -19,7 +20,7 @@ var/global/list/datum/stack_recipe/rod_recipes = list ( \
 	attack_verb = list("hit", "bludgeoned", "whacked")
 	hitsound = 'sound/weapons/grenadelaunch.ogg'
 	toolspeed = 1
-	usesound = 'sound/items/Deconstruct.ogg'
+	usesound = 'sound/items/deconstruct.ogg'
 
 /obj/item/stack/rods/cyborg
 	materials = list()
@@ -37,8 +38,8 @@ var/global/list/datum/stack_recipe/rod_recipes = list ( \
 		icon_state = "rods"
 
 /obj/item/stack/rods/attackby(obj/item/W, mob/user, params)
-	if(istype(W, /obj/item/weapon/weldingtool))
-		var/obj/item/weapon/weldingtool/WT = W
+	if(istype(W, /obj/item/weldingtool))
+		var/obj/item/weldingtool/WT = W
 
 		if(get_amount() < 2)
 			to_chat(user, "<span class='warning'>You need at least two rods to do this!</span>")
@@ -46,7 +47,6 @@ var/global/list/datum/stack_recipe/rod_recipes = list ( \
 
 		if(WT.remove_fuel(0,user))
 			var/obj/item/stack/sheet/metal/new_item = new(user.loc)
-			new_item.add_to_stacks(user)
 			if(new_item.get_amount() <= 0)
 				// stack was moved into another one on the pile
 				new_item = locate() in user.loc
@@ -55,7 +55,7 @@ var/global/list/datum/stack_recipe/rod_recipes = list ( \
 						 "<span class='notice'>You shape [src] into metal with the welding tool.</span>", \
 						 "<span class='italics'>You hear welding.</span>")
 
-			var/replace = user.get_inactive_hand() == src
+			var/replace = user.is_in_inactive_hand(src)
 			use(2)
 			if(get_amount() <= 0 && replace)
 				user.unEquip(src, 1)

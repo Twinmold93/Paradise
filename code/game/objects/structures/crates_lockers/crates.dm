@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
-
 /obj/structure/closet/crate
 	name = "crate"
 	desc = "A rectangular steel crate."
@@ -10,7 +8,7 @@
 	climbable = 1
 //	mouse_drag_pointer = MOUSE_ACTIVE_POINTER	//???
 	var/rigged = 0
-	var/obj/item/weapon/paper/manifest/manifest
+	var/obj/item/paper/manifest/manifest
 	// A list of beacon names that the crate will announce the arrival of, when delivered.
 	var/list/announce_beacons = list()
 
@@ -36,18 +34,18 @@
 	if(!src.can_open())
 		return 0
 
-	if(rigged && locate(/obj/item/device/radio/electropack) in src)
+	if(rigged && locate(/obj/item/radio/electropack) in src)
 		if(isliving(usr))
 			var/mob/living/L = usr
 			if(L.electrocute_act(17, src))
-				var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-				s.set_up(5, 1, src)
-				s.start()
+				do_sparks(5, 1, src)
 				return 2
 
 	playsound(src.loc, 'sound/machines/click.ogg', 15, 1, -3)
-	for(var/obj/O in src)
+	for(var/obj/O in src) //Objects
 		O.forceMove(loc)
+	for(var/mob/M in src) //Mobs
+		M.forceMove(loc)
 	icon_state = icon_opened
 	src.opened = 1
 
@@ -69,8 +67,8 @@
 			break
 		if(O.density || O.anchored || istype(O,/obj/structure/closet))
 			continue
-		if(istype(O, /obj/structure/stool/bed)) //This is only necessary because of rollerbeds and swivel chairs.
-			var/obj/structure/stool/bed/B = O
+		if(istype(O, /obj/structure/bed)) //This is only necessary because of rollerbeds and swivel chairs.
+			var/obj/structure/bed/B = O
 			if(B.buckled_mob)
 				continue
 		O.forceMove(src)
@@ -80,9 +78,9 @@
 	src.opened = 0
 	return 1
 
-/obj/structure/closet/crate/attackby(obj/item/weapon/W, mob/user, params)
-	if(istype(W, /obj/item/weapon/rcs) && !src.opened)
-		var/obj/item/weapon/rcs/E = W
+/obj/structure/closet/crate/attackby(obj/item/W, mob/user, params)
+	if(istype(W, /obj/item/rcs) && !src.opened)
+		var/obj/item/rcs/E = W
 		if(E.rcell && (E.rcell.charge >= E.chargecost))
 			if(!is_level_reachable(src.z)) // This is inconsistent with the closet sending code
 				to_chat(user, "<span class='warning'>The rapid-crate-sender can't locate any telepads!</span>")
@@ -102,6 +100,9 @@
 							L[tmpname] = R
 					var/desc = input("Please select a telepad.", "RCS") in L
 					E.pad = L[desc]
+					if(!Adjacent(user))
+						to_chat(user, "<span class='notice'>Unable to teleport, too far from crate.</span>")
+						return
 					playsound(E.loc, E.usesound, 50, 1)
 					to_chat(user, "<span class='notice'>Teleporting [src.name]...</span>")
 					E.teleporting = 1
@@ -109,17 +110,21 @@
 						E.teleporting = 0
 						return
 					E.teleporting = 0
-					var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-					s.set_up(5, 1, src)
-					s.start()
+					if(!(E.rcell && E.rcell.use(E.chargecost)))
+						to_chat(user, "<span class='notice'>Unable to teleport, insufficient charge.</span>")
+						return
+					do_sparks(5, 1, src)
 					do_teleport(src, E.pad, 0)
-					E.rcell.use(E.chargecost)
 					to_chat(user, "<span class='notice'>Teleport successful. [round(E.rcell.charge/E.chargecost)] charge\s left.</span>")
 					return
+
 			else
 				E.rand_x = rand(50,200)
 				E.rand_y = rand(50,200)
 				var/L = locate(E.rand_x, E.rand_y, 6)
+				if(!Adjacent(user))
+					to_chat(user, "<span class='notice'>Unable to teleport, too far from crate.</span>")
+					return
 				playsound(E.loc, E.usesound, 50, 1)
 				to_chat(user, "<span class='notice'>Teleporting [src.name]...</span>")
 				E.teleporting = 1
@@ -127,11 +132,11 @@
 					E.teleporting = 0
 					return
 				E.teleporting = 0
-				var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-				s.set_up(5, 1, src)
-				s.start()
+				if(!(E.rcell && E.rcell.use(E.chargecost)))
+					to_chat(user, "<span class='notice'>Unable to teleport, insufficient charge.</span>")
+					return
+				do_sparks(5, 1, src)
 				do_teleport(src, L)
-				E.rcell.use(E.chargecost)
 				to_chat(user, "<span class='notice'>Teleport successful. [round(E.rcell.charge/E.chargecost)] charge\s left.</span>")
 				return
 		else
@@ -157,13 +162,13 @@
 		qdel(W)
 		rigged = 1
 		return
-	else if(istype(W, /obj/item/device/radio/electropack))
+	else if(istype(W, /obj/item/radio/electropack))
 		if(rigged)
 			to_chat(user, "<span class='notice'>You attach [W] to [src].</span>")
 			user.drop_item()
 			W.forceMove(src)
 			return
-	else if(istype(W, /obj/item/weapon/wirecutters))
+	else if(istype(W, /obj/item/wirecutters))
 		if(rigged)
 			to_chat(user, "<span class='notice'>You cut away the wiring.</span>")
 			playsound(loc, W.usesound, 100, 1)
@@ -202,13 +207,11 @@
 		update_icon()
 		return
 	else
-		if(rigged && locate(/obj/item/device/radio/electropack) in src)
+		if(rigged && locate(/obj/item/radio/electropack) in src)
 			if(isliving(user))
 				var/mob/living/L = user
 				if(L.electrocute_act(17, src))
-					var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-					s.set_up(5, 1, src)
-					s.start()
+					do_sparks(5, 1, src)
 					return
 		src.add_fingerprint(user)
 		src.toggle(user)
@@ -231,8 +234,8 @@
 	var/greenlight = "securecrateg"
 	var/sparks = "securecratesparks"
 	var/emag = "securecrateemag"
-	var/broken = 0
-	var/locked = 1
+	broken = 0
+	locked = 1
 	health = 1000
 
 /obj/structure/closet/crate/secure/update_icon()
@@ -259,9 +262,7 @@
 		return
 	if(src.allowed(user))
 		src.locked = !src.locked
-		for(var/mob/O in viewers(user, 3))
-			if((O.client && !( O.blinded )))
-				to_chat(O, "<span class='notice'>The crate has been [locked ? null : "un"]locked by [user].</span>")
+		visible_message("<span class='notice'>The crate has been [locked ? null : "un"]locked by [user].</span>")
 		update_icon()
 	else
 		to_chat(user, "<span class='notice'>Access Denied</span>")
@@ -296,10 +297,10 @@
 		src.toggle(user)
 
 
-/obj/structure/closet/crate/secure/attackby(obj/item/weapon/W, mob/user, params)
-	if(is_type_in_list(W, list(/obj/item/stack/packageWrap, /obj/item/stack/cable_coil, /obj/item/device/radio/electropack, /obj/item/weapon/wirecutters,/obj/item/weapon/rcs)))
+/obj/structure/closet/crate/secure/attackby(obj/item/W, mob/user, params)
+	if(is_type_in_list(W, list(/obj/item/stack/packageWrap, /obj/item/stack/cable_coil, /obj/item/radio/electropack, /obj/item/wirecutters,/obj/item/rcs)))
 		return ..()
-	if((istype(W, /obj/item/weapon/card/emag) || istype(W, /obj/item/weapon/melee/energy/blade)))
+	if((istype(W, /obj/item/card/emag) || istype(W, /obj/item/melee/energy/blade)))
 		emag_act(user)
 		return
 	if(!opened)
@@ -390,10 +391,10 @@
 
 /obj/structure/closet/crate/rcd/New()
 	..()
-	new /obj/item/weapon/rcd_ammo(src)
-	new /obj/item/weapon/rcd_ammo(src)
-	new /obj/item/weapon/rcd_ammo(src)
-	new /obj/item/weapon/rcd(src)
+	new /obj/item/rcd_ammo(src)
+	new /obj/item/rcd_ammo(src)
+	new /obj/item/rcd_ammo(src)
+	new /obj/item/rcd(src)
 
 /obj/structure/closet/crate/freezer
 	desc = "A freezer."
@@ -434,12 +435,43 @@
 	new /obj/item/weapon/reagent_containers/food/snacks/liquidfood(src)
 	new /obj/item/weapon/reagent_containers/food/snacks/liquidfood(src)
 
-/obj/structure/closet/crate/bin
-	desc = "A large bin."
-	name = "large bin"
+/obj/structure/closet/crate/can
+	desc = "A large can, looks like a bin to me."
+	name = "garbage can"
 	icon_state = "largebin"
 	icon_opened = "largebinopen"
 	icon_closed = "largebin"
+	anchored = TRUE
+
+/obj/structure/closet/crate/can/attackby(obj/item/W, mob/living/user, params)
+	if(iswrench(W))
+		add_fingerprint(user)
+		user.changeNext_move(CLICK_CD_MELEE)
+		if(anchored)
+			playsound(loc, W.usesound, 100, 1)
+			user.visible_message("[user] starts loosening [src]'s floor casters.", \
+								 					"<span class='notice'>You start loosening [src]'s floor casters...</span>")
+			if(do_after(user, 40 * W.toolspeed, target = src))
+				if(!loc || !anchored)
+					return
+				user.visible_message("[user] loosened [src]'s floor casters.", \
+									 					"<span class='notice'>You loosen [src]'s floor casters.</span>")
+				anchored = FALSE
+		else
+			if(!isfloorturf(loc))
+				user.visible_message("<span class='warning'>A floor must be present to secure [src]!</span>")
+				return
+			playsound(loc, W.usesound, 100, 1)
+			user.visible_message("[user] start securing [src]'s floor casters...", \
+													"<span class='notice'>You start securing [src]'s floor casters...</span>")
+			if(do_after(user, 40 * W.toolspeed, target = src))
+				if(!loc || anchored)
+					return
+				user.visible_message("[user] has secured [src]'s floor casters.", \
+						 								"<span class='notice'>You have secured [src]'s floor casters.</span>")
+				anchored = TRUE
+	else
+		..()
 
 /obj/structure/closet/crate/radiation
 	desc = "A crate with a radiation sign on it."
@@ -567,20 +599,20 @@
 
 	New()
 		..()
-		new /obj/item/weapon/reagent_containers/glass/bucket(src)
-		new /obj/item/weapon/reagent_containers/glass/bucket(src)
-		new /obj/item/weapon/screwdriver(src)
-		new /obj/item/weapon/screwdriver(src)
-		new /obj/item/weapon/wrench(src)
-		new /obj/item/weapon/wrench(src)
-		new /obj/item/weapon/wirecutters(src)
-		new /obj/item/weapon/wirecutters(src)
-		new /obj/item/weapon/shovel/spade(src)
-		new /obj/item/weapon/shovel/spade(src)
-		new /obj/item/weapon/storage/box/beakers(src)
-		new /obj/item/weapon/storage/box/beakers(src)
-		new /obj/item/weapon/hand_labeler(src)
-		new /obj/item/weapon/hand_labeler(src)
+		new /obj/item/reagent_containers/glass/bucket(src)
+		new /obj/item/reagent_containers/glass/bucket(src)
+		new /obj/item/screwdriver(src)
+		new /obj/item/screwdriver(src)
+		new /obj/item/wrench(src)
+		new /obj/item/wrench(src)
+		new /obj/item/wirecutters(src)
+		new /obj/item/wirecutters(src)
+		new /obj/item/shovel/spade(src)
+		new /obj/item/shovel/spade(src)
+		new /obj/item/storage/box/beakers(src)
+		new /obj/item/storage/box/beakers(src)
+		new /obj/item/hand_labeler(src)
+		new /obj/item/hand_labeler(src)
 
 /obj/structure/closet/crate/sci
 	name = "science crate"
@@ -616,3 +648,20 @@
 	icon_state = "electricalcrate"
 	icon_opened = "electricalcrateopen"
 	icon_closed = "electricalcrate"
+
+/obj/structure/closet/crate/tape/New()
+	if(prob(10))
+		new /obj/item/bikehorn/rubberducky(src)
+	..()
+
+//crates of gear in the free golem ship
+/obj/structure/closet/crate/golemgear/New()
+	..()
+	new /obj/item/storage/backpack/industrial(src)
+	new /obj/item/shovel(src)
+	new /obj/item/pickaxe(src)
+	new /obj/item/t_scanner/adv_mining_scanner/lesser(src)
+	new /obj/item/storage/bag/ore(src)
+	new /obj/item/clothing/glasses/meson(src)
+	new /obj/item/card/id/golem(src)
+	new /obj/item/flashlight/lantern(src)

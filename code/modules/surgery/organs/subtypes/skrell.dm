@@ -1,6 +1,5 @@
 /obj/item/organ/internal/liver/skrell
 	alcohol_intensity = 4
-	species = "Skrell"
 
 /obj/item/organ/internal/headpocket
 	name = "headpocket"
@@ -10,18 +9,17 @@
 	w_class = WEIGHT_CLASS_TINY
 	parent_organ = "head"
 	slot = "headpocket"
-	species = "Skrell"
 	actions_types = list(/datum/action/item_action/organ_action/toggle)
-	var/obj/item/weapon/storage/internal/pocket
+	var/obj/item/storage/internal/pocket
 
 /obj/item/organ/internal/headpocket/New()
 	..()
-	pocket = new /obj/item/weapon/storage/internal(src)
+	pocket = new /obj/item/storage/internal(src)
 	pocket.storage_slots = 1
 	// Allow adjacency calculation to work properly
 	loc = owner
 	// Fit only pocket sized items
-	pocket.max_w_class = 2
+	pocket.max_w_class = WEIGHT_CLASS_SMALL
 	pocket.max_combined_w_class = 2
 
 /obj/item/organ/internal/headpocket/on_life()
@@ -40,7 +38,7 @@
 /obj/item/organ/internal/headpocket/on_owner_death()
 	empty_contents()
 
-/obj/item/organ/internal/headpocket/remove()
+/obj/item/organ/internal/headpocket/remove(mob/living/carbon/M, special = 0)
 	empty_contents()
 	. = ..()
 
@@ -54,8 +52,8 @@
 	pocket.emp_act(severity)
 	..()
 
-/obj/item/organ/internal/headpocket/hear_talk(mob/living/M as mob, msg)
-	pocket.hear_talk(M, msg)
+/obj/item/organ/internal/headpocket/hear_talk(mob/living/M as mob, list/message_pieces)
+	pocket.hear_talk(M, message_pieces)
 	..()
 
 /obj/item/organ/internal/headpocket/hear_message(mob/living/M as mob, msg)

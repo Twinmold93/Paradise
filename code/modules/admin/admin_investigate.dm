@@ -26,6 +26,13 @@
 	investigate_log_subjects |= subject
 	F << "<small>[time_stamp()] \ref[src] ([x],[y],[z])</small> || [src] [message]<br>"
 
+/proc/log_investigate(message, subject)
+	if(!message) return
+	var/F = investigate_subject2file(subject)
+	if(!F) return
+	investigate_log_subjects |= subject
+	F << "<small>[time_stamp()] || [message]<br>"
+
 //ADMINVERBS
 /client/proc/investigate_show( subject in investigate_log_subjects )
 	set name = "Investigate"
@@ -40,8 +47,8 @@
 
 		if("hrefs")				//persistant logs and stuff
 			if(config && config.log_hrefs)
-				if(href_logfile)
-					src << browse(href_logfile,"window=investigate[subject];size=800x300")
+				if(GLOB.world_href_log)
+					src << browse(file(GLOB.world_href_log), "window=investigate[subject];size=800x300")
 				else
 					to_chat(src, "<font color='red'>Error: admin_investigate: No href logfile found.</font>")
 					return

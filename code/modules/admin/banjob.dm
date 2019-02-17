@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
-
 var/jobban_runonce			// Updates legacy bans with new info
 var/jobban_keylist[0]		// Linear list of jobban strings, kept around for the legacy system
 var/jobban_assoclist[0] // Associative list, for efficiency
@@ -80,8 +78,7 @@ DEBUG
 				log_runtime(EXCEPTION("Skipping malformed job ban: [s]"))
 	else
 		if(!establish_db_connection())
-			log_to_dd("Database connection failed. Reverting to the legacy ban system.")
-			diary << "Database connection failed. Reverting to the legacy ban system."
+			log_world("Database connection failed. Reverting to the legacy ban system.")
 			config.ban_legacy_system = 1
 			jobban_loadbanfile()
 			return

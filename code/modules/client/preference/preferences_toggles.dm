@@ -46,6 +46,17 @@
 	to_chat(usr, "You will [(prefs.sound & SOUND_ADMINHELP) ? "now" : "no longer"] hear a sound when adminhelps arrive.")
 	feedback_add_details("admin_verb","AHS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
+/client/proc/togglementorhelpsound()
+	set name = "Hear/Silence Mentorhelp Bwoinks"
+	set category = "Preferences"
+	set desc = "Toggle hearing a notification when mentorhelps are recieved"
+	if(!holder)
+		return
+	prefs.sound ^= SOUND_MENTORHELP
+	prefs.save_preferences(src)
+	to_chat(usr, "You will [(prefs.sound & SOUND_MENTORHELP) ? "now" : "no longer"] hear a sound when mentorhelps arrive.")
+	feedback_add_details("admin_verb","MHS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
 /client/verb/deadchat() // Deadchat toggle is usable by anyone.
 	set name = "Show/Hide Deadchat"
 	set category = "Preferences"
@@ -95,12 +106,11 @@
 	prefs.save_preferences(src)
 	if(prefs.sound & SOUND_LOBBY)
 		to_chat(src, "You will now hear music in the game lobby.")
-		if(istype(mob, /mob/new_player))
-			playtitlemusic()
+		if(isnewplayer(usr))
+			usr.client.playtitlemusic()
 	else
 		to_chat(src, "You will no longer hear music in the game lobby.")
-		if(istype(mob, /mob/new_player))
-			src << sound(null, repeat = 0, wait = 0, volume = 85, channel = 1)// stop the jamsz
+		usr.stop_sound_channel(CHANNEL_LOBBYMUSIC)
 
 	feedback_add_details("admin_verb","TLobby") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -113,9 +123,7 @@
 	if(prefs.sound & SOUND_MIDI)
 		to_chat(src, "You will now hear any sounds uploaded by admins.")
 	else
-		var/sound/break_sound = sound(null, repeat = 0, wait = 0, channel = 777)
-		break_sound.priority = 250
-		src << break_sound //breaks the client's sound output on channel 777
+		usr.stop_sound_channel(CHANNEL_ADMIN)
 
 		to_chat(src, "You will no longer hear sounds uploaded by admins; any currently playing midis have been disabled.")
 	feedback_add_details("admin_verb","TMidi") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -150,7 +158,7 @@
 		to_chat(src, "You will now hear ambient sounds.")
 	else
 		to_chat(src, "You will no longer hear ambient sounds.")
-		src << sound(null, repeat = 0, wait = 0, volume = 0, channel = 1)
+		usr.stop_sound_channel(CHANNEL_AMBIENCE)
 	feedback_add_details("admin_verb","TAmbi") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /client/verb/Toggle_Buzz() //No more headaches because headphones bump up shipambience.ogg to insanity levels.
@@ -163,7 +171,7 @@
 		to_chat(src, "You will now hear ambient white noise.")
 	else
 		to_chat(src, "You will no longer hear ambient white noise.")
-		src << sound(null, repeat = 0, wait = 0, volume = 0, channel = 2)
+		usr.stop_sound_channel(CHANNEL_BUZZ)
 	feedback_add_details("admin_verb","TBuzz") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 
@@ -177,8 +185,7 @@
 		to_chat(src, "You will now hear heartbeat sounds.")
 	else
 		to_chat(src, "You will no longer hear heartbeat sounds.")
-		src << sound(null, repeat = 0, wait = 0, volume = 0, channel = 1)
-		src << sound(null, repeat = 0, wait = 0, volume = 0, channel = 2)
+		usr.stop_sound_channel(CHANNEL_HEARTBEAT)
 	feedback_add_details("admin_verb","Thb") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 // This needs a toggle because you people are awful and spammed terrible music
@@ -200,3 +207,15 @@
 	set desc = "Allows you to access the Setup Character screen. Changes to your character won't take effect until next round, but other changes will."
 	prefs.current_tab = 1
 	prefs.ShowChoices(usr)
+
+/client/verb/toggle_darkmode()
+	set name = "Toggle Darkmode"
+	set category = "Preferences"
+	set desc = "Toggles UI style between dark and light"
+	prefs.toggles ^= UI_DARKMODE
+	prefs.save_preferences(src)
+	if(prefs.toggles & UI_DARKMODE)
+		activate_darkmode()
+	else
+		deactivate_darkmode()
+	feedback_add_details("admin_verb","TDarkmode") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!

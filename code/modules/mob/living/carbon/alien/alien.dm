@@ -1,7 +1,3 @@
-#define HEAT_DAMAGE_LEVEL_1 2 //Amount of damage applied when your body temperature just passes the 360.15k safety point
-#define HEAT_DAMAGE_LEVEL_2 3 //Amount of damage applied when your body temperature passes the 400K point
-#define HEAT_DAMAGE_LEVEL_3 8 //Amount of damage applied when your body temperature passes the 1000K point
-
 /mob/living/carbon/alien
 	name = "alien"
 	voice_name = "alien"
@@ -9,15 +5,10 @@
 	icon = 'icons/mob/alien.dmi'
 	gender = NEUTER
 	dna = null
-
-
 	alien_talk_understand = 1
-
 	nightvision = 1
-
-	var/obj/item/weapon/card/id/wear_id = null // Fix for station bounced radios -- Skie
+	var/obj/item/card/id/wear_id = null // Fix for station bounced radios -- Skie
 	var/has_fine_manipulation = 0
-
 	var/move_delay_add = 0 // movement delay to add
 
 	status_flags = CANPARALYSE|CANPUSH
@@ -27,14 +18,16 @@
 	var/heat_protection = 0.5
 	var/leaping = 0
 	ventcrawler = 2
-
 	var/list/alien_organs = list()
+	var/death_message = "lets out a waning guttural screech, green blood bubbling from its maw..."
+	var/death_sound = 'sound/voice/hiss6.ogg'
 
 /mob/living/carbon/alien/New()
 	verbs += /mob/living/verb/mob_sleep
 	verbs += /mob/living/verb/lay_down
 	alien_organs += new /obj/item/organ/internal/brain/xeno
 	alien_organs += new /obj/item/organ/internal/xenos/hivenode
+	alien_organs += new /obj/item/organ/internal/ears
 	for(var/obj/item/organ/internal/I in alien_organs)
 		I.insert(src)
 	..()
@@ -42,7 +35,7 @@
 /mob/living/carbon/alien/get_default_language()
 	if(default_language)
 		return default_language
-	return all_languages["Xenomorph"]
+	return GLOB.all_languages["Xenomorph"]
 
 /mob/living/carbon/alien/say_quote(var/message, var/datum/language/speaking = null)
 	var/verb = "hisses"
@@ -59,25 +52,25 @@
 
 
 /mob/living/carbon/alien/adjustToxLoss(amount)
-	return
+	return STATUS_UPDATE_NONE
 
 /mob/living/carbon/alien/adjustFireLoss(amount) // Weak to Fire
 	if(amount > 0)
-		..(amount * 2)
+		return ..(amount * 2)
 	else
-		..(amount)
-	return
+		return ..(amount)
 
 
 /mob/living/carbon/alien/check_eye_prot()
 	return 2
 
-/mob/living/carbon/alien/updatehealth()
+/mob/living/carbon/alien/updatehealth(reason = "none given")
 	if(status_flags & GODMODE)
 		health = maxHealth
 		stat = CONSCIOUS
 		return
 	health = maxHealth - getOxyLoss() - getFireLoss() - getBruteLoss() - getCloneLoss()
+	update_stat("updatehealth([reason])")
 
 /mob/living/carbon/alien/handle_environment(var/datum/gas_mixture/environment)
 
@@ -118,31 +111,6 @@
 	else
 		clear_alert("alien_fire")
 
-/mob/living/carbon/alien/handle_mutations_and_radiation()
-	// Aliens love radiation nom nom nom
-	if(radiation)
-		if(radiation > 100)
-			radiation = 100
-
-		if(radiation < 0)
-			radiation = 0
-
-		switch(radiation)
-			if(1 to 49)
-				radiation--
-				if(prob(25))
-					adjustToxLoss(1)
-
-			if(50 to 74)
-				radiation -= 2
-				adjustToxLoss(1)
-				if(prob(5))
-					radiation -= 5
-
-			if(75 to 100)
-				radiation -= 3
-				adjustToxLoss(3)
-
 /mob/living/carbon/alien/handle_fire()//Aliens on fire code
 	if(..())
 		return
@@ -153,14 +121,10 @@
 	return has_fine_manipulation
 
 /mob/living/carbon/alien/Stat()
-
+	..()
 	statpanel("Status")
 	stat(null, "Intent: [a_intent]")
 	stat(null, "Move Mode: [m_intent]")
-
-	..()
-
-
 	show_stat_emergency_shuttle_eta()
 
 /mob/living/carbon/alien/SetStunned(amount, updating = 1, force = 0)
@@ -168,6 +132,10 @@
 	if(!(status_flags & CANSTUN) && amount)
 		// add some movement delay
 		move_delay_add = min(move_delay_add + round(amount / 2), 10) // a maximum delay of 10
+
+/mob/living/carbon/alien/movement_delay()
+	. = ..()
+	. += move_delay_add + config.alien_delay //move_delay_add is used to slow aliens with stuns
 
 /mob/living/carbon/alien/getDNA()
 	return null
@@ -203,11 +171,11 @@
 	//Lasertag bullshit
 	if(lasercolor)
 		if(lasercolor == "b")//Lasertag turrets target the opposing team, how great is that? -Sieve
-			if((istype(r_hand,/obj/item/weapon/gun/energy/laser/redtag)) || (istype(l_hand,/obj/item/weapon/gun/energy/laser/redtag)))
+			if((istype(r_hand,/obj/item/gun/energy/laser/tag/red)) || (istype(l_hand,/obj/item/gun/energy/laser/tag/red)))
 				threatcount += 4
 
 		if(lasercolor == "r")
-			if((istype(r_hand,/obj/item/weapon/gun/energy/laser/bluetag)) || (istype(l_hand,/obj/item/weapon/gun/energy/laser/bluetag)))
+			if((istype(r_hand,/obj/item/gun/energy/laser/tag/blue)) || (istype(l_hand,/obj/item/gun/energy/laser/tag/blue)))
 				threatcount += 4
 
 		return threatcount
@@ -231,7 +199,7 @@ Des: Gives the client of the alien an image on each infected mob.
 ----------------------------------------*/
 /mob/living/carbon/alien/proc/AddInfectionImages()
 	if(client)
-		for(var/mob/living/C in mob_list)
+		for(var/mob/living/C in GLOB.mob_list)
 			if(C.status_flags & XENO_HOST)
 				var/obj/item/organ/internal/body_egg/alien_embryo/A = C.get_int_organ(/obj/item/organ/internal/body_egg/alien_embryo)
 				if(A)
@@ -264,16 +232,12 @@ Des: Removes all infected images from the alien.
 /mob/living/carbon/alien/can_use_vents()
 	return
 
-#undef HEAT_DAMAGE_LEVEL_1
-#undef HEAT_DAMAGE_LEVEL_2
-#undef HEAT_DAMAGE_LEVEL_3
-
 /mob/living/carbon/alien/handle_footstep(turf/T)
 	if(..())
 		if(T.footstep_sounds["xeno"])
 			var/S = pick(T.footstep_sounds["xeno"])
 			if(S)
-				if(m_intent == "run")
+				if(m_intent == MOVE_INTENT_RUN)
 					if(!(step_count % 2)) //every other turf makes a sound
 						return 0
 
@@ -281,7 +245,7 @@ Des: Removes all infected images from the alien.
 				range -= 0.666 //-(7 - 2) = (-5) = -5 | -5 - (0.666) = -5.666 | (7 + -5.666) = 1.334 | 1.334 * 3 = 4.002 | range(4.002) = range(4)
 				var/volume = 5
 
-				if(m_intent == "walk")
+				if(m_intent == MOVE_INTENT_WALK)
 					return 0 //silent when walking
 
 				if(buckled || lying || throwing)
@@ -294,3 +258,9 @@ Des: Removes all infected images from the alien.
 				playsound(T, S, volume, 1, range)
 				return 1
 	return 0
+
+/mob/living/carbon/alien/getTrail()
+	if(getBruteLoss() < 200)
+		return pick("xltrails_1", "xltrails_2")
+	else
+		return pick("xttrails_1", "xttrails_2")

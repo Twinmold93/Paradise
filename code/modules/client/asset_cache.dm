@@ -17,8 +17,8 @@ You can set verify to TRUE if you want send() to sleep until the client has the 
 //When sending mutiple assets, how many before we give the client a quaint little sending resources message
 #define ASSET_CACHE_TELL_CLIENT_AMOUNT 8
 
-//List of ALL assets for the above, format is list(filename = asset).
-/var/global/list/asset_cache = list()
+//When passively preloading assets, how many to send at once? Too high creates noticable lag where as too low can flood the client's cache with "verify" files
+#define ASSET_CACHE_PRELOAD_CONCURRENT 3
 
 /client
 	var/list/cache = list() // List of all assets sent to this client by the asset cache.
@@ -44,13 +44,10 @@ You can set verify to TRUE if you want send() to sleep until the client has the 
 	if(client.cache.Find(asset_name) || client.sending.Find(asset_name))
 		return 0
 
-	client << browse_rsc(asset_cache[asset_name], asset_name)
-	if(!verify || !winexists(client, "asset_cache_browser")) // Can't access the asset cache browser, rip.
-		if(client)
-			client.cache += asset_name
+	client << browse_rsc(SSassets.cache[asset_name], asset_name)
+	if(!verify) // Can't access the asset cache browser, rip.
+		client.cache += asset_name
 		return 1
-	if(!client)
-		return 0
 
 	client.sending |= asset_name
 	var/job = ++client.last_asset_job
@@ -94,15 +91,13 @@ You can set verify to TRUE if you want send() to sleep until the client has the 
 	if(unreceived.len >= ASSET_CACHE_TELL_CLIENT_AMOUNT)
 		to_chat(client, "Sending Resources...")
 	for(var/asset in unreceived)
-		if(asset in asset_cache)
-			client << browse_rsc(asset_cache[asset], asset)
+		if(asset in SSassets.cache)
+			client << browse_rsc(SSassets.cache[asset], asset)
 
-	if(!verify || !winexists(client, "asset_cache_browser")) // Can't access the asset cache browser, rip.
-		if(client)
-			client.cache += unreceived
+	if(!verify) // Can't access the asset cache browser, rip.
+		client.cache += unreceived
 		return 1
-	if(!client)
-		return 0
+
 	client.sending |= unreceived
 	var/job = ++client.last_asset_job
 
@@ -127,30 +122,25 @@ You can set verify to TRUE if you want send() to sleep until the client has the 
 
 //This proc will download the files without clogging up the browse() queue, used for passively sending files on connection start.
 //The proc calls procs that sleep for long times.
-proc/getFilesSlow(var/client/client, var/list/files, var/register_asset = TRUE)
+/proc/getFilesSlow(var/client/client, var/list/files, var/register_asset = TRUE)
+	var/concurrent_tracker = 1
 	for(var/file in files)
 		if(!client)
 			break
 		if(register_asset)
-			register_asset(file,files[file])
-		send_asset(client,file)
-		sleep(-1) //queuing calls like this too quickly can cause issues in some client versions
+			register_asset(file, files[file])
+		if(concurrent_tracker >= ASSET_CACHE_PRELOAD_CONCURRENT)
+			concurrent_tracker = 1
+			send_asset(client, file)
+		else
+			concurrent_tracker++
+			send_asset(client, file, verify = FALSE)
+		sleep(0) //queuing calls like this too quickly can cause issues in some client versions
 
 //This proc "registers" an asset, it adds it to the cache for further use, you cannot touch it from this point on or you'll fuck things up.
 //if it's an icon or something be careful, you'll have to copy it before further use.
 /proc/register_asset(var/asset_name, var/asset)
-	asset_cache[asset_name] = asset
-
-//From here on out it's populating the asset cache.
-/proc/populate_asset_cache()
-	for(var/type in typesof(/datum/asset) - list(/datum/asset, /datum/asset/simple))
-		var/datum/asset/A = new type()
-		A.register()
-
-	for(var/client/C in clients)
-		//doing this to a client too soon after they've connected can cause issues, also the proc we call sleeps
-		spawn(10)
-			getFilesSlow(C, asset_cache, FALSE)
+	SSassets.cache[asset_name] = asset
 
 //These datums are used to populate the asset cache, the proc "register()" does this.
 
@@ -200,6 +190,8 @@ proc/getFilesSlow(var/client/client, var/list/files, var/register_asset = TRUE)
 		"large_stamp-law.png"       = 'icons/paper_icons/large_stamp-law.png',
 		"large_stamp-cent.png"      = 'icons/paper_icons/large_stamp-cent.png',
 		"large_stamp-syndicate.png" = 'icons/paper_icons/large_stamp-syndicate.png',
+		"large_stamp-rep.png"	    = 'icons/paper_icons/large_stamp-rep.png',
+		"large_stamp-magistrate.png"= 'icons/paper_icons/large_stamp-magistrate.png',
 		"talisman.png"              = 'icons/paper_icons/talisman.png',
 		"ntlogo.png"                = 'icons/paper_icons/ntlogo.png'
 	)
@@ -246,6 +238,13 @@ proc/getFilesSlow(var/client/client, var/list/files, var/register_asset = TRUE)
 		"sig_low.gif" 				= 'icons/program_icons/sig_low.gif',
 		"sig_lan.gif" 				= 'icons/program_icons/sig_lan.gif',
 		"sig_none.gif" 				= 'icons/program_icons/sig_none.gif',
+		"smmon_0.gif"				= 'icons/program_icons/smmon_0.gif',
+		"smmon_1.gif"				= 'icons/program_icons/smmon_1.gif',
+		"smmon_2.gif"				= 'icons/program_icons/smmon_2.gif',
+		"smmon_3.gif"				= 'icons/program_icons/smmon_3.gif',
+		"smmon_4.gif"				= 'icons/program_icons/smmon_4.gif',
+		"smmon_5.gif"				= 'icons/program_icons/smmon_5.gif',
+		"smmon_6.gif"				= 'icons/program_icons/smmon_6.gif',
 	)
 
 /datum/asset/nanoui
@@ -301,6 +300,31 @@ proc/getFilesSlow(var/client/client, var/list/files, var/register_asset = TRUE)
 /datum/asset/chem_master/send(client)
 	send_asset_list(client, assets, verify)
 
+
+//Pipe sprites for UIs
+/datum/asset/rpd
+	var/assets = list()
+	var/verify = FALSE
+
+/datum/asset/rpd/register()
+	for(var/state in icon_states('icons/obj/pipe-item.dmi'))
+		if(!(state in list("cap", "connector", "dtvalve", "dual-port vent", "dvalve", "filter", "he", "heunary", "injector", "junction", "manifold", "mixer", "tvalve", "mvalve", "passive vent", "passivegate", "pump", "scrubber", "simple", "universal", "uvent", "volumepump"))) //Basically all the pipes we want sprites for
+			continue
+		if(state in list("he", "simple"))
+			for(var/D in alldirs)
+				assets["[state]-[dir2text(D)].png"] = icon('icons/obj/pipe-item.dmi', state, D)
+		for(var/D in cardinal)
+			assets["[state]-[dir2text(D)].png"] = icon('icons/obj/pipe-item.dmi', state, D)
+	for(var/state in icon_states('icons/obj/pipes/disposal.dmi'))
+		if(!(state in list("pipe-c", "pipe-j1", "pipe-s", "pipe-t", "pipe-y", "intake", "outlet"))) //Pipes we want sprites for
+			continue
+		for(var/D in cardinal)
+			assets["[state]-[dir2text(D)].png"] = icon('icons/obj/pipes/disposal.dmi', state, D)
+	for(var/asset_name in assets)
+		register_asset(asset_name, assets[asset_name])
+
+/datum/asset/rpd/send(client)
+	send_asset_list(client, assets, verify)
 
 //Mob Hunt sprites for UIs
 /datum/asset/mob_hunt

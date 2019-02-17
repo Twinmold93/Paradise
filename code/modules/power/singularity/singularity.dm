@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
-
 /obj/singularity
 	name = "gravitational singularity"
 	desc = "A gravitational singularity."
@@ -21,6 +19,7 @@
 	var/dissipate_strength = 1 //How much energy do we lose?
 	var/move_self = 1 //Do we move on our own?
 	var/grav_pull = 4 //How many tiles out do we pull?
+	move_resist = INFINITY	//no, you don't get to push the singulo. Not even you OP wizard gateway statues
 	var/consume_range = 0 //How many tiles out do we eat
 	var/event_chance = 15 //Prob for event each tick
 	var/target = null //its target. moves towards the target if it has one
@@ -37,17 +36,17 @@
 	src.energy = starting_energy
 	..()
 	processing_objects.Add(src)
-	poi_list |= src
-	singularities += src
-	for(var/obj/machinery/power/singularity_beacon/singubeacon in machines)
+	GLOB.poi_list |= src
+	GLOB.singularities += src
+	for(var/obj/machinery/power/singularity_beacon/singubeacon in GLOB.machines)
 		if(singubeacon.active)
 			target = singubeacon
 			break
 
 /obj/singularity/Destroy()
 	processing_objects.Remove(src)
-	poi_list.Remove(src)
-	singularities -= src
+	GLOB.poi_list.Remove(src)
+	GLOB.singularities -= src
 	target = null
 	return ..()
 
@@ -70,7 +69,7 @@
 /obj/singularity/attack_animal(mob/user)
 	consume(user)
 
-/obj/singularity/attackby(obj/item/weapon/W, mob/user, params)
+/obj/singularity/attackby(obj/item/W, mob/user, params)
 	consume(user)
 	return 1
 

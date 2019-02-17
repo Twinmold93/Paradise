@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
-
 /*
  * GAMEMODES (by Rastaf0)
  *
@@ -29,9 +27,9 @@
 	var/recommended_enemies = 0
 	var/newscaster_announcements = null
 	var/ert_disabled = 0
+	var/free_golems_disabled = FALSE
 	var/uplink_welcome = "Syndicate Uplink Console:"
 	var/uplink_uses = 20
-	var/datum/cult_info/cultdat //here instead of cult for adminbus purposes
 
 	var/const/waittime_l = 600  //lower bound on time before intercept arrives (in tenths of seconds)
 	var/const/waittime_h = 1800 //upper bound on time before intercept arrives (in tenths of seconds)
@@ -39,7 +37,6 @@
 	var/list/datum/mind/xenos = list()
 
 	var/list/datum/station_goal/station_goals = list() // A list of all station goals for this game mode
-	var/list/chumps = list()
 
 /datum/game_mode/proc/announce() //to be calles when round starts
 	to_chat(world, "<B>Notice</B>: [src] did not define announce()")
@@ -49,7 +46,7 @@
 ///Checks to see if the game can be setup and ran with the current number of players or whatnot.
 /datum/game_mode/proc/can_start()
 	var/playerC = 0
-	for(var/mob/new_player/player in player_list)
+	for(var/mob/new_player/player in GLOB.player_list)
 		if((player.client)&&(player.ready))
 			playerC++
 
@@ -72,7 +69,6 @@
 ///post_setup()
 ///Everyone should now be on the station and have their normal gear.  This is the place to give the special roles extra things
 /datum/game_mode/proc/post_setup()
-	setup_chumps()
 
 	spawn (ROUNDSTART_LOGOUT_REPORT_TIME)
 		display_roundstart_logout_report()
@@ -84,43 +80,9 @@
 //		feedback_set_details("revision","[revdata.revision]")
 	feedback_set_details("server_ip","[world.internet_address]:[world.port]")
 	generate_station_goals()
+	check_free_golems()
 	start_state = new /datum/station_state()
 	start_state.count()
-	return 1
-
-//setup_chumps()
-//Prepares fake potential collaborators to cut down on metagaming the round type as being a traitor subtype. Overriden in traitor game modes since they have real collaborators
-/datum/game_mode/proc/setup_chumps()
-	var/max_chumps = 1
-	if(config.traitor_scaling)
-		max_chumps = max(1, round((num_players())/(5)))
-	else
-		max_chumps = max(1, min(num_players(), 5))
-	var/tries_left = 5	//limits the number of tries so we don't get stuck looping indefinitely. resets on successfully finding a new chump
-	while(chumps.len < max_chumps)
-		if(!tries_left)			//ran out of unique chumps (or just bad luck with the pick() in get_nt_opposed()) so there may end up being fewer chumps in some rounds.
-			break
-		var/mob/living/carbon/human/chump = get_nt_opposed()
-		if(isnull(chump))	//no possible chumps so just end it here.
-			break
-		if(chump in chumps)
-			tries_left--		//this chump already was picked, try again!
-		else
-			chumps += chump
-			tries_left = 5		//reset our tries since we found a new chump
-	//make sure we have chumps before we try misinforming them. if we don't make a note of it.
-	if(!chumps.len)
-		message_admins("<span class='notice'>Game mode failed to find ANY chumps. Possible causes: no one is opposed/skeptical, or FalseIncarnate can't code.</span>")
-		log_admin("Game mode failed to find ANY chumps. Possible causes: no one is opposed/skeptical, or FalseIncarnate can't code.")
-		return 0
-	//we've got chumps! misinform them!
-	for(var/mob/living/carbon/human/chump in chumps)
-		if(prob(33))
-			spawn(rand(3000, 18000))	//5-30 minute delay to throw off would-be autotraitor metagamers
-				inform_collab(chump)
-		else
-			spawn(rand(10, 100))		//same delay as if the mode were traitor
-				inform_collab(chump)
 	return 1
 
 ///process()
@@ -136,10 +98,10 @@
 			if(MS.active)
 				useMS = MS
 				break
-	for(var/mob/M in player_list)
+	for(var/mob/M in GLOB.player_list)
 		if(M.mind)
-			var/obj/item/device/pda/P=null
-			for(var/obj/item/device/pda/check_pda in PDAs)
+			var/obj/item/pda/P=null
+			for(var/obj/item/pda/check_pda in PDAs)
 				if(check_pda.owner==M.name)
 					P=check_pda
 					break
@@ -160,15 +122,7 @@
 						msg="Task #[count] completed! "
 				if(pay>0)
 					if(M.mind.initial_account)
-						M.mind.initial_account.money += pay
-						var/datum/transaction/T = new()
-						T.target_name = "[command_name()] Payroll"
-						T.purpose = "Payment"
-						T.amount = pay
-						T.date = current_date_string
-						T.time = worldtime2text()
-						T.source_terminal = "\[CLASSIFIED\] Terminal #[rand(111,333)]"
-						M.mind.initial_account.transaction_log.Add(T)
+						M.mind.initial_account.credit(pay, "Payment", "\[CLASSIFIED\] Terminal #[rand(111,333)]", "[command_name()] Payroll")
 						msg += "You have been sent the $[pay], as agreed."
 					else
 						msg += "However, we were unable to send you the $[pay] you're entitled."
@@ -180,7 +134,7 @@
 					break
 
 /datum/game_mode/proc/check_finished() //to be called by ticker
-	if((shuttle_master.emergency && shuttle_master.emergency.mode >= SHUTTLE_ENDGAME) || station_was_nuked)
+	if((SSshuttle.emergency && SSshuttle.emergency.mode >= SHUTTLE_ENDGAME) || station_was_nuked)
 		return 1
 	return 0
 
@@ -202,10 +156,10 @@
 
 	var/list/area/escape_locations = list(/area/shuttle/escape, /area/shuttle/escape_pod1/centcom, /area/shuttle/escape_pod2/centcom, /area/shuttle/escape_pod3/centcom, /area/shuttle/escape_pod5/centcom)
 
-	if(shuttle_master.emergency.mode < SHUTTLE_ENDGAME) //shuttle didn't get to centcom
+	if(SSshuttle.emergency.mode < SHUTTLE_ENDGAME) //shuttle didn't get to centcom
 		escape_locations -= /area/shuttle/escape
 
-	for(var/mob/M in player_list)
+	for(var/mob/M in GLOB.player_list)
 		if(M.client)
 			clients++
 			if(ishuman(M))
@@ -218,7 +172,7 @@
 				if(M.loc && M.loc.loc && M.loc.loc.type in escape_locations)
 					escaped_total++
 
-				if(M.loc && M.loc.loc && M.loc.loc.type == shuttle_master.emergency.areaInstance.type && shuttle_master.emergency.mode >= SHUTTLE_ENDGAME)
+				if(M.loc && M.loc.loc && M.loc.loc.type == SSshuttle.emergency.areaInstance.type && SSshuttle.emergency.mode >= SHUTTLE_ENDGAME)
 					escaped_on_shuttle++
 
 				if(M.loc && M.loc.loc && M.loc.loc.type == /area/shuttle/escape_pod1/centcom)
@@ -272,7 +226,7 @@
 	var/roletext = get_roletext(role)
 
 	// Assemble a list of active players without jobbans.
-	for(var/mob/new_player/player in player_list)
+	for(var/mob/new_player/player in GLOB.player_list)
 		if(player.client && player.ready)
 			if(!jobban_isbanned(player, "Syndicate") && !jobban_isbanned(player, roletext))
 				if(player_old_enough_antag(player.client,role))
@@ -283,10 +237,11 @@
 
 	// Get a list of all the people who want to be the antagonist for this round, except those with incompatible species
 	for(var/mob/new_player/player in players)
-		if((role in player.client.prefs.be_special) && !(player.client.prefs.species in protected_species))
-			player_draft_log += "[player.key] had [roletext] enabled, so we are drafting them."
-			candidates += player.mind
-			players -= player
+		if(!player.client.skip_antag)
+			if((role in player.client.prefs.be_special) && !(player.client.prefs.species in protected_species))
+				player_draft_log += "[player.key] had [roletext] enabled, so we are drafting them."
+				candidates += player.mind
+				players -= player
 
 	// If we don't have enough antags, draft people who voted for the round.
 	if(candidates.len < recommended_enemies)
@@ -322,13 +277,13 @@
 
 /datum/game_mode/proc/num_players()
 	. = 0
-	for(var/mob/new_player/P in player_list)
+	for(var/mob/new_player/P in GLOB.player_list)
 		if(P.client && P.ready)
 			.++
 
 /datum/game_mode/proc/num_players_started()
 	. = 0
-	for(var/mob/living/carbon/human/H in player_list)
+	for(var/mob/living/carbon/human/H in GLOB.player_list)
 		if(H.client)
 			.++
 
@@ -337,8 +292,9 @@
 ///////////////////////////////////
 /datum/game_mode/proc/get_living_heads()
 	. = list()
-	for(var/mob/living/carbon/human/player in mob_list)
-		if(player.stat != DEAD && player.mind && (player.mind.assigned_role in command_positions))
+	for(var/mob/living/carbon/human/player in GLOB.mob_list)
+		var/list/real_command_positions = command_positions.Copy() - "Nanotrasen Representative"
+		if(player.stat != DEAD && player.mind && (player.mind.assigned_role in real_command_positions))
 			. |= player.mind
 
 
@@ -347,8 +303,9 @@
 ////////////////////////////
 /datum/game_mode/proc/get_all_heads()
 	. = list()
-	for(var/mob/player in mob_list)
-		if(player.mind && (player.mind.assigned_role in command_positions))
+	for(var/mob/player in GLOB.mob_list)
+		var/list/real_command_positions = command_positions.Copy() - "Nanotrasen Representative"
+		if(player.mind && (player.mind.assigned_role in real_command_positions))
 			. |= player.mind
 
 //////////////////////////////////////////////
@@ -356,7 +313,7 @@
 //////////////////////////////////////////////
 /datum/game_mode/proc/get_living_sec()
 	. = list()
-	for(var/mob/living/carbon/human/player in mob_list)
+	for(var/mob/living/carbon/human/player in GLOB.mob_list)
 		if(player.stat != DEAD && player.mind && (player.mind.assigned_role in security_positions))
 			. |= player.mind
 
@@ -365,7 +322,7 @@
 ////////////////////////////////////////
 /datum/game_mode/proc/get_all_sec()
 	. = list()
-	for(var/mob/living/carbon/human/player in mob_list)
+	for(var/mob/living/carbon/human/player in GLOB.mob_list)
 		if(player.mind && (player.mind.assigned_role in security_positions))
 			. |= player.mind
 
@@ -374,18 +331,17 @@
 
 /datum/game_mode/New()
 	newscaster_announcements = pick(newscaster_standard_feeds)
-	cultdat = setupcult()
 
 //////////////////////////
 //Reports player logouts//
 //////////////////////////
 proc/display_roundstart_logout_report()
 	var/msg = "<span class='notice'>Roundstart logout report</span>\n\n"
-	for(var/mob/living/L in mob_list)
+	for(var/mob/living/L in GLOB.mob_list)
 
 		if(L.ckey)
 			var/found = 0
-			for(var/client/C in clients)
+			for(var/client/C in GLOB.clients)
 				if(C.ckey == L.ckey)
 					found = 1
 					break
@@ -411,7 +367,7 @@ proc/display_roundstart_logout_report()
 					continue //Dead
 
 			continue //Happy connected client
-		for(var/mob/dead/observer/D in mob_list)
+		for(var/mob/dead/observer/D in GLOB.mob_list)
 			if(D.mind && (D.mind.original == L || D.mind.current == L))
 				if(L.stat == DEAD)
 					if(L.suiciding)	//Suicider
@@ -432,26 +388,9 @@ proc/display_roundstart_logout_report()
 
 
 
-	for(var/mob/M in mob_list)
+	for(var/mob/M in GLOB.mob_list)
 		if(check_rights(R_ADMIN, 0, M))
 			to_chat(M, msg)
-
-
-/proc/get_nt_opposed()
-	var/list/dudes = list()
-	for(var/mob/living/carbon/human/man in player_list)
-		if(man.client)
-			//don't try picking someone like the captain or a security officer for potential collaborators, even if they ARE opposed to Nanotrasen for some reason
-			if(man.mind && man.mind.assigned_role)
-				if((man.mind.assigned_role in ticker.mode.protected_jobs) || (man.mind.assigned_role in ticker.mode.restricted_jobs))
-					continue
-			if(man.client.prefs.nanotrasen_relation == "Opposed")
-				dudes += man
-			else if(man.client.prefs.nanotrasen_relation == "Skeptical" && prob(50))
-				dudes += man
-	if(dudes.len == 0)
-		return null
-	return pick(dudes)
 
 //Announces objectives/generic antag text.
 /proc/show_generic_antag_text(var/datum/mind/player)
@@ -492,34 +431,39 @@ proc/display_roundstart_logout_report()
 		M.ghostize()
 		M.key = theghost.key
 	else
-		message_admins("[M] ([M.key] has been converted into [role_type] with an active antagonist jobban for said role since no ghost has volunteered to take their place.")
+		message_admins("[M] ([M.key] has been converted into [role_type] with an active antagonist jobban for said role since no ghost has volunteered to take [M.p_their()] place.")
 		to_chat(M, "<span class='biggerdanger'>You have been converted into [role_type] with an active jobban. Any further violations of the rules on your part are likely to result in a permanent ban.</span>")
 
-/datum/game_mode/proc/printplayer(datum/mind/ply, fleecheck)
-	var/text = "<br><b>[ply.key]</b> was <b>[ply.name]</b> the <b>[ply.assigned_role]</b> and"
+/proc/printplayer(datum/mind/ply, fleecheck)
+	var/jobtext = ""
+	if(ply.assigned_role)
+		jobtext = " the <b>[ply.assigned_role]</b>"
+	var/text = "<b>[ply.key]</b> was <b>[ply.name]</b>[jobtext] and"
 	if(ply.current)
 		if(ply.current.stat == DEAD)
-			text += " <span class='boldannounce'>died</span>"
+			text += " <span class='redtext'>died</span>"
 		else
-			text += " <span class='greenannounce'>survived</span>"
-		if(fleecheck && !is_station_level(ply.current.z))
-			text += " while <span class='boldannounce'>fleeing the station</span>"
+			text += " <span class='greentext'>survived</span>"
+		if(fleecheck)
+			var/turf/T = get_turf(ply.current)
+			if(!T || !is_station_level(T.z))
+				text += " while <span class='redtext'>fleeing the station</span>"
 		if(ply.current.real_name != ply.name)
 			text += " as <b>[ply.current.real_name]</b>"
 	else
-		text += " <span class='boldannounce'>had their body destroyed</span>"
+		text += " <span class='redtext'>had [ply.p_their()] body destroyed</span>"
 	return text
 
-/datum/game_mode/proc/printobjectives(datum/mind/ply)
-	var/text = ""
+/proc/printobjectives(datum/mind/ply)
+	var/list/objective_parts = list()
 	var/count = 1
 	for(var/datum/objective/objective in ply.objectives)
 		if(objective.check_completion())
-			text += "<br><b>Objective #[count]</b>: [objective.explanation_text] <span class='greenannounce'>Success!</span>"
+			objective_parts += "<b>Objective #[count]</b>: [objective.explanation_text] <span class='greentext'>Success!</span>"
 		else
-			text += "<br><b>Objective #[count]</b>: [objective.explanation_text] <span class='boldannounce'>Fail.</span>"
+			objective_parts += "<b>Objective #[count]</b>: [objective.explanation_text] <span class='redtext'>Fail.</span>"
 		count++
-	return text
+	return objective_parts.Join("<br>")
 
 /datum/game_mode/proc/generate_station_goals()
 	var/list/possible = list()
@@ -554,26 +498,8 @@ proc/display_roundstart_logout_report()
 		var/datum/station_goal/G = V
 		G.print_result()
 
-
-/datum/game_mode/proc/inform_collab(mob/living/carbon/human/M)
-	if(!M)
-		return
-	//Mad-libs for their message
-	var/adjective = pick("strange", "mysterious", "sinister", "un-assuming", "unexpected")
-	var/action_words = pick("aid the fight against Nanotrasen", "repay a debt", "partake in some mischief", "help overthrow the system", "stick it to the man")
-	var/organization = pick("Anti-Fascist Movement", "Syndicate", "Spessmen for the Protesting of Nanotrasen", "Greytider's Union", "Illuminati (in space)")
-	//Stuff to give them a single set of code-words
-	var/list/possible_words = splittext(syndicate_code_phrase, ", ")
-	var/list/possible_reply = splittext(syndicate_code_response, ", ")
-	var/index = rand(1, possible_words.len)
-	var/my_word = possible_words[index]
-	var/my_reply
-	if(possible_reply.len < index)		//just in case we had a longer code word list than the response list
-		my_reply = pick(possible_reply)
-	else
-		my_reply = possible_reply[index]
-
-	to_chat(M, "You suddenly remember \an [adjective] note you received earlier informing you that a chance to [action_words] may present itself today. An agent of the [organization] may contact you for help.")
-	to_chat(M, "The note had the words \"[my_word]\" and \"[my_reply]\" written at the bottom, which you memorized just in case.")
-	to_chat(M, "<span class='warning'>You are NOT an antagonist, so self-antagging rules still apply to you. Use your good judgement and ahelp if you are unsure of what you are allowed to do.</span>")
-	M.mind.store_memory("<b>Important Words</b>: \"[my_word]\", \"[my_reply]\"")
+/datum/game_mode/proc/check_free_golems() //check config and gamemode for free golems setting and run the prob to check if the round will have free golems spawned or not
+	if((config.unrestricted_free_golems || !free_golems_disabled) && prob(config.prob_free_golems))
+		for(var/obj/effect/landmark/free_golem_spawn/L in GLOB.landmarks_list)
+			if(isturf(L.loc))
+				new /obj/effect/mob_spawn/human/golem/adamantine(L.loc)

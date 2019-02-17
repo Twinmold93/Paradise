@@ -17,8 +17,11 @@
 	. = ..()
 
 	if(!istype(src, /turf/space/transit))
-		icon_state = "[((x + y) ^ ~(x * y) + z) % 25]"
-	update_starlight()
+		icon_state = SPACE_ICON_STATE
+	if(update_starlight() && is_station_level(z))
+	// before you ask: Yes, this is fucking stupid, but looping through turf/space in world is how you make the server freeze
+	// so I don't see a better way of doing this
+		LAZYADD(GLOB.station_level_space_turfs, src)
 
 /turf/space/Destroy(force)
 	if(force)
@@ -42,11 +45,13 @@
 
 /turf/space/proc/update_starlight()
 	if(!config.starlight)
-		return
+		return FALSE
 	if(locate(/turf/simulated) in orange(src,1))
 		set_light(config.starlight)
+		return TRUE
 	else
 		set_light(0)
+		return FALSE
 
 /turf/space/attackby(obj/item/C as obj, mob/user as mob, params)
 	..()
@@ -56,7 +61,7 @@
 		if(L)
 			if(R.use(1))
 				to_chat(user, "<span class='notice'>You begin constructing catwalk...</span>")
-				playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
+				playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 				qdel(L)
 				ChangeTurf(/turf/simulated/floor/plating/airless/catwalk)
 			else
@@ -64,7 +69,7 @@
 			return
 		if(R.use(1))
 			to_chat(user, "<span class='notice'>Constructing support lattice...</span>")
-			playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
+			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			ReplaceWithLattice()
 		else
 			to_chat(user, "<span class='warning'>You need one rod to build a lattice.</span>")
@@ -76,7 +81,7 @@
 			var/obj/item/stack/tile/plasteel/S = C
 			if(S.use(1))
 				qdel(L)
-				playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
+				playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 				to_chat(user, "<span class='notice'>You build a floor.</span>")
 				ChangeTurf(/turf/simulated/floor/plating)
 			else

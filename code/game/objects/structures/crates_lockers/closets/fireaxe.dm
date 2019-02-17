@@ -2,16 +2,17 @@
 /obj/structure/closet/fireaxecabinet
 	name = "fire axe cabinet"
 	desc = "There is small label that reads \"For Emergency use only\" along with details for safe use of the axe. As if."
-	var/obj/item/weapon/twohanded/fireaxe/fireaxe = new/obj/item/weapon/twohanded/fireaxe
+	var/obj/item/twohanded/fireaxe/fireaxe = new/obj/item/twohanded/fireaxe
 	icon_state = "fireaxe1000"
 	icon_closed = "fireaxe1000"
 	icon_opened = "fireaxe1100"
 	anchored = 1
 	density = 0
+	armor = list(melee = 50, bullet = 50, laser = 50, energy = 100, bomb = 10, bio = 100, rad = 100)
 	var/localopened = 0 //Setting this to keep it from behaviouring like a normal closet and obstructing movement in the map. -Agouri
 	opened = 1
 	var/hitstaken = 0
-	var/locked = 1
+	locked = 1
 	var/smashed = 0
 
 	attackby(var/obj/item/O as obj, var/mob/living/user as mob)  //Marker -Agouri
@@ -22,7 +23,7 @@
 			hasaxe = 1
 
 		if(isrobot(user) || src.locked)
-			if(istype(O, /obj/item/device/multitool))
+			if(istype(O, /obj/item/multitool))
 				to_chat(user, "<span class='warning'>Resetting circuitry...</span>")
 				playsound(user, 'sound/machines/lockreset.ogg', 50, 1)
 				if(do_after(user, 20 * O.toolspeed, target = src))
@@ -30,9 +31,9 @@
 					to_chat(user, "<span class = 'caution'> You disable the locking modules.</span>")
 					update_icon()
 				return
-			else if(istype(O, /obj/item/weapon))
+			else if(istype(O, /obj/item))
 				user.changeNext_move(CLICK_CD_MELEE)
-				var/obj/item/weapon/W = O
+				var/obj/item/W = O
 				if(src.smashed || src.localopened)
 					if(localopened)
 						localopened = 0
@@ -47,13 +48,13 @@
 				else
 					src.hitstaken++
 					if(src.hitstaken == 4)
-						playsound(user, 'sound/effects/Glassbr3.ogg', 100, 1) //Break cabinet, receive goodies. Cabinet's fucked for life after that.
+						playsound(user, 'sound/effects/glassbr3.ogg', 100, 1) //Break cabinet, receive goodies. Cabinet's fucked for life after that.
 						src.smashed = 1
 						src.locked = 0
 						src.localopened = 1
 				update_icon()
 			return
-		if(istype(O, /obj/item/weapon/twohanded/fireaxe) && src.localopened)
+		if(istype(O, /obj/item/twohanded/fireaxe) && src.localopened)
 			if(!fireaxe)
 				if(O:wielded)
 					to_chat(user, "<span class='warning'>Unwield the axe first.</span>")
@@ -77,7 +78,7 @@
 		else
 			if(src.smashed)
 				return
-			if(istype(O, /obj/item/device/multitool))
+			if(istype(O, /obj/item/multitool))
 				if(localopened)
 					localopened = 0
 					icon_state = text("fireaxe[][][][]closing",hasaxe,src.localopened,src.hitstaken,src.smashed)

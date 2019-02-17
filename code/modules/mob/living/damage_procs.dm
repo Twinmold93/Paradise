@@ -8,7 +8,7 @@
 	Returns
 	standard 0 if fail
 */
-/mob/living/proc/apply_damage(var/damage = 0, var/damagetype = BRUTE, var/def_zone = null, var/blocked = 0, var/sharp = 0, var/edge = 0, var/used_weapon = null)
+/mob/living/proc/apply_damage(var/damage = 0, var/damagetype = BRUTE, var/def_zone = null, var/blocked = 0, var/sharp = 0, var/used_weapon = null)
 	blocked = (100-blocked)/100
 	if(!damage || (blocked <= 0))	return 0
 	switch(damagetype)
@@ -24,9 +24,25 @@
 			adjustCloneLoss(damage * blocked)
 		if(STAMINA)
 			adjustStaminaLoss(damage * blocked)
-	updatehealth()
+	updatehealth("apply damage")
 	return 1
 
+/mob/living/proc/apply_damage_type(damage = 0, damagetype = BRUTE) //like apply damage except it always uses the damage procs
+	switch(damagetype)
+		if(BRUTE)
+			return adjustBruteLoss(damage)
+		if(BURN)
+			return adjustFireLoss(damage)
+		if(TOX)
+			return adjustToxLoss(damage)
+		if(OXY)
+			return adjustOxyLoss(damage)
+		if(CLONE)
+			return adjustCloneLoss(damage)
+		if(STAMINA)
+			return adjustStaminaLoss(damage)
+		if(BRAIN)
+			return adjustBrainLoss(damage)
 
 /mob/living/proc/apply_damages(var/brute = 0, var/burn = 0, var/tox = 0, var/oxy = 0, var/clone = 0, var/def_zone = null, var/blocked = 0, var/stamina = 0)
 	if(blocked >= 100)	return 0
@@ -67,7 +83,7 @@
 		if(JITTER)
 			if(status_flags & CANSTUN)
 				Jitter(effect * blocked)
-	updatehealth()
+	updatehealth("apply effect")
 	return 1
 
 /mob/living/proc/apply_effects(var/stun = 0, var/weaken = 0, var/paralyze = 0, var/irradiate = 0, var/slur = 0, var/stutter = 0, var/eyeblur = 0, var/drowsy = 0, var/blocked = 0, var/stamina = 0, var/jitter = 0)
@@ -83,3 +99,205 @@
 	if(stamina)		apply_damage(stamina, STAMINA, null, blocked)
 	if(jitter) 		apply_effect(jitter, JITTER, blocked)
 	return 1
+
+
+/mob/living/proc/getBruteLoss()
+	return bruteloss
+
+/mob/living/proc/adjustBruteLoss(var/amount, updating_health = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE	//godmode
+	var/old_bruteloss = bruteloss
+	bruteloss = min(max(bruteloss + amount, 0),(maxHealth*2))
+	if(old_bruteloss == bruteloss)
+		updating_health = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_HEALTH
+	if(updating_health)
+		updatehealth("adjustBruteLoss")
+
+/mob/living/proc/getOxyLoss()
+	return oxyloss
+
+/mob/living/proc/adjustOxyLoss(var/amount, updating_health = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE	//godmode
+	var/old_oxyloss = oxyloss
+	oxyloss = min(max(oxyloss + amount, 0),(maxHealth*2))
+	if(old_oxyloss == oxyloss)
+		updating_health = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_HEALTH
+	if(updating_health)
+		updatehealth("adjustOxyLoss")
+
+/mob/living/proc/setOxyLoss(amount, updating_health = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE	//godmode
+	var/old_oxyloss = oxyloss
+	oxyloss = amount
+	if(old_oxyloss == oxyloss)
+		updating_health = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_HEALTH
+	if(updating_health)
+		updatehealth("setOxyLoss")
+
+/mob/living/proc/getToxLoss()
+	return toxloss
+
+/mob/living/proc/adjustToxLoss(var/amount, updating_health = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE	//godmode
+	var/old_toxloss = toxloss
+	toxloss = min(max(toxloss + amount, 0),(maxHealth*2))
+	if(old_toxloss == toxloss)
+		updating_health = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_HEALTH
+	if(updating_health)
+		updatehealth("adjustToxLoss")
+
+/mob/living/proc/setToxLoss(var/amount, updating_health = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE	//godmode
+	var/old_toxloss = toxloss
+	toxloss = amount
+	if(old_toxloss == toxloss)
+		updating_health = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_HEALTH
+	if(updating_health)
+		updatehealth("setToxLoss")
+
+/mob/living/proc/getFireLoss()
+	return fireloss
+
+/mob/living/proc/adjustFireLoss(var/amount, updating_health = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE	//godmode
+	var/old_fireloss = fireloss
+	fireloss = min(max(fireloss + amount, 0),(maxHealth*2))
+	if(old_fireloss == fireloss)
+		updating_health = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_HEALTH
+	if(updating_health)
+		updatehealth("adjustFireLoss")
+
+/mob/living/proc/getCloneLoss()
+	return cloneloss
+
+/mob/living/proc/adjustCloneLoss(var/amount, updating_health = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE	//godmode
+	var/old_cloneloss = cloneloss
+	cloneloss = min(max(cloneloss + amount, 0),(maxHealth*2))
+	if(old_cloneloss == cloneloss)
+		updating_health = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_HEALTH
+	if(updating_health)
+		updatehealth("adjustCloneLoss")
+
+/mob/living/proc/setCloneLoss(var/amount, updating_health = TRUE)
+	if(status_flags & GODMODE)	return 0	//godmode
+	var/old_cloneloss = cloneloss
+	cloneloss = amount
+	if(old_cloneloss == cloneloss)
+		updating_health = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_HEALTH
+	if(updating_health)
+		updatehealth("setCloneLoss")
+
+/mob/living/proc/getBrainLoss()
+	return 0
+
+/mob/living/proc/adjustBrainLoss(amount, updating = TRUE)
+	return STATUS_UPDATE_NONE
+
+/mob/living/proc/setBrainLoss(amount, updating = TRUE)
+	return STATUS_UPDATE_NONE
+
+/mob/living/proc/getStaminaLoss()
+	return staminaloss
+
+/mob/living/proc/adjustStaminaLoss(amount, updating = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE
+	var/old_stamloss = staminaloss
+	staminaloss = min(max(staminaloss + amount, 0),(maxHealth*2))
+	if(old_stamloss == staminaloss)
+		updating = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_STAMINA
+	if(updating)
+		handle_hud_icons_health()
+		update_stamina()
+
+/mob/living/proc/setStaminaLoss(amount, updating = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE
+	var/old_stamloss = staminaloss
+	staminaloss = amount
+	if(old_stamloss == staminaloss)
+		updating = FALSE
+		. = STATUS_UPDATE_NONE
+	else
+		. = STATUS_UPDATE_STAMINA
+	if(updating)
+		handle_hud_icons_health()
+		update_stamina()
+
+/mob/living/proc/getMaxHealth()
+	return maxHealth
+
+/mob/living/proc/setMaxHealth(var/newMaxHealth)
+	maxHealth = newMaxHealth
+
+
+
+// heal ONE external organ, organ gets randomly selected from damaged ones.
+/mob/living/proc/heal_organ_damage(brute, burn, updating_health = TRUE)
+	adjustBruteLoss(-brute, FALSE)
+	adjustFireLoss(-burn, FALSE)
+	if(updating_health)
+		updatehealth("heal organ damage")
+
+// damage ONE external organ, organ gets randomly selected from damaged ones.
+/mob/living/proc/take_organ_damage(brute, burn, updating_health = TRUE)
+	if(status_flags & GODMODE)
+		return FALSE	//godmode
+	adjustBruteLoss(brute, FALSE)
+	adjustFireLoss(burn, FALSE)
+	if(updating_health)
+		updatehealth("take organ damage")
+
+// heal MANY external organs, in random order
+/mob/living/proc/heal_overall_damage(brute, burn, updating_health = TRUE)
+	adjustBruteLoss(-brute, FALSE)
+	adjustFireLoss(-burn, FALSE)
+	if(updating_health)
+		updatehealth("heal overall damage")
+
+// damage MANY external organs, in random order
+/mob/living/proc/take_overall_damage(brute, burn, updating_health = TRUE, used_weapon = null)
+	if(status_flags & GODMODE)
+		return FALSE	//godmode
+	adjustBruteLoss(brute, FALSE)
+	adjustFireLoss(burn, FALSE)
+	if(updating_health)
+		updatehealth("take overall damage")
+
+/mob/living/proc/has_organic_damage()
+	return (maxHealth - health)

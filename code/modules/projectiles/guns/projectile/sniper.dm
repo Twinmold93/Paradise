@@ -1,4 +1,4 @@
-/obj/item/weapon/gun/projectile/automatic/sniper_rifle
+/obj/item/gun/projectile/automatic/sniper_rifle
 	name = "sniper rifle"
 	desc = "the kind of gun that will leave you crying for mummy before you even realise your leg's missing"
 	icon_state = "sniper"
@@ -6,27 +6,38 @@
 	recoil = 2
 	weapon_weight = WEAPON_MEDIUM
 	mag_type = /obj/item/ammo_box/magazine/sniper_rounds
+	fire_sound = 'sound/weapons/gunshots/gunshot_sniper.ogg'
+	magin_sound = 'sound/weapons/gun_interactions/batrifle_magin.ogg'
+	magout_sound = 'sound/weapons/gun_interactions/batrifle_magout.ogg'
 	fire_delay = 40
 	burst_size = 1
-	origin_tech = "combat=8"
+	origin_tech = "combat=7"
 	can_unsuppress = 1
 	can_suppress = 1
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	zoomable = TRUE
 	zoom_amt = 7 //Long range, enough to see in front of you, but no tiles behind you.
 	slot_flags = SLOT_BACK
 	actions_types = list()
 
-/obj/item/weapon/gun/projectile/automatic/sniper_rifle/update_icon()
+/obj/item/gun/projectile/automatic/sniper_rifle/update_icon()
 	if(magazine)
 		icon_state = "sniper-mag"
 	else
 		icon_state = "sniper"
 
-/obj/item/weapon/gun/projectile/automatic/sniper_rifle/syndicate
+/obj/item/gun/projectile/automatic/sniper_rifle/syndicate
 	name = "syndicate sniper rifle"
 	desc = "Syndicate flavoured sniper rifle, it packs quite a punch, a punch to your face"
-	origin_tech = "combat=8;syndicate=4"
+	origin_tech = "combat=7;syndicate=6"
+
+/obj/item/gun/projectile/automatic/sniper_rifle/soporific
+	name = "Soporific sniper rifle"
+	desc = "A sniper rifle that's primarily used to fire non-lethal soporific rounds."
+	origin_tech = "combat=7;syndicate=6"
+	mag_type = /obj/item/ammo_box/magazine/sniper_rounds/soporific
+	can_unsuppress = 0
+	can_suppress = 0
 
 //Normal Boolets
 /obj/item/ammo_box/magazine/sniper_rounds
@@ -101,7 +112,6 @@
 	name = "sniper rounds (Bleed)"
 	desc = "Haemorrhage sniper rounds, leaves your target in a pool of crimson pain"
 	icon_state = "haemorrhage"
-	origin_tech = "combat=7;syndicate=5"
 	ammo_type = /obj/item/ammo_casing/haemorrhage
 	max_ammo = 5
 
@@ -120,9 +130,9 @@
 	breakthings = FALSE
 
 /obj/item/projectile/bullet/sniper/haemorrhage/on_hit(atom/target, blocked = 0, hit_zone)
-	if((blocked != 100) && istype(target, /mob/living/carbon/human))
-		var/mob/living/carbon/human/H = target
-		H.drip(1000)
+	if((blocked != 100) && iscarbon(target))
+		var/mob/living/carbon/C = target
+		C.bleed(100)
 
 	return ..()
 
@@ -131,6 +141,7 @@
 	name = "sniper rounds (penetrator)"
 	desc = "An extremely powerful round capable of passing straight through cover and anyone unfortunate enough to be behind it."
 	ammo_type = /obj/item/ammo_casing/penetrator
+	origin_tech = "combat=6;syndicate=3"
 	max_ammo = 5
 
 /obj/item/ammo_casing/penetrator
@@ -148,3 +159,22 @@
 	dismemberment = 0
 	weaken = 0
 	breakthings = FALSE
+
+//toy magazine
+/obj/item/ammo_box/magazine/toy/sniper_rounds
+	name = "donksoft Sniper magazine"
+	icon_state = ".50mag"
+	ammo_type = /obj/item/ammo_casing/caseless/foam_dart/sniper/riot
+	max_ammo = 6
+	caliber = "foam_force_sniper"
+
+/obj/item/ammo_box/magazine/toy/sniper_rounds/update_icon()
+	overlays.Cut()
+
+	var/ammo = ammo_count()
+	if(ammo && istype(contents[contents.len], /obj/item/ammo_casing/caseless/foam_dart/sniper/riot))
+		overlays += image('icons/obj/ammo.dmi', icon_state = ".50mag-r")
+	else if(ammo)
+		overlays += image('icons/obj/ammo.dmi', icon_state = ".50mag-f")
+	else
+		icon_state = "[initial(icon_state)]"

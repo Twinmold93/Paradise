@@ -13,7 +13,7 @@
 	buckle_lying = 1
 	var/icon_temperature = T20C //stop small changes in temperature causing icon refresh
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/process()
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/process_atmos()
 	var/environment_temperature = 0
 	var/datum/gas_mixture/pipe_air = return_air()
 	if(!pipe_air)
@@ -61,7 +61,7 @@
 	initialize_directions_he = initialize_directions	// The auto-detection from /pipe is good enough for a simple HE pipe
 	color = "#404040"
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/initialize(initPipe = 1)
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/atmos_init(initPipe = 1)
 	..(0)
 	if(initPipe)
 		normalize_dir()
@@ -110,7 +110,7 @@
 			initialize_directions = EAST
 			initialize_directions_he = WEST
 
-/obj/machinery/atmospherics/pipe/simple/heat_exchanging/junction/initialize()
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/junction/atmos_init()
 	..(0)
 	for(var/obj/machinery/atmospherics/target in get_step(src,initialize_directions))
 		if(target.initialize_directions & get_dir(target,src))

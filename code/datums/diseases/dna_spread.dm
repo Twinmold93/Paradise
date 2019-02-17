@@ -23,8 +23,8 @@
 		//Absorbs the target DNA.
 		strain_data["dna"] = new affected_mob.dna.type
 		affected_mob.dna.copy_dna(strain_data["dna"])
-		src.carrier = 1
-		src.stage = 4
+		carrier = TRUE
+		stage = 4
 		return
 
 	switch(stage)
@@ -41,7 +41,6 @@
 				to_chat(affected_mob, "<span class='danger'>Your stomach hurts.</span>")
 				if(prob(20))
 					affected_mob.adjustToxLoss(2)
-					affected_mob.updatehealth()
 		if(4)
 			if(!transformed && !carrier)
 				//Save original dna for when the disease is cured.

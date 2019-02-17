@@ -5,7 +5,7 @@
 	icon = 'icons/obj/tiles.dmi'
 	icon_state = "tile"
 	item_state = "tile"
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	force = 1
 	throwforce = 1
 	throw_speed = 5
@@ -23,7 +23,7 @@
 
 /obj/item/stack/tile/attackby(obj/item/W, mob/user, params)
 	if(iswelder(W))
-		var/obj/item/weapon/weldingtool/WT = W
+		var/obj/item/weldingtool/WT = W
 
 		if(is_hot(W) && !mineralType)
 			to_chat(user, "<span class='warning'>You can not reform this!</span>")
@@ -39,6 +39,9 @@
 				atmos_spawn_air(SPAWN_HEAT | SPAWN_TOXINS, 5)
 				user.visible_message("<span class='warning'>[user.name] sets the plasma tiles on fire!</span>", \
 									"<span class='warning'>You set the plasma tiles on fire!</span>")
+				message_admins("Plasma tiles ignited by [key_name_admin(user)](<A HREF='?_src_=holder;adminmoreinfo=\ref[user]'>?</A>) (<A HREF='?_src_=holder;adminplayerobservefollow=\ref[user]'>FLW</A>) in ([x],[y],[z] - <A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
+				log_game("Plasma tiles ignited by [key_name(user)] in ([x],[y],[z])")
+				investigate_log("was <font color='red'><b>ignited</b></font> by [key_name(user)]","atmos")
 				qdel(src)
 				return
 
@@ -99,6 +102,11 @@
 	icon_state = "tile-carpet"
 	turf_type = /turf/simulated/floor/carpet
 	burn_state = FLAMMABLE
+
+/obj/item/stack/tile/carpet/black
+	name = "black carpet"
+	icon_state = "tile-carpet-black"
+	turf_type = /turf/simulated/floor/carpet/black
 
 //Plasteel
 /obj/item/stack/tile/plasteel
@@ -161,3 +169,15 @@
 	desc = "A grooved floor tile."
 	icon_state = "tile_pod"
 	turf_type = /turf/simulated/floor/pod
+
+/obj/item/stack/tile/arcade_carpet
+	name = "arcade carpet"
+	singular_name = "arcade carpet"
+	desc= "A piece of carpet with a retro spaceship pattern."
+	icon_state = "tile_space"
+	turf_type = /turf/simulated/floor/carpet/arcade
+	merge_type = /obj/item/stack/tile/arcade_carpet
+	burn_state = FLAMMABLE
+
+/obj/item/stack/tile/arcade_carpet/loaded
+	amount = 20

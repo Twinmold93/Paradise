@@ -30,34 +30,20 @@ CREATE TABLE `SS13_characters` (
   `age` smallint(4) NOT NULL,
   `species` varchar(45) NOT NULL,
   `language` varchar(45) NOT NULL,
-  `hair_red` smallint(4) NOT NULL,
-  `hair_green` smallint(4) NOT NULL,
-  `hair_blue` smallint(4) NOT NULL,
-  `secondary_hair_red` smallint(4) NOT NULL,
-  `secondary_hair_green` smallint(4) NOT NULL,
-  `secondary_hair_blue` smallint(4) NOT NULL,
-  `facial_red` smallint(4) NOT NULL,
-  `facial_green` smallint(4) NOT NULL,
-  `facial_blue` smallint(4) NOT NULL,
-  `secondary_facial_red` smallint(4) NOT NULL,
-  `secondary_facial_green` smallint(4) NOT NULL,
-  `secondary_facial_blue` smallint(4) NOT NULL,
+  `hair_colour` varchar(7) NOT NULL DEFAULT '#000000',
+  `secondary_hair_colour` varchar(7) NOT NULL DEFAULT '#000000',
+  `facial_hair_colour` varchar(7) NOT NULL DEFAULT '#000000',
+  `secondary_facial_hair_colour` varchar(7) NOT NULL DEFAULT '#000000',
   `skin_tone` smallint(4) NOT NULL,
-  `skin_red` smallint(4) NOT NULL,
-  `skin_green` smallint(4) NOT NULL,
-  `skin_blue` smallint(4) NOT NULL,
+  `skin_colour` varchar(7) NOT NULL DEFAULT '#000000',
   `marking_colours` varchar(255) NOT NULL DEFAULT 'head=%23000000&body=%23000000&tail=%23000000',
-  `head_accessory_red` smallint(4) NOT NULL,
-  `head_accessory_green` smallint(4) NOT NULL,
-  `head_accessory_blue` smallint(4) NOT NULL,
+  `head_accessory_colour` varchar(7) NOT NULL DEFAULT '#000000',
   `hair_style_name` varchar(45) NOT NULL,
   `facial_style_name` varchar(45) NOT NULL,
   `marking_styles` varchar(255) NOT NULL DEFAULT 'head=None&body=None&tail=None',
   `head_accessory_style_name` varchar(45) NOT NULL,
   `alt_head_name` varchar(45) NOT NULL,
-  `eyes_red` smallint(4) NOT NULL,
-  `eyes_green` smallint(4) NOT NULL,
-  `eyes_blue` smallint(4) NOT NULL,
+  `eye_colour` varchar(7) NOT NULL DEFAULT '#000000',
   `underwear` mediumtext NOT NULL,
   `undershirt` mediumtext NOT NULL,
   `backbag` mediumtext NOT NULL,
@@ -148,7 +134,7 @@ CREATE TABLE `SS13_death` (
 DROP TABLE IF EXISTS `SS13_donators`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `donators` (
+CREATE TABLE `SS13_donators` (
   `patreon_name` varchar(32) NOT NULL,
   `tier` int(2),
   `ckey` varchar(32) COMMENT 'Manual Field',
@@ -265,7 +251,7 @@ CREATE TABLE `SS13_player` (
   `UI_style` varchar(10) DEFAULT 'Midnight',
   `UI_style_color` varchar(7) DEFAULT '#ffffff',
   `UI_style_alpha` smallint(4) DEFAULT '255',
-  `be_role` mediumtext NOT NULL,
+  `be_role` mediumtext,
   `default_slot` smallint(4) DEFAULT '1',
   `toggles` mediumint(8) DEFAULT '383',
   `sound` mediumint(8) DEFAULT '31',
@@ -277,6 +263,8 @@ CREATE TABLE `SS13_player` (
   `windowflashing` smallint(4) DEFAULT '1',
   `ghost_anonsay` tinyint(1) NOT NULL DEFAULT '0',
   `exp` mediumtext,
+  `clientfps` smallint(4) DEFAULT '0',
+  `atklog` smallint(4) DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `ckey` (`ckey`)
 ) ENGINE=InnoDB AUTO_INCREMENT=32446 DEFAULT CHARSET=latin1;
@@ -370,13 +358,13 @@ CREATE TABLE `SS13_poll_vote` (
 DROP TABLE IF EXISTS `SS13_privacy`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `SS13_privacy` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `datetime` datetime NOT NULL,
+CREATE TABLE `ss13_privacy` (
   `ckey` varchar(32) NOT NULL,
-  `option` varchar(128) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=latin1;
+  `datetime` datetime NOT NULL,
+  `consent` bit(1) NOT NULL,
+  PRIMARY KEY (`ckey`),
+  UNIQUE KEY `ckey_UNIQUE` (`ckey`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -529,6 +517,20 @@ CREATE TABLE `SS13_memo` (
   `timestamp` datetime NOT NULL,
   `last_editor` varchar(32),
   `edits` text,
+  PRIMARY KEY (`ckey`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `SS13_discord`
+--
+DROP TABLE IF EXISTS `SS13_discord`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `SS13_discord` (
+  `ckey` varchar(32) NOT NULL,
+  `discord_id` bigint(20) NOT NULL,
+  `notify` int(11) NOT NULL,
   PRIMARY KEY (`ckey`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;

@@ -19,7 +19,7 @@
 	src.update_icon()
 	..(loc)
 	for(var/atom/A in loc)
-		A.blob_act()
+		A.blob_act(src)
 	return
 
 
@@ -126,7 +126,7 @@
 		qdel(B)
 
 	for(var/atom/A in T)//Hit everything in the turf
-		A.blob_act()
+		A.blob_act(src)
 	return 1
 
 /obj/structure/blob/ex_act(severity)
@@ -141,19 +141,22 @@
 
 /obj/structure/blob/Crossed(var/mob/living/L)
 	..()
-	L.blob_act()
+	L.blob_act(src)
 
 /obj/structure/blob/tesla_act(power)
 	..()
 	take_damage(power/400, BURN)
 
-/obj/structure/blob/attackby(var/obj/item/weapon/W, var/mob/living/user, params)
+/obj/structure/blob/hulk_damage()
+	return 15
+
+/obj/structure/blob/attackby(var/obj/item/W, var/mob/living/user, params)
 	user.changeNext_move(CLICK_CD_MELEE)
 	user.do_attack_animation(src)
 	playsound(src.loc, 'sound/effects/attackblob.ogg', 50, 1)
 	visible_message("<span class='danger'>[user] has attacked the [src.name] with \the [W]!</span>")
 	if(W.damtype == BURN)
-		playsound(src.loc, 'sound/items/Welder.ogg', 100, 1)
+		playsound(src.loc, 'sound/items/welder.ogg', 100, 1)
 	take_damage(W.force, W.damtype)
 
 /obj/structure/blob/attack_animal(mob/living/simple_animal/M as mob)
@@ -174,7 +177,7 @@
 	take_damage(damage, BRUTE)
 	return
 
-/obj/structure/blob/proc/take_damage(damage, damage_type)
+/obj/structure/blob/take_damage(damage, damage_type)
 	if(!damage || damage_type == STAMINA) // Avoid divide by zero errors
 		return
 	switch(damage_type)
@@ -202,11 +205,11 @@
 
 /obj/structure/blob/examine(mob/user)
 	..(user)
-	to_chat(user, "It looks like it's of a [get_chem_name()] kind.")
+	to_chat(user, "It looks like it's made of [get_chem_name()].")
 
 
 /obj/structure/blob/proc/get_chem_name()
-	for(var/mob/camera/blob/B in mob_list)
+	for(var/mob/camera/blob/B in GLOB.mob_list)
 		if(lowertext(B.blob_reagent_datum.color) == lowertext(src.color)) // Goddamit why we use strings for these
 			return B.blob_reagent_datum.name
 	return "unknown"

@@ -4,6 +4,7 @@
 	unsuitable_atmos_damage = 15
 	faction = list("mining")
 	weather_immunities = list("lava","ash")
+	obj_damage = 30
 	environment_smash = 2
 	minbodytemp = 0
 	heat_damage_per_tick = 20
@@ -11,7 +12,7 @@
 	response_disarm = "shoves"
 	response_harm = "strikes"
 	status_flags = 0
-	a_intent = I_HARM
+	a_intent = INTENT_HARM
 	var/throw_message = "bounces off of"
 	var/icon_aggro = null // for swapping to when we get aggressive
 	see_in_dark = 8
@@ -24,7 +25,8 @@
 
 /mob/living/simple_animal/hostile/asteroid/LoseAggro()
 	..()
-	icon_state = icon_living
+	if(stat == CONSCIOUS)
+		icon_state = icon_living
 
 /mob/living/simple_animal/hostile/asteroid/bullet_act(var/obj/item/projectile/P)//Reduces damage from most projectiles to curb off-screen kills
 	if(!stat)
@@ -65,17 +67,18 @@
 	maxHealth = 200
 	health = 200
 	harm_intent_damage = 5
+	obj_damage = 60
 	melee_damage_lower = 12
 	melee_damage_upper = 12
 	attacktext = "bites into"
-	a_intent = I_HARM
+	a_intent = INTENT_HARM
 	speak_emote = list("chitters")
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 	aggro_vision_range = 9
 	idle_vision_range = 2
 	turns_per_move = 5
-	loot = list(/obj/item/weapon/ore/diamond{layer = 4.1},
-				/obj/item/weapon/ore/diamond{layer = 4.1})
+	loot = list(/obj/item/stack/ore/diamond{layer = 4.1},
+				/obj/item/stack/ore/diamond{layer = 4.1})
 
 /obj/item/projectile/temp/basilisk
 	name = "freezing blast"
@@ -113,7 +116,7 @@
 	icon_dead = "Goliath_dead"
 	icon_gib = "syndicate_gib"
 	attack_sound = 'sound/weapons/punch4.ogg'
-	mouse_opacity = 2
+	mouse_opacity = MOUSE_OPACITY_OPAQUE
 	move_to_delay = 40
 	ranged = 1
 	ranged_cooldown = 2 //By default, start the Goliath with his cooldown off so that people can run away quickly on first sight
@@ -125,6 +128,7 @@
 	maxHealth = 300
 	health = 300
 	harm_intent_damage = 1 //Only the manliest of men can kill a Goliath with only their fists.
+	obj_damage = 100
 	melee_damage_lower = 25
 	melee_damage_upper = 25
 	attacktext = "pulverizes"
@@ -132,7 +136,9 @@
 	throw_message = "does nothing to the rocky hide of the"
 	aggro_vision_range = 9
 	idle_vision_range = 5
-	anchored = 1 //Stays anchored until death as to be unpullable
+	move_force = MOVE_FORCE_VERY_STRONG
+	move_resist = MOVE_FORCE_VERY_STRONG
+	pull_force = MOVE_FORCE_VERY_STRONG
 	var/pre_attack = 0
 	loot = list(/obj/item/asteroid/goliath_hide{layer = 4.1})
 
@@ -148,7 +154,9 @@
 	icon_state = "Goliath_preattack"
 
 /mob/living/simple_animal/hostile/asteroid/goliath/revive()
-	anchored = 1
+	move_force = MOVE_FORCE_VERY_STRONG
+	move_resist = MOVE_FORCE_VERY_STRONG
+	pull_force = MOVE_FORCE_VERY_STRONG
 	..()
 
 /mob/living/simple_animal/hostile/asteroid/goliath/OpenFire()
@@ -222,7 +230,7 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "goliath_hide"
 	flags = NOBLUDGEON
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	layer = 4
 
 /obj/item/asteroid/goliath_hide/afterattack(atom/target, mob/user, proximity_flag)

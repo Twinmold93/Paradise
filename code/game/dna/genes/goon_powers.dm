@@ -154,7 +154,7 @@
 		to_chat(user, "<span class='warning'>This will only work on normal organic beings.</span>")
 		return
 
-	if(RESIST_COLD in C.mutations)
+	if(COLDRES in C.mutations)
 		C.visible_message("<span class='warning'>A cloud of fine ice crystals engulfs [C.name], but disappears almost instantly!</span>")
 		return
 	var/handle_suit = 0
@@ -166,23 +166,18 @@
 				if(H.internal)
 					H.visible_message("<span class='warning'>[user] sprays a cloud of fine ice crystals, engulfing [H]!</span>",
 										"<span class='notice'>[user] sprays a cloud of fine ice crystals over your [H.head]'s visor.</span>")
-					log_admin("[key_name(user)] has used cryokinesis on [key_name(C)] while wearing internals and a suit")
-					msg_admin_attack("[key_name_admin(user)] has cast cryokinesis on [key_name_admin(C)]")
+					add_attack_logs(user, C, "Cryokinesis")
 				else
 					H.visible_message("<span class='warning'>[user] sprays a cloud of fine ice crystals engulfing, [H]!</span>",
 										"<span class='warning'>[user] sprays a cloud of fine ice crystals cover your [H.head]'s visor and make it into your air vents!.</span>")
-					log_admin("[key_name(user)] has used cryokinesis on [key_name(C)]")
-					msg_admin_attack("[key_name_admin(user)] has cast cryokinesis on [key_name_admin(C)]")
-					H.bodytemperature = max(0, H.bodytemperature - 50)
-					H.adjustFireLoss(5)
+					add_attack_logs(user, C, "Cryokinesis")
+					H.bodytemperature = max(0, H.bodytemperature - 100)
 	if(!handle_suit)
-		C.bodytemperature = max(0, C.bodytemperature - 100)
-		C.adjustFireLoss(10)
+		C.bodytemperature = max(0, C.bodytemperature - 200)
 		C.ExtinguishMob()
 
 		C.visible_message("<span class='warning'>[user] sprays a cloud of fine ice crystals, engulfing [C]!</span>")
-		log_admin("[key_name(user)] has used cryokinesis on [key_name(C)] without internals or a suit")
-		msg_admin_attack("[key_name_admin(user)] has cast cryokinesis on [key_name_admin(C)]")
+		add_attack_logs(user, C, "Cryokinesis- NO SUIT/INTERNALS")
 
 	//playsound(user.loc, 'bamf.ogg', 50, 0)
 
@@ -257,7 +252,7 @@
 	)
 	var/list/own_blacklist = list(
 		/obj/item/organ,
-		/obj/item/weapon/implant
+		/obj/item/implant
 	)
 
 /obj/effect/proc_holder/spell/targeted/eat/proc/doHeal(var/mob/user)
@@ -270,7 +265,7 @@
 			affecting = H.bodyparts_by_name[name]
 			if(!istype(affecting, /obj/item/organ/external))
 				continue
-			affecting.heal_damage(4, 0)
+			affecting.heal_damage(4, 0, updating_health = FALSE)
 		H.UpdateDamageIcon()
 		H.updatehealth()
 
@@ -320,14 +315,6 @@
 
 	var/atom/movable/the_item = targets[1]
 	if(ishuman(the_item))
-		//My gender
-		var/m_his = "his"
-		if(user.gender == FEMALE)
-			m_his = "her"
-		// Their gender
-		var/t_his = "his"
-		if(the_item.gender == FEMALE)
-			t_his = "her"
 		var/mob/living/carbon/human/H = the_item
 		var/obj/item/organ/external/limb = H.get_organ(user.zone_sel.selecting)
 		if(!istype(limb))
@@ -336,15 +323,15 @@
 			return 0
 		if(istype(limb,/obj/item/organ/external/head))
 			// Bullshit, but prevents being unable to clone someone.
-			to_chat(user, "<span class='warning'>You try to put \the [limb] in your mouth, but [t_his] ears tickle your throat!</span>")
+			to_chat(user, "<span class='warning'>You try to put \the [limb] in your mouth, but [the_item.p_their()] ears tickle your throat!</span>")
 			revert_cast()
 			return 0
 		if(istype(limb,/obj/item/organ/external/chest))
 			// Bullshit, but prevents being able to instagib someone.
-			to_chat(user, "<span class='warning'>You try to put their [limb] in your mouth, but it's too big to fit!</span>")
+			to_chat(user, "<span class='warning'>You try to put [the_item.p_their()] [limb] in your mouth, but it's too big to fit!</span>")
 			revert_cast()
 			return 0
-		user.visible_message("<span class='danger'>[user] begins stuffing [the_item]'s [limb.name] into [m_his] gaping maw!</span>")
+		user.visible_message("<span class='danger'>[user] begins stuffing [the_item]'s [limb.name] into [user.p_their()] gaping maw!</span>")
 		var/oldloc = H.loc
 		if(!do_mob(user,H,EAT_MOB_DELAY))
 			to_chat(user, "<span class='danger'>You were interrupted before you could eat [the_item]!</span>")
@@ -356,7 +343,7 @@
 				return
 			user.visible_message("<span class='danger'>[user] [pick("chomps","bites")] off [the_item]'s [limb]!</span>")
 			playsound(user.loc, 'sound/items/eatfood.ogg', 50, 0)
-			limb.droplimb(0, DROPLIMB_EDGE)
+			limb.droplimb(0, DROPLIMB_SHARP)
 			doHeal(user)
 	else
 		user.visible_message("<span class='danger'>[user] eats \the [the_item].</span>")
@@ -414,9 +401,6 @@
 					else
 						M.stop_pulling()
 
-		if(user.pinned.len)
-			failure = 1
-
 		user.visible_message("<span class='danger'>[user.name]</b> takes a huge leap!</span>")
 		playsound(user.loc, 'sound/weapons/thudswoosh.ogg', 50, 1)
 		if(failure)
@@ -439,7 +423,7 @@
 		user.flying = prevFlying
 
 		if(FAT in user.mutations && prob(66))
-			user.visible_message("<span class='danger'>[user.name]</b> crashes due to their heavy weight!</span>")
+			user.visible_message("<span class='danger'>[user.name]</b> crashes due to [user.p_their()] heavy weight!</span>")
 			//playsound(user.loc, 'zhit.wav', 50, 1)
 			user.AdjustWeakened(10)
 			user.AdjustStunned(5)
@@ -564,10 +548,10 @@
 			return
 
 		if(M.stat == 2)
-			to_chat(user, "<span class='warning'>[M.name] is dead and cannot have their mind read.</span>")
+			to_chat(user, "<span class='warning'>[M.name] is dead and cannot have [M.p_their()] mind read.</span>")
 			return
 		if(M.health < 0)
-			to_chat(user, "<span class='warning'>[M.name] is dying, and their thoughts are too scrambled to read.</span>")
+			to_chat(user, "<span class='warning'>[M.name] is dying, and [M.p_their()] thoughts are too scrambled to read.</span>")
 			return
 
 		to_chat(user, "<span class='notice'>Mind Reading of <b>[M.name]:</b></span>")
@@ -575,8 +559,8 @@
 		var/pain_condition = M.health / M.maxHealth
 		// lower health means more pain
 		var/list/randomthoughts = list("what to have for lunch","the future","the past","money",
-		"their hair","what to do next","their job","space","amusing things","sad things",
-		"annoying things","happy things","something incoherent","something they did wrong")
+		"[M.p_their()] hair","what to do next","[M.p_their()] job","space","amusing things","sad things",
+		"annoying things","happy things","something incoherent","something [M.p_they()] did wrong")
 		var/thoughts = "thinking about [pick(randomthoughts)]"
 
 		if(M.fire_stacks)
@@ -597,16 +581,16 @@
 				to_chat(user, "<span class='notice'><b>Condition</b>: [M.name] is suffering severe pain.</span>")
 			else
 				to_chat(user, "<span class='notice'><b>Condition</b>: [M.name] is suffering excruciating pain.</span>")
-				thoughts = "haunted by their own mortality"
+				thoughts = "haunted by [M.p_their()] own mortality"
 
 		switch(M.a_intent)
-			if(I_HELP)
+			if(INTENT_HELP)
 				to_chat(user, "<span class='notice'><b>Mood</b>: You sense benevolent thoughts from [M.name].</span>")
-			if(I_DISARM)
+			if(INTENT_DISARM)
 				to_chat(user, "<span class='notice'><b>Mood</b>: You sense cautious thoughts from [M.name].</span>")
-			if(I_GRAB)
+			if(INTENT_GRAB)
 				to_chat(user, "<span class='notice'><b>Mood</b>: You sense hostile thoughts from [M.name].</span>")
-			if(I_HARM)
+			if(INTENT_HARM)
 				to_chat(user, "<span class='notice'><b>Mood</b>: You sense cruel thoughts from [M.name].</span>")
 				for(var/mob/living/L in view(7,M))
 					if(L == M)
@@ -631,54 +615,3 @@
 		else if(prob(5) || M.mind.assigned_role=="Chaplain")
 			to_chat(M, "<span class='warning'>You sense someone intruding upon your thoughts...</span>")
 		return
-
-////////////////////////////////////////////////////////////////////////
-
-// WAS: /datum/bioEffect/superfart
-/datum/dna/gene/basic/grant_spell/superfart
-	name = "High-Pressure Intestines"
-	desc = "Vastly increases the gas capacity of the subject's digestive tract."
-	activation_messages = list("You feel bloated and gassy.")
-	deactivation_messages = list("You no longer feel gassy. What a relief!")
-	instability = GENE_INSTABILITY_MINOR
-	mutation = SUPER_FART
-	spelltype = /obj/effect/proc_holder/spell/aoe_turf/superfart
-
-/datum/dna/gene/basic/grant_spell/superfart/New()
-	..()
-	block = SUPERFARTBLOCK
-
-/obj/effect/proc_holder/spell/aoe_turf/superfart
-	name = "Super Fart"
-	desc = "Fart with the fury of 1000 burritos."
-	panel = "Abilities"
-	charge_max = 900
-	invocation_type = "emote"
-	range = 3
-	clothes_req = 0
-	selection_type = "view"
-	action_icon_state = "superfart"
-
-/obj/effect/proc_holder/spell/aoe_turf/superfart/invocation(mob/user = usr)
-	invocation = "<span class='warning'><b>[user]</b> hunches down and grits their teeth!</span>"
-	invocation_emote_self = invocation
-	..(user)
-
-/obj/effect/proc_holder/spell/aoe_turf/superfart/cast(list/targets)
-	var/UT = get_turf(usr)
-
-	if(do_after(usr, 30, target = usr))
-		playsound(UT, 'sound/goonstation/effects/superfart.ogg', 50, 0)
-		usr.visible_message("<span class='warning'><b>[usr]</b> unleashes a [pick("tremendous","gigantic","colossal")] fart!</span>", "<span class='warning'>You hear a [pick("tremendous","gigantic","colossal")] fart.</span>")
-		for(var/T in targets)
-			for(var/mob/living/M in T)
-				shake_camera(M, 10, 5)
-				if(M == usr)
-					continue
-				to_chat(M, "<span class='warning'>You are sent flying!</span>")
-				M.Weaken(5)
-				step_away(M, UT, 15)
-				step_away(M, UT, 15)
-				step_away(M, UT, 15)
-	else
-		to_chat(usr, "<span class='warning'>You were interrupted and couldn't fart! Rude!</span>")

@@ -1,4 +1,4 @@
-/client/proc/cmd_admin_drop_everything(mob/M as mob in mob_list)
+/client/proc/cmd_admin_drop_everything(mob/M as mob in GLOB.mob_list)
 	set category = null
 	set name = "Drop Everything"
 
@@ -16,7 +16,7 @@
 	message_admins("[key_name_admin(usr)] made [key_name_admin(M)] drop everything!", 1)
 	feedback_add_details("admin_verb","DEVR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/client/proc/cmd_admin_prison(mob/M as mob in mob_list)
+/client/proc/cmd_admin_prison(mob/M as mob in GLOB.mob_list)
 	set category = "Admin"
 	set name = "Prison"
 
@@ -44,7 +44,7 @@
 		message_admins("<span class='notice'>[key_name_admin(usr)] sent [key_name_admin(M)] to the prison station.</span>", 1)
 		feedback_add_details("admin_verb","PRISON") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/client/proc/cmd_admin_subtle_message(mob/M as mob in mob_list)
+/client/proc/cmd_admin_subtle_message(mob/M as mob in GLOB.mob_list)
 	set category = "Event"
 	set name = "Subtle Message"
 
@@ -61,7 +61,7 @@
 	if(usr)
 		if(usr.client)
 			if(usr.client.holder)
-				to_chat(M, "<b>old You hear a voice in your head... <i>[msg]</i></b>")
+				to_chat(M, "<b>You hear a voice in your head... <i>[msg]</i></b>")
 
 	log_admin("SubtlePM: [key_name(usr)] -> [key_name(M)] : [msg]")
 	message_admins("<span class='boldnotice'>SubtleMessage: [key_name_admin(usr)] -> [key_name_admin(M)] : [msg]</span>", 1)
@@ -83,7 +83,7 @@
 
 	var/missing_ages = 0
 	var/msg = ""
-	for(var/client/C in clients)
+	for(var/client/C in GLOB.clients)
 		if(C.player_age == "Requires database")
 			missing_ages = 1
 			continue
@@ -141,7 +141,47 @@
 	message_admins("<span class='boldnotice'>DirectNarrate: [key_name_admin(usr)] to ([key_name_admin(M)]): [msg]<BR></span>", 1)
 	feedback_add_details("admin_verb","DIRN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/client/proc/cmd_admin_godmode(mob/M as mob in mob_list)
+
+
+
+/client/proc/cmd_admin_headset_message(mob/M in GLOB.mob_list)
+	set category = "Event"
+	set name = "Headset Message"
+
+	admin_headset_message(M)
+
+/client/proc/admin_headset_message(mob/M in GLOB.mob_list, sender = null)
+	var/mob/living/carbon/human/H = M
+
+	if(!check_rights(R_ADMIN))
+		return
+
+	if(!istype(H))
+		to_chat(usr, "This can only be used on instances of type /mob/living/carbon/human")
+		return
+	if(!istype(H.l_ear, /obj/item/radio/headset) && !istype(H.r_ear, /obj/item/radio/headset))
+		to_chat(usr, "The person you are trying to contact is not wearing a headset")
+		return
+
+	if(!sender)
+		sender = input("Who is the message from?", "Sender") as null|anything in list("Centcomm", "Syndicate")
+		if(!sender)
+			return
+
+	message_admins("[key_name_admin(src)] has started answering [key_name_admin(H)]'s [sender] request.")
+	var/input = input("Please enter a message to reply to [key_name(H)] via their headset.", "Outgoing message from [sender]", "") as text|null
+	if(!input)
+		message_admins("[key_name_admin(src)] decided not to answer [key_name_admin(H)]'s [sender] request.")
+		return
+
+	log_admin("[key_name(src)] replied to [key_name(H)]'s [sender] message with the message [input].")
+	message_admins("[key_name_admin(src)] replied to [key_name_admin(H)]'s [sender] message with: \"[input]\"")
+	to_chat(H, "You hear something crackle in your ears for a moment before a voice speaks.  \"Please stand by for a message from [sender == "Syndicate" ? "your benefactor" : "Central Command"].  Message as follows[sender == "Syndicate" ? ", agent." : ":"] <span class='bold'>[input].</span> Message ends.\"")
+
+
+
+
+/client/proc/cmd_admin_godmode(mob/M as mob in GLOB.mob_list)
 	set category = "Admin"
 	set name = "Godmode"
 
@@ -302,7 +342,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 		return
 
 	var/mob/dead/observer/G_found
-	for(var/mob/dead/observer/G in player_list)
+	for(var/mob/dead/observer/G in GLOB.player_list)
 		if(G.ckey == input)
 			G_found = G
 			break
@@ -395,6 +435,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 	//Now for special roles and equipment.
 	switch(new_character.mind.special_role)
 		if("traitor")
+			job_master.AssignRank(new_character, new_character.mind.assigned_role, 0)
 			job_master.EquipRank(new_character, new_character.mind.assigned_role, 1)
 			ticker.mode.equip_traitor(new_character)
 		if("Wizard")
@@ -410,7 +451,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 		if("Death Commando")//Leaves them at late-join spawn.
 			new_character.equip_death_commando()
 			new_character.internal = new_character.s_store
-			new_character.update_internals_hud_icon(1)
+			new_character.update_action_buttons_icon()
 		else//They may also be a cyborg or AI.
 			switch(new_character.mind.assigned_role)
 				if("Cyborg")//More rigging to make em' work and check if they're traitor.
@@ -425,11 +466,12 @@ Traitors and the like can also be revived with the previous role mostly intact.
 						call(/datum/game_mode/proc/add_law_zero)(new_character)
 				//Add aliens.
 				else
+					job_master.AssignRank(new_character, new_character.mind.assigned_role, 0)
 					job_master.EquipRank(new_character, new_character.mind.assigned_role, 1)//Or we simply equip them.
 
 	//Announces the character on all the systems, based on the record.
 	if(!issilicon(new_character))//If they are not a cyborg/AI.
-		if(!record_found&&new_character.mind.assigned_role!="MODE")//If there are no records for them. If they have a record, this info is already in there. MODE people are not announced anyway.
+		if(!record_found && new_character.mind.assigned_role != new_character.mind.special_role)//If there are no records for them. If they have a record, this info is already in there. Offstation special characters announced anyway.
 			//Power to the user!
 			if(alert(new_character,"Warning: No data core entry detected. Would you like to announce the arrival of this character by adding them to various databases, such as medical records?",,"No","Yes")=="Yes")
 				data_core.manifest_inject(new_character)
@@ -448,7 +490,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 /proc/create_xeno(ckey)
 	if(!ckey)
 		var/list/candidates = list()
-		for(var/mob/M in player_list)
+		for(var/mob/M in GLOB.player_list)
 			if(M.stat != DEAD)		continue	//we are not dead!
 			if(!(ROLE_ALIEN in M.client.prefs.be_special))	continue	//we don't want to be an alium
 			if(jobban_isbanned(M, "alien") || jobban_isbanned(M, "Syndicate")) continue //we are jobbanned
@@ -483,7 +525,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 
 	var/list/mobs = list()
 	var/list/ghosts = list()
-	var/list/sortmob = sortAtom(mob_list)                           // get the mob list.
+	var/list/sortmob = sortAtom(GLOB.mob_list)                           // get the mob list.
 	/var/any=0
 	for(var/mob/dead/observer/M in sortmob)
 		mobs.Add(M)                                             //filter it where it's only ghosts
@@ -522,7 +564,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 
 	feedback_add_details("admin_verb","IONC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/client/proc/cmd_admin_rejuvenate(mob/living/M as mob in mob_list)
+/client/proc/cmd_admin_rejuvenate(mob/living/M as mob in GLOB.mob_list)
 	set category = "Event"
 	set name = "Rejuvenate"
 
@@ -576,9 +618,9 @@ Traitors and the like can also be revived with the previous role mostly intact.
 
 			command_announcement.Announce(input, customname, MsgSound[beepsound], , , type)
 			print_command_report(input, "[command_name()] Update")
-		else if("No")
+		if("No")
 			//same thing as the blob stuff - it's not public, so it's classified, dammit
-			command_announcement.Announce("A report has been downloaded and printed out at all communications consoles.", "Incoming Classified Message", 'sound/AI/commandreport.ogg', from = "[command_name()] Update")
+			command_announcer.autosay("A classified message has been printed out at all communication consoles.");
 			print_command_report(input, "Classified [command_name()] Update")
 		else
 			return
@@ -588,22 +630,30 @@ Traitors and the like can also be revived with the previous role mostly intact.
 	feedback_add_details("admin_verb","CCR") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 
-/client/proc/cmd_admin_delete(atom/O as obj|mob|turf in view())
+/client/proc/cmd_admin_delete(atom/A as obj|mob|turf in view())
 	set category = "Admin"
 	set name = "Delete"
 
 	if(!check_rights(R_ADMIN))
 		return
 
-	if(alert(src, "Are you sure you want to delete:\n[O]\nat ([O.x], [O.y], [O.z])?", "Confirmation", "Yes", "No") == "Yes")
-		log_admin("[key_name(usr)] deleted [O] at ([O.x],[O.y],[O.z])")
-		message_admins("[key_name_admin(usr)] deleted [O] at ([O.x],[O.y],[O.z])", 1)
+	admin_delete(A)
+
+/client/proc/admin_delete(datum/D)
+	if(istype(D) && !D.can_vv_delete())
+		to_chat(src, "[D] rejected your deletion")
+		return
+	var/atom/A = D
+	var/coords = istype(A) ? "at ([A.x], [A.y], [A.z])" : ""
+	if(alert(src, "Are you sure you want to delete:\n[D]\n[coords]?", "Confirmation", "Yes", "No") == "Yes")
+		log_admin("[key_name(usr)] deleted [D] [coords]")
+		message_admins("[key_name_admin(usr)] deleted [D] [coords]", 1)
 		feedback_add_details("admin_verb","DEL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-		if(istype(O, /turf))
-			var/turf/T = O
+		if(isturf(D))
+			var/turf/T = D
 			T.ChangeTurf(/turf/space)
-			return
-		qdel(O)
+		else
+			qdel(D)
 
 /client/proc/cmd_admin_list_open_jobs()
 	set category = "Admin"
@@ -613,8 +663,17 @@ Traitors and the like can also be revived with the previous role mostly intact.
 		return
 
 	if(job_master)
+		var/currentpositiontally
+		var/totalpositiontally
+		to_chat(src, "<span class='notice'>Job Name: Filled job slot / Total job slots <b>(Free job slots)</b></span>")
 		for(var/datum/job/job in job_master.occupations)
-			to_chat(src, "[job.title]: [job.total_positions]")
+			to_chat(src, "<span class='notice'>[job.title]: [job.current_positions] / \
+			[job.total_positions == -1 ? "<b>UNLIMITED</b>" : job.total_positions] \
+			 <b>([job.total_positions == -1 ? "UNLIMITED" : job.total_positions - job.current_positions])</b></span>")
+			if(job.total_positions != -1) // Only count position that isn't unlimited
+				currentpositiontally += job.current_positions
+				totalpositiontally += job.total_positions
+		to_chat(src, "<b>Currently filled job slots (Excluding unlimited): [currentpositiontally] / [totalpositiontally] ([totalpositiontally - currentpositiontally])</b>")
 	feedback_add_details("admin_verb","LFS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /client/proc/cmd_admin_explosion(atom/O as obj|mob|turf in view())
@@ -671,7 +730,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 	else
 		return
 
-/client/proc/cmd_admin_gib(mob/M as mob in mob_list)
+/client/proc/cmd_admin_gib(mob/M as mob in GLOB.mob_list)
 	set category = "Admin"
 	set name = "Gib"
 
@@ -687,7 +746,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 	message_admins("[key_name_admin(usr)] has gibbed [key_name_admin(M)]", 1)
 
 	if(istype(M, /mob/dead/observer))
-		gibs(M.loc, M.viruses)
+		gibs(M.loc)
 		return
 
 	M.gib()
@@ -711,7 +770,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 		message_admins("<span class='notice'>[key_name_admin(usr)] used gibself.</span>", 1)
 		feedback_add_details("admin_verb","GIBS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/client/proc/cmd_admin_check_contents(mob/living/M as mob in mob_list)
+/client/proc/cmd_admin_check_contents(mob/living/M as mob in GLOB.mob_list)
 	set category = "Admin"
 	set name = "Check Contents"
 
@@ -746,7 +805,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 	set category = "Admin"
 	set name = "Call Shuttle"
 
-	if(shuttle_master.emergency.mode >= SHUTTLE_DOCKED)
+	if(SSshuttle.emergency.mode >= SHUTTLE_DOCKED)
 		return
 
 	if(!check_rights(R_ADMIN))
@@ -755,7 +814,12 @@ Traitors and the like can also be revived with the previous role mostly intact.
 	var/confirm = alert(src, "You sure?", "Confirm", "Yes", "No")
 	if(confirm != "Yes") return
 
-	shuttle_master.emergency.request()
+	if(alert("Set Shuttle Recallable (Select Yes unless you know what this does)", "Recallable?", "Yes", "No") == "Yes")
+		SSshuttle.emergency.canRecall = TRUE
+	else
+		SSshuttle.emergency.canRecall = FALSE
+
+	SSshuttle.emergency.request()
 
 	feedback_add_details("admin_verb","CSHUT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_admin("[key_name(usr)] admin-called the emergency shuttle.")
@@ -770,10 +834,21 @@ Traitors and the like can also be revived with the previous role mostly intact.
 		return
 	if(alert(src, "You sure?", "Confirm", "Yes", "No") != "Yes") return
 
-	if(shuttle_master.emergency.mode >= SHUTTLE_DOCKED)
+	if(SSshuttle.emergency.mode >= SHUTTLE_DOCKED)
 		return
 
-	shuttle_master.emergency.cancel()
+	if(SSshuttle.emergency.canRecall == FALSE)
+		if(alert("Shuttle is currently set to be nonrecallable. Recalling may break things. Respect Recall Status?", "Override Recall Status?", "Yes", "No") == "Yes")
+			return
+		else
+			var/keepStatus = alert("Maintain recall status on future shuttle calls?", "Maintain Status?", "Yes", "No") == "Yes" //Keeps or drops recallability
+			SSshuttle.emergency.canRecall = TRUE // must be true for cancel proc to work
+			SSshuttle.emergency.cancel()
+			if(keepStatus)
+				SSshuttle.emergency.canRecall = FALSE // restores original status
+	else
+		SSshuttle.emergency.cancel()
+
 	feedback_add_details("admin_verb","CCSHUT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_admin("[key_name(usr)] admin-recalled the emergency shuttle.")
 	message_admins("<span class='adminnotice'>[key_name_admin(usr)] admin-recalled the emergency shuttle.</span>")
@@ -789,13 +864,13 @@ Traitors and the like can also be revived with the previous role mostly intact.
 	if(!check_rights(R_ADMIN))
 		return
 
-	if(shuttle_master)
-		shuttle_master.emergencyNoEscape = !shuttle_master.emergencyNoEscape
+	if(SSshuttle)
+		SSshuttle.emergencyNoEscape = !SSshuttle.emergencyNoEscape
 
-	log_admin("[key_name(src)] has [shuttle_master.emergencyNoEscape ? "denied" : "allowed"] the shuttle to be called.")
-	message_admins("[key_name_admin(usr)] has [shuttle_master.emergencyNoEscape ? "denied" : "allowed"] the shuttle to be called.")
+	log_admin("[key_name(src)] has [SSshuttle.emergencyNoEscape ? "denied" : "allowed"] the shuttle to be called.")
+	message_admins("[key_name_admin(usr)] has [SSshuttle.emergencyNoEscape ? "denied" : "allowed"] the shuttle to be called.")
 
-/client/proc/cmd_admin_attack_log(mob/M as mob in mob_list)
+/client/proc/cmd_admin_attack_log(mob/M as mob in GLOB.mob_list)
 	set category = "Admin"
 	set name = "Attack Log"
 
@@ -862,25 +937,69 @@ Traitors and the like can also be revived with the previous role mostly intact.
 
 /client/proc/reset_all_tcs()
 	set category = "Admin"
-	set name = "Reset Telecomms Scripts"
-	set desc = "Blanks all telecomms scripts from all telecomms servers"
+	set name = "Reset NTTC Configuration"
+	set desc = "Resets NTTC to the default configuration."
 
 	if(!check_rights(R_ADMIN))
 		return
 
-	var/confirm = alert(src, "You sure you want to blank all NTSL scripts?", "Confirm", "Yes", "No")
+	var/confirm = alert(src, "You sure you want to reset NTTC?", "Confirm", "Yes", "No")
 	if(confirm != "Yes")
 		return
 
-	for(var/obj/machinery/telecomms/server/S in telecomms_list)
-		var/datum/TCS_Compiler/C = S.Compiler
-		S.rawcode = ""
-		C.Compile("")
-	for(var/obj/machinery/computer/telecomms/traffic/T in machines)
-		T.storedcode = ""
-	log_admin("[key_name(usr)] blanked all telecomms scripts.")
-	message_admins("[key_name_admin(usr)] blanked all telecomms scripts.")
-	feedback_add_details("admin_verb","RAT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	GLOB.nttc_config.reset()
+	log_admin("[key_name(usr)] reset NTTC scripts.")
+	message_admins("[key_name_admin(usr)] reset NTTC scripts.")
+	feedback_add_details("admin_verb","RAT2") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/client/proc/list_ssds()
+	set category = "Admin"
+	set name = "List SSDs"
+	set desc = "Lists SSD players"
+
+	if(!check_rights(R_ADMIN))
+		return
+
+	var/msg = "<html><head><title>SSD Report</title></head><body>"
+	msg += "SSD Players:<BR><TABLE border='1'>"
+	msg += "<TR><TD><B>Key</B></TD><TD><B>Real Name</B></TD><TD><B>Job</B></TD><TD><B>Mins SSD</B></TD><TD><B>Special Role</B></TD><TD><B>Area</B></TD><TD><B>PPN</B></TD><TD><B>Cryo</B></TD></TR>"
+	var/mins_ssd
+	var/job_string
+	var/key_string
+	var/role_string
+	for(var/mob/living/carbon/human/H in GLOB.living_mob_list)
+		if(!isLivingSSD(H))
+			continue
+		mins_ssd = round((world.time - H.last_logout) / 600)
+		if(H.job)
+			job_string = H.job
+		else
+			job_string = "-"
+		key_string = H.key
+		if(job_string in command_positions)
+			job_string = "<U>" + job_string + "</U>"
+		role_string = "-"
+		var/obj_count = 0
+		var/obj_string = ""
+		if(H.mind)
+			if(H.mind.special_role)
+				role_string = "<U>[H.mind.special_role]</U>"
+			if(!H.key && H.mind.key)
+				key_string = H.mind.key
+			for(var/datum/objective/O in all_objectives)
+				if(O.target == H.mind)
+					obj_count++
+			if(obj_count > 0)
+				obj_string = "<BR><U>Obj Target</U>"
+		msg += "<TR><TD>[key_string]</TD><TD>[H.real_name]</TD><TD>[job_string]</TD><TD>[mins_ssd]</TD><TD>[role_string][obj_string]</TD>"
+		msg += "<TD>[get_area(H)]</TD><TD>[ADMIN_PP(H,"PP")]</TD>"
+		if(istype(H.loc, /obj/machinery/cryopod))
+			msg += "<TD><A href='?_src_=holder;cryossd=[H.UID()]'>De-Spawn</A></TD>"
+		else
+			msg += "<TD><A href='?_src_=holder;cryossd=[H.UID()]'>Cryo</A></TD>"
+		msg += "</TR>"
+	msg += "</TABLE></BODY></HTML>"
+	src << browse(msg, "window=Player_ssd_check")
 
 /client/proc/toggle_ert_calling()
 	set category = "Event"

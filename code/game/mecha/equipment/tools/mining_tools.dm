@@ -15,7 +15,8 @@
 		return
 	if(isobj(target))
 		var/obj/target_obj = target
-		if(target_obj.unacidable)
+		if(target_obj.unacidable && !istype(target_obj, /obj/mecha))
+			occupant_message("<span class='danger'>[target] is too durable to drill through.</span>")
 			return
 	target.visible_message("<span class='warning'>[chassis] starts to drill [target].</span>",
 					"<span class='userdanger'>[chassis] starts to drill [target]...</span>",
@@ -73,7 +74,7 @@
 	if(locate(/obj/item/mecha_parts/mecha_equipment/hydraulic_clamp) in chassis.equipment)
 		var/obj/structure/ore_box/ore_box = locate(/obj/structure/ore_box) in chassis:cargo
 		if(ore_box)
-			for(var/obj/item/weapon/ore/ore in range(1, chassis))
+			for(var/obj/item/stack/ore/ore in range(1, chassis))
 				if(get_dir(chassis, ore) & chassis.dir)
 					ore.Move(ore_box)
 
@@ -86,7 +87,7 @@
 /obj/item/mecha_parts/mecha_equipment/drill/proc/drill_mob(mob/living/target, mob/user, var/drill_damage=80)
 	target.visible_message("<span class='danger'>[chassis] drills [target] with [src].</span>", \
 						"<span class='userdanger'>[chassis] drills [target] with [src].</span>")
-	add_logs(user, target, "attacked", "[name]", "(INTENT: [uppertext(user.a_intent)]) (DAMTYPE: [uppertext(damtype)])")
+	add_attack_logs(user, target, "DRILLED with [src] (INTENT: [uppertext(user.a_intent)]) (DAMTYPE: [uppertext(damtype)])")
 	if(target.stat == DEAD && target.butcher_results)
 		target.harvest(chassis) // Butcher the mob with our drill.
 	else
@@ -94,7 +95,6 @@
 
 	if(target)
 		target.Paralyse(10)
-		target.updatehealth()
 
 
 /obj/item/mecha_parts/mecha_equipment/drill/diamonddrill
@@ -110,7 +110,6 @@
 	name = "exosuit mining scanner"
 	desc = "Equipment for engineering and combat exosuits. It will automatically check surrounding rock for useful minerals."
 	icon_state = "mecha_analyzer"
-	origin_tech = "materials=3;engineering=2"
 	selectable = 0
 	equip_cooldown = 30
 	var/scanning = 0

@@ -14,16 +14,17 @@
 	desc = "Smells nice."
 	item_state = "hairflower"
 
-/obj/item/clothing/head/hairflower/purple
-	icon_state = "hairflowerp"
-	item_state = "hairflowerp"
-	item_state = "that"
-
 /obj/item/clothing/head/powdered_wig
 	name = "powdered wig"
 	desc = "A powdered wig."
 	icon_state = "pwig"
 	item_state = "pwig"
+
+/obj/item/clothing/head/justice_wig
+	name = "Justice wig"
+	desc = "A fancy powdered wig given to arbitrators of the law. It looks itchy."
+	icon_state = "jwig"
+	item_state = "jwig"
 
 /obj/item/clothing/head/beret/blue
 	icon_state = "beret_blue"
@@ -75,6 +76,11 @@
 	desc = "A plastic replica of a syndicate agent's space helmet, you'll look just like a real murderous syndicate agent in this! This is a toy, it is not made for use in space!"
 	flags = BLOCKHAIR
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/helmet.dmi'
+	)
+
 
 /obj/item/clothing/head/cueball
 	name = "cueball helmet"
@@ -84,6 +90,10 @@
 	flags = BLOCKHAIR
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
 	flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
 
 /obj/item/clothing/head/snowman
 	name = "snowman head"
@@ -93,6 +103,10 @@
 	flags = BLOCKHAIR
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
 	flags_cover = HEADCOVERSEYES | HEADCOVERSMOUTH
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
 
 /obj/item/clothing/head/that
 	name = "sturdy top-hat"
@@ -227,7 +241,7 @@
 		return 1
 
 /obj/item/clothing/head/fedora/proc/tip_fedora(mob/user)
-	user.visible_message("[user] tips their fedora.", "You tip your fedora")
+	user.visible_message("[user] tips [user.p_their()] fedora.", "You tip your fedora")
 
 
 /obj/item/clothing/head/fez
@@ -251,6 +265,10 @@
 	icon_state = "chickenhead"
 	item_state = "chickensuit"
 	flags = BLOCKHAIR
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
 
 /obj/item/clothing/head/corgi
 	name = "corgi suit head"
@@ -380,7 +398,7 @@
 	throwforce = 3.0
 	throw_speed = 2
 	throw_range = 5
-	w_class = 2
+	w_class = WEIGHT_CLASS_SMALL
 	attack_verb = list("warned", "cautioned", "smashed")
 	burn_state = FIRE_PROOF
 
@@ -401,6 +419,10 @@
 	item_state = "griffinhat"
 	flags = BLOCKHAIR
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
 	actions_types = list(/datum/action/item_action/caw)
 
 /obj/item/clothing/head/griffin/attack_self()
@@ -430,6 +452,10 @@
 	icon_state = "papersack"
 	flags = BLOCKHAIR
 	flags_inv = HIDEFACE|HIDEEARS
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
 
 /obj/item/clothing/head/papersack/smiley
 	name = "paper sack hat"
@@ -437,6 +463,10 @@
 	icon_state = "papersack_smile"
 	flags = BLOCKHAIR
 	flags_inv = HIDEFACE|HIDEEARS
+	species_fit = list("Grey")
+	sprite_sheets = list(
+	"Grey" = 'icons/mob/species/grey/head.dmi'
+	)
 
 /obj/item/clothing/head/crown
 	name = "crown"
@@ -448,3 +478,9 @@
 	name = "magnificent crown"
 	desc = "A crown worn by only the highest emperors of the land."
 	icon_state = "fancycrown"
+
+/obj/item/clothing/head/zepelli
+	name = "chequered diamond hat"
+	desc = "Wearing this makes you feel like a real mozzarella cheeseball. "
+	icon_state = "zepelli"
+	item_state = "zepelli"

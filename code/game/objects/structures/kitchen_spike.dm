@@ -11,7 +11,7 @@
 
 /obj/structure/kitchenspike_frame/attackby(obj/item/I, mob/user, params)
 	add_fingerprint(user)
-	if(istype(I, /obj/item/weapon/wrench))
+	if(istype(I, /obj/item/wrench))
 		if(anchored)
 			to_chat(user, "<span class='notice'>You unwrench [src] from the floor.</span>")
 			anchored = 0
@@ -29,7 +29,7 @@
 
 
 /obj/structure/kitchenspike
-	name = "a meat spike"
+	name = "meat spike"
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "spike"
 	desc = "A spike for collecting meat from animals."
@@ -40,8 +40,8 @@
 
 
 
-/obj/structure/kitchenspike/attackby(obj/item/weapon/grab/G as obj, mob/user as mob)
-	if(istype(G, /obj/item/weapon/crowbar))
+/obj/structure/kitchenspike/attackby(obj/item/grab/G as obj, mob/user as mob)
+	if(istype(G, /obj/item/crowbar))
 		if(!buckled_mob)
 			playsound(loc, G.usesound, 100, 1)
 			if(do_after(user, 20 * G.toolspeed, target = src))
@@ -53,7 +53,7 @@
 		else
 			to_chat(user, "<span class='notice'>You can't do that while something's on the spike!</span>")
 		return
-	if(!istype(G, /obj/item/weapon/grab) || !G.affecting)
+	if(!istype(G, /obj/item/grab) || !G.affecting)
 		return
 	if(buckled_mob)
 		to_chat(user, "<span class = 'danger'>The spike already has something on it, finish collecting its meat first!</span>")
@@ -82,9 +82,8 @@
 	playsound(loc, 'sound/effects/splat.ogg', 25, 1)
 	H.forceMove(loc)
 	H.emote("scream")
-	if(istype(H, /mob/living/carbon/human)) //So you don't get human blood when you spike a giant spidere
-		var/turf/simulated/pos = get_turf(H)
-		pos.add_blood_floor(H)
+	if(ishuman(H))
+		H.add_splatter_floor()
 	H.adjustBruteLoss(30)
 	H.buckled = src
 	H.dir = 2

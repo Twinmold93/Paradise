@@ -137,7 +137,7 @@
 /datum/gear/hat/med_beret
 	display_name = "medical beret"
 	path = /obj/item/clothing/head/beret/med
-	allowed_roles = list("Chief Medical Officer", "Medical Doctor" , "Virologist", "Brig Physician")
+	allowed_roles = list("Chief Medical Officer", "Medical Doctor" , "Virologist", "Brig Physician" , "Coroner")
 
 /datum/gear/hat/surgicalcap_purple
 	display_name = "surgical cap, purple"
@@ -148,3 +148,11 @@
 	display_name = "surgical cap, green"
 	path = /obj/item/clothing/head/surgery/green
 	allowed_roles = list("Chief Medical Officer", "Medical Doctor")
+
+/datum/gear/hat/flowerpin
+	display_name = "hair flower"
+	path = /obj/item/clothing/head/hairflower
+
+/datum/gear/hat/kitty
+	display_name = "kitty headband"
+	path = /obj/item/clothing/head/kitty

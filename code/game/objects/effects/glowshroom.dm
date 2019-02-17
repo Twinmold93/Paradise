@@ -72,7 +72,7 @@
 	else //if on the floor, glowshroom on-floor sprite
 		icon_state = "[base_icon_state]f"
 
-	addtimer(src, "Spread", delay, FALSE)
+	addtimer(CALLBACK(src, .proc/Spread), delay)
 
 /obj/structure/glowshroom/proc/Spread()
 	var/turf/ownturf = get_turf(src)
@@ -117,7 +117,7 @@
 			shrooms_planted++ //if we failed due to generation, don't try to plant one later
 	if(shrooms_planted < myseed.yield) //if we didn't get all possible shrooms planted, try again later
 		myseed.yield -= shrooms_planted
-		addtimer(src, "Spread", delay, FALSE)
+		addtimer(CALLBACK(src, .proc/Spread), delay)
 
 /obj/structure/glowshroom/proc/CalcDir(turf/location = loc)
 	var/direction = 16
@@ -154,14 +154,16 @@
 /obj/structure/glowshroom/attackby(obj/item/I, mob/user)
 	..()
 	var/damage_to_do = I.force
-	if(istype(I, /obj/item/weapon/scythe))
-		var/obj/item/weapon/scythe/S = I
+	if(istype(I, /obj/item/scythe))
+		var/obj/item/scythe/S = I
 		if(S.extend)	//so folded telescythes won't get damage boosts / insta-clears (they instead will instead be treated like non-scythes)
 			damage_to_do *= 4
 			for(var/obj/structure/glowshroom/G in range(1,src))
 				G.endurance -= damage_to_do
 				G.CheckEndurance()
 			return
+	else if(I.sharp)
+		damage_to_do = I.force * 3 // wirecutter: 6->18, knife 10->30, hatchet 12->36
 	if(I.damtype != STAMINA)
 		endurance -= damage_to_do
 		CheckEndurance()

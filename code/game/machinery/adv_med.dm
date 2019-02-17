@@ -1,16 +1,24 @@
 /obj/machinery/bodyscanner
-	var/mob/living/carbon/occupant
-	var/locked
 	name = "body scanner"
-	icon = 'icons/obj/Cryogenic2.dmi'
+	icon = 'icons/obj/cryogenic2.dmi'
 	icon_state = "bodyscanner-open"
-	density = 1
-	dir = 8
-	anchored = 1
+	density = TRUE
+	dir = WEST
+	anchored = TRUE
 	idle_power_usage = 1250
 	active_power_usage = 2500
 
 	light_color = "#00FF00"
+	var/obj/machinery/body_scanconsole/console = null
+	var/mob/living/carbon/occupant = null
+	var/locked
+
+/obj/machinery/bodyscanner/Destroy()
+	go_out()
+	if(console)
+		console.connected = null
+		console = null
+	return ..()
 
 /obj/machinery/bodyscanner/power_change()
 	..()
@@ -24,59 +32,58 @@
 		if(M == occupant)
 			continue
 		else
-			M.forceMove(src.loc)
+			M.forceMove(loc)
 
 /obj/machinery/bodyscanner/New()
 	..()
 	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/bodyscanner(null)
-	component_parts += new /obj/item/weapon/stock_parts/scanning_module(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
+	component_parts += new /obj/item/circuitboard/bodyscanner(null)
+	component_parts += new /obj/item/stock_parts/scanning_module(null)
+	component_parts += new /obj/item/stock_parts/console_screen(null)
+	component_parts += new /obj/item/stock_parts/console_screen(null)
 	component_parts += new /obj/item/stack/cable_coil(null, 2)
 	RefreshParts()
 
 /obj/machinery/bodyscanner/upgraded/New()
 	..()
 	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/bodyscanner(null)
-	component_parts += new /obj/item/weapon/stock_parts/scanning_module/phasic(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
+	component_parts += new /obj/item/circuitboard/bodyscanner(null)
+	component_parts += new /obj/item/stock_parts/scanning_module/phasic(null)
+	component_parts += new /obj/item/stock_parts/console_screen(null)
+	component_parts += new /obj/item/stock_parts/console_screen(null)
 	component_parts += new /obj/item/stack/cable_coil(null, 2)
 	RefreshParts()
 
-/obj/machinery/bodyscanner/attackby(var/obj/item/weapon/G as obj, var/mob/user as mob)
-	if(istype(G, /obj/item/weapon/screwdriver))
-		if(src.occupant)
+/obj/machinery/bodyscanner/attackby(obj/item/I, mob/user)
+	if(isscrewdriver(I))
+		if(occupant)
 			to_chat(user, "<span class='notice'>The maintenance panel is locked.</span>")
 			return
-		default_deconstruction_screwdriver(user, "bodyscanner-o", "bodyscanner-open", G)
+		default_deconstruction_screwdriver(user, "bodyscanner-o", "bodyscanner-open", I)
 		return
 
-	if(istype(G, /obj/item/weapon/wrench))
-		if(src.occupant)
+	if(iswrench(I))
+		if(occupant)
 			to_chat(user, "<span class='notice'>The scanner is occupied.</span>")
 			return
 		if(panel_open)
 			to_chat(user, "<span class='notice'>Close the maintenance panel first.</span>")
 			return
-		if(dir == 4)
-			dir = 8
+		if(dir == EAST)
+			setDir(WEST)
 		else
-			dir = 4
-		playsound(src.loc, G.usesound, 50, 1)
+			setDir(EAST)
+		playsound(loc, I.usesound, 50, 1)
 		return
 
-	if(exchange_parts(user, G))
+	if(exchange_parts(user, I))
 		return
 
-	if(istype(G, /obj/item/weapon/crowbar))
-		default_deconstruction_crowbar(G)
+	if(default_deconstruction_crowbar(I))
 		return
 
-	if(istype(G, /obj/item/weapon/grab))
-		var/obj/item/weapon/grab/TYPECAST_YOUR_SHIT = G
+	if(istype(I, /obj/item/grab))
+		var/obj/item/grab/TYPECAST_YOUR_SHIT = I
 		if(panel_open)
 			to_chat(user, "<span class='notice'>Close the maintenance panel first.</span>")
 			return
@@ -87,7 +94,7 @@
 			return
 		for(var/mob/living/carbon/slime/M in range(1, TYPECAST_YOUR_SHIT.affecting))
 			if(M.Victim == TYPECAST_YOUR_SHIT.affecting)
-				to_chat(user, "<span class='danger'>[TYPECAST_YOUR_SHIT.affecting.name] has a fucking slime attached to them, deal with that first.</span>")
+				to_chat(user, "<span class='danger'>[TYPECAST_YOUR_SHIT.affecting.name] has a fucking slime attached to [TYPECAST_YOUR_SHIT.affecting.p_them()], deal with that first.</span>")
 				return
 		var/mob/M = TYPECAST_YOUR_SHIT.affecting
 		if(M.abiotic())
@@ -97,7 +104,10 @@
 		occupant = M
 		icon_state = "body_scanner_1"
 		add_fingerprint(user)
-		qdel(G)
+		qdel(TYPECAST_YOUR_SHIT)
+		return
+
+	return ..()
 
 
 /obj/machinery/bodyscanner/MouseDrop_T(mob/living/carbon/human/O, mob/user as mob)
@@ -115,7 +125,7 @@
 		to_chat(user, "<span class='notice'>Close the maintenance panel first.</span>")
 		return 0 //panel open
 	if(occupant)
-		to_chat(user, "<span class='notice'>\The [src] is already occupied.</span>")
+		to_chat(user, "<span class='notice'>[src] is already occupied.</span>")
 		return 0 //occupied
 
 	if(O.buckled)
@@ -125,11 +135,11 @@
 		return 0
 	for(var/mob/living/carbon/slime/M in range(1, O))
 		if(M.Victim == O)
-			to_chat(user, "<span class='danger'>[O] has a fucking slime attached to them, deal with that first.</span>")
+			to_chat(user, "<span class='danger'>[O] has a fucking slime attached to [O.p_them()], deal with that first.</span>")
 			return 0
 
 	if(O == user)
-		visible_message("[user] climbs into \the [src].")
+		visible_message("[user] climbs into [src].")
 	else
 		visible_message("[user] puts [O] into the body scanner.")
 
@@ -167,21 +177,21 @@
 	switch(severity)
 		if(1.0)
 			for(var/atom/movable/A as mob|obj in src)
-				A.forceMove(src.loc)
+				A.forceMove(loc)
 				A.ex_act(severity)
 			qdel(src)
 			return
 		if(2.0)
 			if(prob(50))
 				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(src.loc)
+					A.forceMove(loc)
 					A.ex_act(severity)
 				qdel(src)
 				return
 		if(3.0)
 			if(prob(25))
 				for(var/atom/movable/A as mob|obj in src)
-					A.forceMove(src.loc)
+					A.forceMove(loc)
 					A.ex_act(severity)
 				qdel(src)
 				return
@@ -207,20 +217,20 @@
 	return
 
 /obj/machinery/body_scanconsole
-	var/obj/machinery/bodyscanner/connected
-	var/delete
-	var/temphtml
 	name = "Body Scanner Console"
-	icon = 'icons/obj/Cryogenic2.dmi'
+	icon = 'icons/obj/cryogenic2.dmi'
 	icon_state = "bodyscannerconsole"
 	density = 1
 	anchored = 1
-	dir = 8
+	dir = WEST
 	idle_power_usage = 250
 	active_power_usage = 500
+	var/obj/machinery/bodyscanner/connected = null
+	var/delete
+	var/temphtml
 	var/printing = null
 	var/printing_text = null
-	var/known_implants = list(/obj/item/weapon/implant/chem, /obj/item/weapon/implant/death_alarm, /obj/item/weapon/implant/mindshield, /obj/item/weapon/implant/tracking)
+	var/known_implants = list(/obj/item/implant/chem, /obj/item/implant/death_alarm, /obj/item/implant/mindshield, /obj/item/implant/tracking, /obj/item/implant/health)
 
 /obj/machinery/body_scanconsole/power_change()
 	if(stat & BROKEN)
@@ -230,18 +240,24 @@
 		stat &= ~NOPOWER
 	else
 		spawn(rand(0, 15))
-			src.icon_state = "bodyscannerconsole-p"
+			icon_state = "bodyscannerconsole-p"
 			stat |= NOPOWER
 
 /obj/machinery/body_scanconsole/New()
 	..()
 	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/bodyscanner_console(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
-	component_parts += new /obj/item/weapon/stock_parts/console_screen(null)
+	component_parts += new /obj/item/circuitboard/bodyscanner_console(null)
+	component_parts += new /obj/item/stock_parts/console_screen(null)
+	component_parts += new /obj/item/stock_parts/console_screen(null)
 	component_parts += new /obj/item/stack/cable_coil(null, 2)
 	RefreshParts()
 	findscanner()
+
+/obj/machinery/body_scanconsole/Destroy()
+	if(connected)
+		connected.console = null
+		connected = null
+	return ..()
 
 /obj/machinery/body_scanconsole/ex_act(severity)
 	switch(severity)
@@ -269,44 +285,45 @@
 	return
 
 /obj/machinery/body_scanconsole/proc/findscanner()
-	var/obj/machinery/bodyscanner/bodyscannernew = null
-	// Loop through every direction
 	for(dir in list(NORTH,EAST,SOUTH,WEST))
 		// Try to find a scanner in that direction
 		var/temp = locate(/obj/machinery/bodyscanner, get_step(src, dir))
-		if(!isnull(temp))
-			bodyscannernew = temp
-	src.connected = bodyscannernew
-	return
+		if(temp)
+			connected = temp
+			connected.console = src
+			break
 
 
-/obj/machinery/body_scanconsole/attackby(var/obj/item/weapon/G as obj, var/mob/user as mob, params)
-	if(istype(G, /obj/item/weapon/screwdriver))
-		default_deconstruction_screwdriver(user, "bodyscannerconsole-p", "bodyscannerconsole", G)
+/obj/machinery/body_scanconsole/attackby(obj/item/I, mob/user, params)
+	if(default_deconstruction_screwdriver(user, "bodyscannerconsole-p", "bodyscannerconsole", I))
 		return
 
-	if(istype(G, /obj/item/weapon/wrench))
+	if(iswrench(I))
 		if(panel_open)
 			to_chat(user, "<span class='notice'>Close the maintenance panel first.</span>")
 			return
-		if(dir == 4)
-			dir = 8
+		if(dir == EAST)
+			setDir(WEST)
 		else
-			dir = 4
-		playsound(loc, G.usesound, 50, 1)
-
-	if(exchange_parts(user, G))
+			setDir(EAST)
+		playsound(loc, I.usesound, 50, 1)
 		return
 
-	default_deconstruction_crowbar(G)
+	if(exchange_parts(user, I))
+		return
 
-/obj/machinery/body_scanconsole/attack_ai(user as mob)
+	if(default_deconstruction_crowbar(I))
+		return
+	else
+		return ..()
+
+/obj/machinery/body_scanconsole/attack_ai(user)
 	return attack_hand(user)
 
-/obj/machinery/body_scanconsole/attack_ghost(user as mob)
+/obj/machinery/body_scanconsole/attack_ghost(user)
 	return attack_hand(user)
 
-/obj/machinery/body_scanconsole/attack_hand(user as mob)
+/obj/machinery/body_scanconsole/attack_hand(user)
 	if(stat & (NOPOWER|BROKEN))
 		return
 
@@ -314,14 +331,14 @@
 		to_chat(user, "<span class='notice'>Close the maintenance panel first.</span>")
 		return
 
-	if(!src.connected)
+	if(!connected)
 		findscanner()
 
 	ui_interact(user)
 
 
-/obj/machinery/body_scanconsole/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, force_open)
+/obj/machinery/body_scanconsole/ui_interact(mob/user, ui_key = "main", datum/nanoui/ui = null, force_open = 1)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "adv_med.tmpl", "Body Scanner", 690, 600)
 		ui.open()
@@ -345,7 +362,14 @@
 		occupantData["health"] = H.health
 		occupantData["maxHealth"] = H.maxHealth
 
-		occupantData["hasVirus"] = H.viruses.len
+		var/found_disease = FALSE
+		for(var/thing in H.viruses)
+			var/datum/disease/D = thing
+			if(D.visibility_flags & HIDDEN_SCANNER || D.visibility_flags & HIDDEN_PANDEMIC)
+				continue
+			found_disease = TRUE
+			break
+		occupantData["hasVirus"] = found_disease
 
 		occupantData["bruteLoss"] = H.getBruteLoss()
 		occupantData["oxyLoss"] = H.getOxyLoss()
@@ -364,19 +388,17 @@
 
 		var/bloodData[0]
 		bloodData["hasBlood"] = 0
-		if(ishuman(H) && H.vessel && !(H.species && H.species.flags & NO_BLOOD))
-			var/blood_type = H.get_blood_name()
-			var/blood_volume = round(H.vessel.get_reagent_amount(blood_type))
+		if(ishuman(H) && !(NO_BLOOD in H.dna.species.species_traits))
 			bloodData["hasBlood"] = 1
-			bloodData["volume"] = blood_volume
-			bloodData["percent"] = round(((blood_volume / BLOOD_VOLUME_NORMAL)*100))
+			bloodData["volume"] = H.blood_volume
+			bloodData["percent"] = round(((H.blood_volume / BLOOD_VOLUME_NORMAL)*100))
 			bloodData["pulse"] = H.get_pulse(GETPULSE_TOOL)
-			bloodData["bloodLevel"] = blood_volume
+			bloodData["bloodLevel"] = H.blood_volume
 			bloodData["bloodMax"] = H.max_blood
 		occupantData["blood"] = bloodData
 
 		var/implantData[0]
-		for(var/obj/item/weapon/implant/I in H)
+		for(var/obj/item/implant/I in H)
 			if(I.implanted && is_type_in_list(I, known_implants))
 				var/implantSubData[0]
 				implantSubData["name"] = sanitize(I.name)
@@ -398,7 +420,7 @@
 			organData["broken"] = E.min_broken_damage
 
 			var/shrapnelData[0]
-			for(var/obj/I in E.implants)
+			for(var/obj/I in E.embedded_objects)
 				var/shrapnelSubData[0]
 				shrapnelSubData["name"] = I.name
 
@@ -408,16 +430,12 @@
 			organData["shrapnel_len"] = shrapnelData.len
 
 			var/organStatus[0]
-			if(E.status & ORGAN_DESTROYED)
-				organStatus["destroyed"] = 1
 			if(E.status & ORGAN_BROKEN)
 				organStatus["broken"] = E.broken_description
-			if(E.status & ORGAN_ROBOT)
+			if(E.is_robotic())
 				organStatus["robotic"] = 1
 			if(E.status & ORGAN_SPLINTED)
 				organStatus["splinted"] = 1
-			if(E.status & ORGAN_BLEEDING)
-				organStatus["bleeding"] = 1
 			if(E.status & ORGAN_DEAD)
 				organStatus["dead"] = 1
 
@@ -426,10 +444,8 @@
 			if(istype(E, /obj/item/organ/external/chest) && H.is_lung_ruptured())
 				organData["lungRuptured"] = 1
 
-			for(var/datum/wound/W in E.wounds)
-				if(W.internal)
-					organData["internalBleeding"] = 1
-					break
+			if(E.internal_bleeding)
+				organData["internalBleeding"] = 1
 
 			extOrganData.Add(list(organData))
 
@@ -445,7 +461,7 @@
 			organData["maxHealth"] = I.max_damage
 			organData["bruised"] = I.min_broken_damage
 			organData["broken"] = I.min_bruised_damage
-			organData["robotic"] = I.robotic
+			organData["robotic"] = I.is_robotic()
 			organData["dead"] = (I.status & ORGAN_DEAD)
 
 			intOrganData.Add(list(organData))
@@ -464,18 +480,18 @@
 		return 1
 
 	if(href_list["ejectify"])
-		src.connected.eject()
+		connected.eject()
 
 	if(href_list["print_p"])
 		generate_printing_text()
 
 		if(!(printing) && printing_text)
 			printing = 1
-			visible_message("<span class='notice'>\The [src] rattles and prints out a sheet of paper.</span>")
-			var/obj/item/weapon/paper/P = new /obj/item/weapon/paper(loc)
+			visible_message("<span class='notice'>[src] rattles and prints out a sheet of paper.</span>")
+			var/obj/item/paper/P = new /obj/item/paper(loc)
 			playsound(loc, 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, 1)
 			P.info = "<CENTER><B>Body Scan - [href_list["name"]]</B></CENTER><BR>"
-			P.info += "<b>Time of scan:</b> [worldtime2text(world.time)]<br><br>"
+			P.info += "<b>Time of scan:</b> [station_time_timestamp()]<br><br>"
 			P.info += "[printing_text]"
 			P.info += "<br><br><b>Notes:</b><br>"
 			P.name = "Body Scan - [href_list["name"]]"
@@ -499,8 +515,15 @@
 					t1 = "*dead*"
 			dat += "[occupant.health > 50 ? "<font color='blue'>" : "<font color='red'>"]\tHealth %: [occupant.health], ([t1])</font><br>"
 
-			if(occupant.viruses.len)
-				dat += "<font color='red'>Viral pathogen detected in blood stream.</font><BR>"
+			var/found_disease = FALSE
+			for(var/thing in occupant.viruses)
+				var/datum/disease/D = thing
+				if(D.visibility_flags & HIDDEN_SCANNER || D.visibility_flags & HIDDEN_PANDEMIC)
+					continue
+				found_disease = TRUE
+				break
+			if(found_disease)
+				dat += "<font color='red'>Disease detected in occupant.</font><BR>"
 
 			var/extra_font = null
 			extra_font = (occupant.getBruteLoss() < 60 ? "<font color='blue'>" : "<font color='red'>")
@@ -532,14 +555,11 @@
 			if(occupant.has_brain_worms())
 				dat += "Large growth detected in frontal lobe, possibly cancerous. Surgical removal is recommended.<br>"
 
-			if(occupant.vessel)
-				var/blood_type = occupant.get_blood_name()
-				var/blood_volume = round(occupant.vessel.get_reagent_amount(blood_type))
-				var/blood_percent =  blood_volume / BLOOD_VOLUME_NORMAL
-				blood_percent *= 100
+			var/blood_percent =  round((occupant.blood_volume / BLOOD_VOLUME_NORMAL))
+			blood_percent *= 100
 
-				extra_font = (blood_volume > 448 ? "<font color='blue'>" : "<font color='red'>")
-				dat += "[extra_font]\tBlood Level %: [blood_percent] ([blood_volume] units)</font><br>"
+			extra_font = (occupant.blood_volume > 448 ? "<font color='blue'>" : "<font color='red'>")
+			dat += "[extra_font]\tBlood Level %: [blood_percent] ([occupant.blood_volume] units)</font><br>"
 
 			if(occupant.reagents)
 				dat += "Epinephrine units: [occupant.reagents.get_reagent_amount("Epinephrine")] units<BR>"
@@ -573,19 +593,16 @@
 				var/splint = ""
 				var/internal_bleeding = ""
 				var/lung_ruptured = ""
-				for(var/datum/wound/W in e.wounds) if(W.internal)
+				if(e.internal_bleeding)
 					internal_bleeding = "<br>Internal bleeding"
-					break
 				if(istype(e, /obj/item/organ/external/chest) && occupant.is_lung_ruptured())
 					lung_ruptured = "Lung ruptured:"
 				if(e.status & ORGAN_SPLINTED)
 					splint = "Splinted:"
-				if(e.status & ORGAN_BLEEDING)
-					bled = "Bleeding:"
 				if(e.status & ORGAN_BROKEN)
 					AN = "[e.broken_description]:"
-				if(e.status & ORGAN_ROBOT)
-					robot = "Prosthetic:"
+				if(e.is_robotic())
+					robot = "Robotic:"
 				if(e.open)
 					open = "Open:"
 				switch(e.germ_level)
@@ -605,17 +622,14 @@
 						infected = "Septic:"
 
 				var/unknown_body = 0
-				for(var/I in e.implants)
+				for(var/I in e.embedded_objects)
 					unknown_body++
 
 				if(unknown_body || e.hidden)
 					imp += "Unknown body present:"
 				if(!AN && !open && !infected & !imp)
 					AN = "None:"
-				if(!(e.status & ORGAN_DESTROYED))
-					dat += "<td>[e.name]</td><td>[e.burn_dam]</td><td>[e.brute_dam]</td><td>[robot][bled][AN][splint][open][infected][imp][internal_bleeding][lung_ruptured]</td>"
-				else
-					dat += "<td>[e.name]</td><td>-</td><td>-</td><td>Not Found</td>"
+				dat += "<td>[e.name]</td><td>[e.burn_dam]</td><td>[e.brute_dam]</td><td>[robot][bled][AN][splint][open][infected][imp][internal_bleeding][lung_ruptured]</td>"
 				dat += "</tr>"
 			for(var/obj/item/organ/internal/i in occupant.internal_organs)
 				var/mech = i.desc
@@ -645,7 +659,7 @@
 			if(occupant.disabilities & NEARSIGHTED)
 				dat += "<font color='red'>Retinal misalignment detected.</font><BR>"
 		else
-			dat += "\The [src] is empty."
+			dat += "[src] is empty."
 	else
 		dat = "<font color='red'> Error: No Body Scanner connected.</font>"
 

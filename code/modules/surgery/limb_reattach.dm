@@ -15,7 +15,7 @@
 		var/obj/item/organ/external/affected = H.get_organ(user.zone_sel.selecting)
 		if(!affected)
 			return 0
-		if(affected.status & ORGAN_ROBOT)
+		if(affected.is_robotic())
 			return 0
 		if(affected.cannot_amputate)
 			return 0
@@ -32,7 +32,7 @@
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
 		var/obj/item/organ/external/affected = H.get_organ(user.zone_sel.selecting)
-		if(target.get_species() == "Machine")
+		if(ismachine(target))
 			// RIP bi-centennial man
 			return 0
 		if(!affected)
@@ -76,7 +76,7 @@
 	var/obj/item/organ/external/affected = target.get_organ(target_zone)
 	if(affected)
 		return 0
-	var/list/organ_data = target.species.has_limbs["[target_zone]"]
+	var/list/organ_data = target.dna.species.has_limbs["[target_zone]"]
 	return !isnull(organ_data)
 
 /datum/surgery_step/limb/attach
@@ -126,12 +126,12 @@
 	var/obj/item/organ/external/E = tool
 	user.visible_message("<span class='alert'>[user]'s hand slips, damaging [target]'s [E.amputation_point]!</span>", \
 	"<span class='alert'>Your hand slips, damaging [target]'s [E.amputation_point]!</span>")
-	target.apply_damage(10, BRUTE, null, sharp=1)
+	target.apply_damage(10, BRUTE, null, sharp = 1)
 	return 0
 
 
 /datum/surgery_step/limb/attach/proc/is_correct_limb(obj/item/organ/external/E)
-	if(E.status & ORGAN_ROBOT)
+	if(E.is_robotic())
 		return 0
 	return 1
 
@@ -149,13 +149,13 @@
 	name = "attach robotic limb"
 
 /datum/surgery_step/limb/attach/robo/is_correct_limb(obj/item/organ/external/E)
-	if(!(E.status & ORGAN_ROBOT))
+	if(!E.is_robotic())
 		return 0
 	return 1
 
 /datum/surgery_step/limb/attach/robo/attach_limb(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/E)
 	// Fixes fabricator IPC heads
-	if(!(E.dna) && E.robotic == 2 && target.dna)
+	if(!(E.dna) && E.is_robotic() && target.dna)
 		E.set_dna(target.dna)
 	..()
 	if(E.limb_name == "head")
@@ -165,18 +165,14 @@
 			H.h_style = "Bald"
 			H.f_style = "Shaved"
 			target.m_styles["head"] = "None"
-	E.status &= ~ORGAN_DESTROYED
-	if(E.children)
-		for(var/obj/item/organ/external/C in E.children)
-			C.status &= ~ORGAN_DESTROYED
 
 
 /datum/surgery_step/limb/connect
 	name = "connect limb"
 	allowed_tools = list(
-	/obj/item/weapon/hemostat = 100,	\
-	/obj/item/stack/cable_coil = 75, 	\
-	/obj/item/device/assembly/mousetrap = 20
+	/obj/item/hemostat = 100,	\
+	/obj/item/stack/cable_coil = 90, 	\
+	/obj/item/assembly/mousetrap = 25
 	)
 	can_infect = 1
 
@@ -197,13 +193,6 @@
 	var/obj/item/organ/external/E = target.get_organ(target_zone)
 	user.visible_message("<span class='notice'>[user] has connected tendons and muscles in [target]'s [E.amputation_point] with [tool].</span>",	\
 	"<span class='notice'>You have connected tendons and muscles in [target]'s [E.amputation_point] with [tool].</span>")
-	E.status &= ~ORGAN_DESTROYED
-	var/obj/item/organ/external/stump = target.bodyparts_by_name["limb stump"]
-	if(stump)
-		stump.remove(target)
-	if(E.children)
-		for(var/obj/item/organ/external/C in E.children)
-			C.status &= ~ORGAN_DESTROYED
 	target.update_body()
 	target.updatehealth()
 	target.UpdateDamageIcon()
@@ -213,7 +202,7 @@
 	var/obj/item/organ/external/E = target.get_organ(target_zone)
 	user.visible_message("<span class='alert'>[user]'s hand slips, damaging [target]'s [E.amputation_point]!</span>", \
 	"<span class='alert'>Your hand slips, damaging [target]'s [E.amputation_point]!</span>")
-	target.apply_damage(10, BRUTE, null, sharp=1)
+	target.apply_damage(10, BRUTE, null, sharp = 1)
 	return 0
 
 /datum/surgery_step/limb/mechanize
@@ -244,7 +233,7 @@
 		for(var/part_name in L.part)
 			if(!isnull(target.get_organ(part_name)))
 				continue
-			var/list/organ_data = target.species.has_limbs["[part_name]"]
+			var/list/organ_data = target.dna.species.has_limbs["[part_name]"]
 			if(!organ_data)
 				continue
 			// This will break if there's more than one stump ever
@@ -254,10 +243,6 @@
 			var/new_limb_type = organ_data["path"]
 			var/obj/item/organ/external/new_limb = new new_limb_type(target)
 			new_limb.robotize(L.model_info)
-			new_limb.status &= ~ORGAN_DESTROYED
-			if(new_limb.children)
-				for(var/obj/item/organ/external/C in new_limb.children)
-					C.status &= ~ORGAN_DESTROYED
 			if(L.sabotaged)
 				new_limb.sabotaged = 1
 	target.update_body()
@@ -271,5 +256,5 @@
 /datum/surgery_step/limb/mechanize/fail_step(mob/living/user, mob/living/carbon/human/target, target_zone, obj/item/tool)
 	user.visible_message("<span class='alert'>[user]'s hand slips, damaging [target]'s flesh!</span>", \
 	"<span class='alert'>Your hand slips, damaging [target]'s flesh!</span>")
-	target.apply_damage(10, BRUTE, null, sharp=1)
+	target.apply_damage(10, BRUTE, null, sharp = 1)
 	return 0

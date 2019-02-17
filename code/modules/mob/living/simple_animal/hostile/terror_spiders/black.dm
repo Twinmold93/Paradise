@@ -21,7 +21,7 @@
 	health = 120
 	melee_damage_lower = 5
 	melee_damage_upper = 10
-	move_to_delay = 5
+	web_type = /obj/structure/spider/terrorweb/black
 	stat_attack = 1 // ensures they will target people in crit, too!
 	spider_tier = TS_TIER_2
 
@@ -36,12 +36,24 @@
 		L.reagents.add_reagent("terror_black_toxin", 30) // inject our special poison
 		visible_message("<span class='danger'>[src] buries its long fangs deep into the [inject_target] of [target]!</span>")
 	else
-		visible_message("<span class='danger'>[src] bites [target], but cannot inject venom into their [inject_target]!</span>")
+		visible_message("<span class='danger'>[src] bites [target], but cannot inject venom into [target.p_their()] [inject_target]!</span>")
 	L.attack_animal(src)
 	if(!ckey && (!(target in enemies) || L.reagents.has_reagent("terror_black_toxin", 60)))
-		step_away(src,L)
-		step_away(src,L)
+		step_away(src, L)
+		step_away(src, L)
 		LoseTarget()
-		for(var/i in 0 to 3)
-			step_away(src, L)
-		visible_message("<span class='notice'>[src] warily eyes [L] from a distance.</span>")
+		step_away(src, L)
+		visible_message("<span class='notice'>[src] jumps away from [L]!</span>")
+
+
+/obj/structure/spider/terrorweb/black
+	name = "sinister web"
+	desc = "This web has beads of a dark fluid on its strands."
+
+/obj/structure/spider/terrorweb/black/web_special_ability(mob/living/carbon/C)
+	if(istype(C))
+		if(!C.reagents.has_reagent("terror_black_toxin", 60))
+			var/inject_target = pick("chest","head")
+			if(C.can_inject(null, 0, inject_target, 0))
+				to_chat(C, "<span class='danger'>[src] slices into you!</span>")
+				C.reagents.add_reagent("terror_black_toxin", 30)

@@ -3,8 +3,35 @@
 	~Sayu
 */
 
+
+// THESE DO NOT AFFECT THE BASE 1 DECISECOND DELAY OF NEXT_CLICK
+/mob/var/next_move_adjust = 0 //Amount to adjust action delays by, + or -
+/mob/var/next_move_modifier = 1 //Value to multiply action delays by
+
+//Delays the mob's next action by num deciseconds
+// eg: 10-3 = 7 deciseconds of delay
+// eg: 10*0.5 = 5 deciseconds of delay
+// DOES NOT EFFECT THE BASE 1 DECISECOND DELAY OF NEXT_CLICK
+
+/mob/proc/changeNext_move(num)
+	next_move = world.time + ((num+next_move_adjust)*next_move_modifier)
+
 // 1 decisecond click delay (above and beyond mob/next_move)
+//This is mainly modified by click code, to modify click delays elsewhere, use next_move and changeNext_move()
 /mob/var/next_click	= 0
+
+// THESE DO AFFECT THE BASE 1 DECISECOND DELAY OF NEXT_CLICK
+/mob/var/next_click_adjust = 0
+/mob/var/next_click_modifier = 1 //Value to multiply click delays by
+
+//Delays the mob's next click by num deciseconds
+// eg: 10-3 = 7 deciseconds of delay
+// eg: 10*0.5 = 5 deciseconds of delay
+// DOES NOT EFFECT THE BASE 1 DECISECOND DELAY OF NEXT_CLICK
+
+/mob/proc/changeNext_click(num)
+	next_click = world.time + ((num+next_click_adjust)*next_click_modifier)
+
 
 /*
 	Before anything else, defer these calls to a per-mobtype handler.  This allows us to
@@ -38,11 +65,17 @@
 		client.click_intercept.InterceptClickOn(src, params, A)
 		return
 
-	if(world.time <= next_click)
+	if(next_click > world.time)
 		return
-	next_click = world.time + 1
+	changeNext_click(1)
 
 	var/list/modifiers = params2list(params)
+	if(modifiers["middle"] && modifiers["shift"] && modifiers["ctrl"])
+		MiddleShiftControlClickOn(A)
+		return
+	if(modifiers["middle"] && modifiers["shift"])
+		MiddleShiftClickOn(A)
+		return
 	if(modifiers["shift"] && modifiers["ctrl"])
 		CtrlShiftClickOn(A)
 		return
@@ -100,9 +133,7 @@
 	if(A == loc || (A in loc) || (sdepth != -1 && sdepth <= 2))
 		// No adjacency needed
 		if(W)
-			var/resolved = A.attackby(W,src)
-			if(!resolved && A && W)
-				W.afterattack(A,src,1,params) // 1 indicates adjacency
+			W.melee_attack_chain(src, A, params)
 		else
 			if(ismob(A))
 				changeNext_move(CLICK_CD_MELEE)
@@ -118,10 +149,7 @@
 	if(isturf(A) || isturf(A.loc) || (sdepth != -1 && sdepth <= 1))
 		if(A.Adjacent(src)) // see adjacent.dm
 			if(W)
-				// Return 1 in attackby() to prevent afterattack() effects (when safely moving items for example, params)
-				var/resolved = A.attackby(W,src,params)
-				if(!resolved && A && W)
-					W.afterattack(A,src,1,params) // 1: clicking something Adjacent
+				W.melee_attack_chain(src, A, params)
 			else
 				if(ismob(A))
 					changeNext_move(CLICK_CD_MELEE)
@@ -135,9 +163,6 @@
 				RangedAttack(A, params)
 
 	return
-
-/mob/proc/changeNext_move(num)
-	next_move = world.time + num
 
 // Default behavior: ignore double clicks, consider them normal clicks instead
 /mob/proc/DblClickOn(var/atom/A, var/params)
@@ -169,7 +194,7 @@
 /mob/proc/RangedAttack(var/atom/A, var/params)
 	if(!mutations.len)
 		return
-	if((LASER in mutations) && a_intent == I_HARM)
+	if((LASER in mutations) && a_intent == INTENT_HARM)
 		LaserEyes(A) // moved into a proc below
 		return
 	else
@@ -201,10 +226,38 @@
 
 /mob/living/carbon/MiddleClickOn(var/atom/A)
 	if(!src.stat && src.mind && src.mind.changeling && src.mind.changeling.chosen_sting && (istype(A, /mob/living/carbon)) && (A != src))
-		next_click = world.time + 5
+		changeNext_click(5)
 		mind.changeling.chosen_sting.try_to_sting(src, A)
 	else
 		..()
+
+/*
+	Middle shift-click
+	Makes the mob face the direction of the clicked thing
+*/
+/mob/proc/MiddleShiftClickOn(atom/A)
+	if(incapacitated())
+		return
+	var/face_dir = get_cardinal_dir(src, A)
+	if(forced_look == face_dir)
+		forced_look = null
+		to_chat(src, "<span class='notice'>You are no longer facing any direction.</span>")
+		return
+	forced_look = face_dir
+	to_chat(src, "<span class='notice'>You are now facing [dir2text(forced_look)].</span>")
+
+/*
+	Middle shift-control-click
+	Makes the mob constantly face the object (until it's out of sight)
+*/
+/mob/proc/MiddleShiftControlClickOn(atom/A)
+	var/face_uid = A.UID()
+	if(forced_look == face_uid)
+		forced_look = null
+		to_chat(src, "<span class='notice'>You are no longer facing [A].</span>")
+		return
+	forced_look = face_uid
+	to_chat(src, "<span class='notice'>You are now facing [A].</span>")
 
 // In case of use break glass
 /*
@@ -232,12 +285,12 @@
 /mob/proc/CtrlClickOn(var/atom/A)
 	A.CtrlClick(src)
 	return
-/atom/proc/CtrlClick(var/mob/user)
-	return
 
-/atom/movable/CtrlClick(var/mob/user)
-	if(Adjacent(user))
-		user.start_pulling(src)
+/atom/proc/CtrlClick(mob/user)
+	SEND_SIGNAL(src, COMSIG_CLICK_CTRL, user)
+	var/mob/living/ML = user
+	if(istype(ML))
+		ML.pulled(src)
 
 /*
 	Alt click
@@ -256,7 +309,7 @@
 
 /mob/living/carbon/AltClickOn(var/atom/A)
 	if(!src.stat && src.mind && src.mind.changeling && src.mind.changeling.chosen_sting && (istype(A, /mob/living/carbon)) && (A != src))
-		next_click = world.time + 5
+		changeNext_click(5)
 		mind.changeling.chosen_sting.try_to_sting(src, A)
 	else
 		..()
@@ -341,7 +394,7 @@
 	icon = 'icons/mob/screen_full.dmi'
 	icon_state = "passage0"
 	plane = CLICKCATCHER_PLANE
-	mouse_opacity = 2
+	mouse_opacity = MOUSE_OPACITY_OPAQUE
 	screen_loc = "CENTER-7,CENTER-7"
 
 /obj/screen/click_catcher/Click(location, control, params)

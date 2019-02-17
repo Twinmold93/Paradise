@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:33
-
 /obj/machinery/field/containment
 	name = "Containment Field"
 	desc = "An energy field."
@@ -8,7 +6,7 @@
 	anchored = 1
 	density = 0
 	unacidable = 1
-	use_power = 0
+	use_power = NO_POWER_USE
 	light_range = 4
 	layer = OBJ_LAYER + 0.1
 	var/obj/machinery/field/generator/FG1 = null
@@ -101,9 +99,7 @@
 	if(hasShocked)
 		return 0
 	hasShocked = 1
-	var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-	s.set_up(5, 1, AM.loc)
-	s.start()
+	do_sparks(5, 1, AM.loc)
 	var/atom/target = get_edge_target_turf(AM, get_dir(src, get_step_away(AM, src)))
 	AM.throw_at(target, 200, 4)
 	spawn(5)

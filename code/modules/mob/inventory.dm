@@ -6,10 +6,21 @@
 	if(hand)	return l_hand
 	else		return r_hand
 
+/mob/proc/is_in_active_hand(obj/item/I)
+	var/obj/item/item_to_test = get_active_hand()
+
+	return item_to_test && item_to_test.is_equivalent(I)
+
+
 //Returns the thing in our inactive hand
 /mob/proc/get_inactive_hand()
 	if(hand)	return r_hand
 	else		return l_hand
+
+/mob/proc/is_in_inactive_hand(obj/item/I)
+	var/obj/item/item_to_test = get_inactive_hand()
+
+	return item_to_test && item_to_test.is_equivalent(I)
 
 //Returns if a certain item can be equipped to a certain slot.
 // Currently invalid for two-handed items - call obj/item/mob_can_equip() instead.
@@ -72,7 +83,7 @@
 //This is probably the main one you need to know :)
 //Just puts stuff on the floor for most mobs, since all mobs have hands but putting stuff in the AI/corgi/ghost hand is VERY BAD.
 /mob/proc/put_in_hands(obj/item/W)
-	W.forceMove(get_turf(src))
+	W.forceMove(drop_location())
 	W.layer = initial(W.layer)
 	W.plane = initial(W.plane)
 	W.dropped()
@@ -119,11 +130,14 @@
 	else if(I == l_hand)
 		l_hand = null
 		update_inv_l_hand()
+	else if(I in tkgrabbed_objects)
+		var/obj/item/tk_grab/tkgrab = tkgrabbed_objects[I]
+		unEquip(tkgrab, force)
 
 	if(I)
 		if(client)
 			client.screen -= I
-		I.forceMove(loc)
+		I.forceMove(drop_location())
 		I.dropped(src)
 		if(I)
 			I.layer = initial(I.layer)
@@ -177,7 +191,7 @@
 		M.s_active.handle_item_insertion(src)
 		return 1
 
-	var/obj/item/weapon/storage/S = M.get_inactive_hand()
+	var/obj/item/storage/S = M.get_inactive_hand()
 	if(istype(S) && S.can_be_inserted(src, 1))	//see if we have box in other hand
 		S.handle_item_insertion(src)
 		return 1

@@ -4,31 +4,26 @@
 	max_damage = 200
 	icon_state = "brain2"
 	force = 1.0
-	w_class = 2
+	w_class = WEIGHT_CLASS_SMALL
 	throwforce = 1.0
 	throw_speed = 3
 	throw_range = 5
-	origin_tech = "biotech=3"
+	origin_tech = "biotech=5"
 	attack_verb = list("attacked", "slapped", "whacked")
 	var/mob/living/carbon/brain/brainmob = null
 	organ_tag = "brain"
 	parent_organ = "head"
 	slot = "brain"
-	vital = 1
+	vital = TRUE
+	hidden_pain = TRUE //the brain has no pain receptors, and brain damage is meant to be a stealthy damage type.
 	var/mmi_icon = 'icons/obj/assemblies.dmi'
 	var/mmi_icon_state = "mmi_full"
-
-/obj/item/organ/internal/brain/surgeryize()
-	if(!owner)
-		return
-	owner.SetEarDeaf(0)
-	owner.SetEarDamage(0) //Yeah, didn't you...hear? The ears are totally inside the brain.
 
 /obj/item/organ/internal/brain/xeno
 	name = "xenomorph brain"
 	desc = "We barely understand the brains of terrestial animals. Who knows what we may find in the brain of such an advanced species?"
 	icon_state = "brain-x"
-	origin_tech = "biotech=7"
+	origin_tech = "biotech=6"
 	mmi_icon = 'icons/mob/alien.dmi'
 	mmi_icon_state = "AlienMMI"
 
@@ -71,9 +66,9 @@
 	var/obj/item/organ/internal/brain/B = src
 	if(!special)
 		var/mob/living/simple_animal/borer/borer = owner.has_brain_worms()
-
 		if(borer)
-			borer.detach() //Should remove borer if the brain is removed - RR
+			borer.leave_host() //Should remove borer if the brain is removed - RR
+
 		if(owner.mind && !non_primary)//don't transfer if the owner does not have a mind.
 			B.transfer_identity(user)
 
@@ -125,3 +120,11 @@
 /obj/item/organ/internal/brain/Destroy() //copypasted from MMIs.
 	QDEL_NULL(brainmob)
 	return ..()
+
+/obj/item/organ/internal/brain/cluwne
+
+/obj/item/organ/internal/brain/cluwne/insert(mob/living/target, special = 0, make_cluwne = 1)
+	..(target, special = special)
+	if(ishuman(target) && make_cluwne)
+		var/mob/living/carbon/human/H = target
+		H.makeCluwne() //No matter where you go, no matter what you do, you cannot escape

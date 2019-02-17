@@ -4,7 +4,7 @@
 	icon_state = "mycelium-tower"
 	species = "towercap"
 	plantname = "Tower Caps"
-	product = /obj/item/weapon/grown/log
+	product = /obj/item/grown/log
 	lifespan = 80
 	endurance = 50
 	maturation = 15
@@ -23,35 +23,38 @@
 	icon_state = "mycelium-steelcap"
 	species = "steelcap"
 	plantname = "Steel Caps"
-	product = /obj/item/weapon/grown/log/steel
+	product = /obj/item/grown/log/steel
 	mutatelist = list()
 	rarity = 20
 
 
 
 
-/obj/item/weapon/grown/log
+/obj/item/grown/log
 	seed = /obj/item/seeds/tower
 	name = "tower-cap log"
 	desc = "It's better than bad, it's good!"
 	icon_state = "logs"
 	force = 5
 	throwforce = 5
-	w_class = 3
+	w_class = WEIGHT_CLASS_NORMAL
 	throw_speed = 2
 	throw_range = 3
 	origin_tech = "materials=1"
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
 	var/plank_type = /obj/item/stack/sheet/wood
 	var/plank_name = "wooden planks"
-	var/list/accepted = list(/obj/item/weapon/reagent_containers/food/snacks/grown/tobacco,
-	/obj/item/weapon/reagent_containers/food/snacks/grown/tea,
-	/obj/item/weapon/reagent_containers/food/snacks/grown/ambrosia/vulgaris,
-	/obj/item/weapon/reagent_containers/food/snacks/grown/ambrosia/deus,
-	/obj/item/weapon/reagent_containers/food/snacks/grown/wheat)
+	var/list/accepted = list(/obj/item/reagent_containers/food/snacks/grown/tobacco,
+	/obj/item/reagent_containers/food/snacks/grown/tea,
+	/obj/item/reagent_containers/food/snacks/grown/ambrosia/vulgaris,
+	/obj/item/reagent_containers/food/snacks/grown/ambrosia/deus,
+	/obj/item/reagent_containers/food/snacks/grown/wheat)
 
+/obj/item/grown/log/New()
+	..()
+	accepted = typecacheof(accepted)
 
-/obj/item/weapon/grown/log/attackby(obj/item/weapon/W, mob/user, params)
+/obj/item/grown/log/attackby(obj/item/W, mob/user, params)
 	if(is_sharp(W))
 		user.show_message("<span class='notice'>You make [plank_name] out of \the [src]!</span>", 1)
 		var/seed_modifier = 0
@@ -66,11 +69,11 @@
 			to_chat(user, "<span class='notice'>You add the newly-formed [plank_name] to the stack. It now contains [plank.amount] [plank_name].</span>")
 		qdel(src)
 
-	if(is_type_in_list(W,accepted))
-		var/obj/item/weapon/reagent_containers/food/snacks/grown/leaf = W
+	if(is_type_in_typecache(W, accepted))
+		var/obj/item/reagent_containers/food/snacks/grown/leaf = W
 		if(leaf.dry)
 			user.show_message("<span class='notice'>You wrap \the [W] around the log, turning it into a torch!</span>")
-			var/obj/item/device/flashlight/flare/torch/T = new /obj/item/device/flashlight/flare/torch(user.loc)
+			var/obj/item/flashlight/flare/torch/T = new /obj/item/flashlight/flare/torch(user.loc)
 			usr.unEquip(W)
 			usr.put_in_active_hand(T)
 			qdel(leaf)
@@ -81,12 +84,12 @@
 	else
 		return ..()
 
-/obj/item/weapon/grown/log/tree
+/obj/item/grown/log/tree
 	seed = null
 	name = "wood log"
 	desc = "TIMMMMM-BERRRRRRRRRRR!"
 
-/obj/item/weapon/grown/log/steel
+/obj/item/grown/log/steel
 	seed = /obj/item/seeds/tower/steel
 	name = "steel-cap log"
 	desc = "It's made of metal."
@@ -128,7 +131,7 @@
 		return
 	if(!has_buckled_mobs() && do_after(user, 50, target = src))
 		for(var/I in 1 to 5)
-			var/obj/item/weapon/grown/log/L = new /obj/item/weapon/grown/log(loc)
+			var/obj/item/grown/log/L = new /obj/item/grown/log(loc)
 			L.pixel_x += rand(1,4)
 			L.pixel_y += rand(1,4)
 		qdel(src)
@@ -138,7 +141,7 @@
 
 /obj/structure/bonfire/proc/CheckOxygen()
 	var/datum/gas_mixture/G = loc.return_air() // Check if we're standing in an oxygenless environment
-	if(G.oxygen > 16)
+	if(G.oxygen > 13)
 		return 1
 	return 0
 

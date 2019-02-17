@@ -16,7 +16,6 @@
 
 var/global/next_unique_datum_id = 1
 
-/datum/var/tmp/unique_datum_id = null
 /client/var/tmp/unique_datum_id = null
 
 /datum/proc/UID()
@@ -31,6 +30,7 @@ var/global/next_unique_datum_id = 1
 	if(!unique_datum_id)
 		unique_datum_id = "\ref[src]_[next_unique_datum_id++]"
 	return unique_datum_id
+
 
 /proc/locateUID(uid)
 	if(!istext(uid))

@@ -4,7 +4,6 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 	name = "item"
 	icon = 'icons/obj/items.dmi'
 	var/discrete = 0 // used in item_attack.dm to make an item not show an attack message to viewers
-	var/no_embed = 0 // For use in item_attack.dm
 	var/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/blood_overlay_color = null
 	var/item_state = null
@@ -16,11 +15,13 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 	var/inhand_x_dimension = 32
 	var/inhand_y_dimension = 32
 
+	can_be_hit = FALSE
+
 	var/r_speed = 1.0
 	var/health = null
 	var/hitsound = null
 	var/usesound = null
-	var/w_class = 3
+	var/w_class = WEIGHT_CLASS_NORMAL
 	var/slot_flags = 0		//This is used to determine on which slots an item can fit.
 	pass_flags = PASSTABLE
 	pressure_resistance = 3
@@ -34,6 +35,8 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 
 	var/list/actions = list() //list of /datum/action's that this item has.
 	var/list/actions_types = list() //list of paths of action datums to give to the item on New().
+	var/list/action_icon = list() //list of icons-sheets for a given action to override the icon.
+	var/list/action_icon_state = list() //list of icon states for a given action to override the icon_state.
 
 	var/list/materials = list()
 	//Since any item can now be a piece of clothing, this has to be put here so all items share it.
@@ -45,10 +48,9 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 	var/permeability_coefficient = 1 // for chemicals/diseases
 	var/siemens_coefficient = 1 // for electrical admittance/conductance (electrocution checks and shit)
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
-	var/armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
 	var/armour_penetration = 0 //percentage of armour effectiveness to remove
 	var/list/allowed = null //suit storage stuff.
-	var/obj/item/device/uplink/hidden/hidden_uplink = null // All items can have an uplink hidden inside, just remember to add the triggers.
+	var/obj/item/uplink/hidden/hidden_uplink = null // All items can have an uplink hidden inside, just remember to add the triggers.
 
 	var/needs_permit = 0			//Used by security bots to determine if this item is safe for public use.
 
@@ -62,6 +64,17 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 	var/hit_reaction_chance = 0 //If you want to have something unrelated to blocking/armour piercing etc. Maybe not needed, but trying to think ahead/allow more freedom
 
 	var/mob/thrownby = null
+
+	//So items can have custom embedd values
+	//Because customisation is king
+	var/embed_chance = EMBED_CHANCE
+	var/embedded_fall_chance = EMBEDDED_ITEM_FALLOUT
+	var/embedded_pain_chance = EMBEDDED_PAIN_CHANCE
+	var/embedded_pain_multiplier = EMBEDDED_PAIN_MULTIPLIER  //The coefficient of multiplication for the damage this item does while embedded (this*w_class)
+	var/embedded_fall_pain_multiplier = EMBEDDED_FALL_PAIN_MULTIPLIER //The coefficient of multiplication for the damage this item does when falling out of a limb (this*w_class)
+	var/embedded_impact_pain_multiplier = EMBEDDED_IMPACT_PAIN_MULTIPLIER //The coefficient of multiplication for the damage this item does when first embedded (this*w_class)
+	var/embedded_unsafe_removal_pain_multiplier = EMBEDDED_UNSAFE_REMOVAL_PAIN_MULTIPLIER //The coefficient of multiplication for the damage removing this without surgery causes (this*w_class)
+	var/embedded_unsafe_removal_time = EMBEDDED_UNSAFE_REMOVAL_TIME //A time in ticks, multiplied by the w_class.
 
 	var/toolspeed = 1 // If this item is a tool, the speed multiplier
 
@@ -77,12 +90,28 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 	var/sprite_sheets_obj = null //Used to override hardcoded clothing inventory object dmis in human clothing proc.
 	var/list/species_fit = null //This object has a different appearance when worn by these species
 
+	var/trip_verb = TV_TRIP
+	var/trip_chance = 0
+
+	var/trip_stun = 0
+	var/trip_weaken = 0
+	var/trip_any = FALSE
+	var/trip_walksafe = TRUE
+	var/trip_tiles = 0
+
 /obj/item/New()
 	..()
 	for(var/path in actions_types)
-		new path(src)
+		new path(src, action_icon[path], action_icon_state[path])
+
+	if(!hitsound)
+		if(damtype == "fire")
+			hitsound = 'sound/items/welder.ogg'
+		if(damtype == "brute")
+			hitsound = "swing_hit"
 
 /obj/item/Destroy()
+	flags &= ~DROPDEL	//prevent reqdels
 	QDEL_NULL(hidden_uplink)
 	if(ismob(loc))
 		var/mob/m = loc
@@ -96,9 +125,6 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 		return 0
 	else
 		return 1
-
-/obj/item/device
-	icon = 'icons/obj/device.dmi'
 
 /obj/item/ex_act(severity)
 	switch(severity)
@@ -146,16 +172,18 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 /obj/item/examine(mob/user, var/distance = -1)
 	var/size
 	switch(src.w_class)
-		if(1.0)
+		if(WEIGHT_CLASS_TINY)
 			size = "tiny"
-		if(2.0)
+		if(WEIGHT_CLASS_SMALL)
 			size = "small"
-		if(3.0)
+		if(WEIGHT_CLASS_NORMAL)
 			size = "normal-sized"
-		if(4.0)
+		if(WEIGHT_CLASS_BULKY)
 			size = "bulky"
-		if(5.0)
+		if(WEIGHT_CLASS_HUGE)
 			size = "huge"
+		if(WEIGHT_CLASS_GIGANTIC)
+			size = "gigantic"
 
 	. = ..(user, distance, "", "It is a [size] item.")
 
@@ -167,9 +195,6 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 			var/list/techlvls = params2list(origin_tech)
 			for(var/T in techlvls) //This needs to use the better names.
 				msg += "Tech: [CallTechName(T)] | Magnitude: [techlvls[T]] <BR>"
-			msg += "Research reliability: [reliability]% <BR>"
-			if(crit_fail)
-				msg += "<span class='danger'>Critical failure detected in subject!</span><BR>"
 		else
 			msg += "<span class='danger'>No tech origins detected.</span><BR>"
 
@@ -183,8 +208,11 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 		msg += "*--------*"
 		to_chat(user, msg)
 
+/obj/item/afterattack(atom/target, mob/user, proximity, params)
+	SEND_SIGNAL(src, COMSIG_ITEM_AFTERATTACK, target, user, proximity, params)
+	..()
 
-/obj/item/attack_hand(mob/user as mob)
+/obj/item/attack_hand(mob/user as mob, pickupfireoverride = FALSE)
 	if(!user) return 0
 	if(hasorgans(user))
 		var/mob/living/carbon/human/H = user
@@ -198,7 +226,7 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 			to_chat(user, "<span class='warning'>You try to move your [temp.name], but cannot!</span>")
 			return 0
 
-	if(burn_state == ON_FIRE)
+	if(burn_state == ON_FIRE && !pickupfireoverride)
 		var/mob/living/carbon/human/H = user
 		if(istype(H))
 			if(H.gloves && (H.gloves.max_heat_protection_temperature > 360))
@@ -207,16 +235,15 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 			else
 				to_chat(user, "<span class='warning'>You burn your hand on [src]!</span>")
 				var/obj/item/organ/external/affecting = H.get_organ("[user.hand ? "l" : "r" ]_arm")
-				if(affecting && affecting.take_damage(0, 5))		// 5 burn damage
+				if(affecting && affecting.receive_damage(0, 5))		// 5 burn damage
 					H.UpdateDamageIcon()
-				H.updatehealth()
 				return
 		else
 			extinguish()
 
-	if(istype(src.loc, /obj/item/weapon/storage))
+	if(istype(src.loc, /obj/item/storage))
 		//If the item is in a storage item, take it out
-		var/obj/item/weapon/storage/S = src.loc
+		var/obj/item/storage/S = src.loc
 		S.remove_from_storage(src)
 
 	if(throwing)
@@ -230,6 +257,7 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 			return 0
 
 	pickup(user)
+
 	add_fingerprint(user)
 	user.put_in_active_hand(src)
 	return 1
@@ -245,7 +273,7 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 	attack_hand(A)
 
 /obj/item/attack_ai(mob/user as mob)
-	if(istype(src.loc, /obj/item/weapon/robot_module))
+	if(istype(src.loc, /obj/item/robot_module))
 		//If the item is part of a cyborg module, equip it
 		if(!isrobot(user))
 			return
@@ -256,25 +284,25 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 
 // Due to storage type consolidation this should get used more now.
 // I have cleaned it up a little, but it could probably use more.  -Sayu
-/obj/item/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
-	if(istype(W,/obj/item/weapon/storage))
-		var/obj/item/weapon/storage/S = W
+/obj/item/attackby(obj/item/I, mob/user, params)
+	if(istype(I, /obj/item/storage))
+		var/obj/item/storage/S = I
 		if(S.use_to_pickup)
 			if(S.collection_mode) //Mode is set to collect all items on a tile and we clicked on a valid one.
-				if(isturf(src.loc))
+				if(isturf(loc))
 					var/list/rejections = list()
 					var/success = 0
 					var/failure = 0
 
-					for(var/obj/item/I in src.loc)
-						if(I.type in rejections) // To limit bag spamming: any given type only complains once
+					for(var/obj/item/IT in loc)
+						if(IT.type in rejections) // To limit bag spamming: any given type only complains once
 							continue
-						if(!S.can_be_inserted(I))	// Note can_be_inserted still makes noise when the answer is no
-							rejections += I.type	// therefore full bags are still a little spammy
+						if(!S.can_be_inserted(IT))	// Note can_be_inserted still makes noise when the answer is no
+							rejections += IT.type	// therefore full bags are still a little spammy
 							failure = 1
 							continue
 						success = 1
-						S.handle_item_insertion(I, 1)	//The 1 stops the "You put the [src] into [S]" insertion message from being displayed.
+						S.handle_item_insertion(IT, 1)	//The 1 stops the "You put the [src] into [S]" insertion message from being displayed.
 					if(success && !failure)
 						to_chat(user, "<span class='notice'>You put everything in [S].</span>")
 					else if(success)
@@ -284,10 +312,30 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 
 			else if(S.can_be_inserted(src))
 				S.handle_item_insertion(src)
-
-	return
+	else if(istype(I, /obj/item/stack/tape_roll))
+		if(istype(src, /obj/item/storage)) //Don't tape the bag if we can put the duct tape inside it instead
+			var/obj/item/storage/bag = src
+			if(bag.can_be_inserted(I))
+				return ..()
+		var/obj/item/stack/tape_roll/TR = I
+		var/list/clickparams = params2list(params)
+		var/x_offset = text2num(clickparams["icon-x"])
+		var/y_offset = text2num(clickparams["icon-y"])
+		if(GetComponent(/datum/component/ducttape))
+			to_chat(user, "<span class='notice'>[src] already has some tape attached!</span>")
+			return
+		if(TR.use(1))
+			to_chat(user, "<span class='notice'>You apply some tape to [src].</span>")
+			AddComponent(/datum/component/ducttape, src, user, x_offset, y_offset)
+			anchored = TRUE
+			user.transfer_fingerprints_to(src)
+		else
+			to_chat(user, "<span class='notice'>You don't have enough tape to do that!</span>")
+	else
+		return ..()
 
 /obj/item/proc/hit_reaction(mob/living/carbon/human/owner, attack_text = "the attack", final_block_chance = 0, damage = 0, attack_type = MELEE_ATTACK)
+	SEND_SIGNAL(src, COMSIG_ITEM_HIT_REACT, args)
 	if(prob(final_block_chance))
 		owner.visible_message("<span class='danger'>[owner] blocks [attack_text] with [src]!</span>")
 		return 1
@@ -300,21 +348,28 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 	for(var/X in actions)
 		var/datum/action/A = X
 		A.Remove(user)
+	if(flags & DROPDEL)
+		qdel(src)
+	SEND_SIGNAL(src, COMSIG_ITEM_DROPPED,user)
 
 // called just as an item is picked up (loc is not yet changed)
 /obj/item/proc/pickup(mob/user)
-	return
+	SEND_SIGNAL(src, COMSIG_ITEM_PICKUP, user)
 
 // called when this item is removed from a storage item, which is passed on as S. The loc variable is already set to the new destination before this is called.
-/obj/item/proc/on_exit_storage(obj/item/weapon/storage/S as obj)
+/obj/item/proc/on_exit_storage(obj/item/storage/S as obj)
 	return
 
 // called when this item is added into a storage item, which is passed on as S. The loc variable is already set to the storage item.
-/obj/item/proc/on_enter_storage(obj/item/weapon/storage/S as obj)
+/obj/item/proc/on_enter_storage(obj/item/storage/S as obj)
 	return
 
 // called when "found" in pockets and storage items. Returns 1 if the search should end.
 /obj/item/proc/on_found(mob/finder as mob)
+	return
+
+// called when the giver gives it to the receiver
+/obj/item/proc/on_give(mob/living/carbon/giver, mob/living/carbon/receiver)
 	return
 
 // called after an item is placed in an equipment slot
@@ -323,6 +378,7 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 // for items that can be placed in multiple slots
 // note this isn't called during the initial dressing of a player
 /obj/item/proc/equipped(var/mob/user, var/slot)
+	SEND_SIGNAL(src, COMSIG_ITEM_EQUIPPED, user, slot)
 	for(var/X in actions)
 		var/datum/action/A = X
 		if(item_action_slot_check(slot, user)) //some items only give their actions buttons when in a specific slot.
@@ -359,15 +415,12 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 
 	if(!(usr)) //BS12 EDIT
 		return
-	if(!usr.canmove || usr.stat || usr.restrained() || !Adjacent(usr))
+	if(usr.incapacitated() || !Adjacent(usr))
 		return
-	if((!istype(usr, /mob/living/carbon)) || (istype(usr, /mob/living/carbon/brain)))//Is humanoid, and is not a brain
+	if(!iscarbon(usr) || isbrain(usr)) //Is humanoid, and is not a brain
 		to_chat(usr, "<span class='warning'>You can't pick things up!</span>")
 		return
-	if( usr.stat || usr.restrained() )//Is not asleep/dead and is not restrained
-		to_chat(usr, "<span class='warning'>You can't pick things up!</span>")
-		return
-	if(src.anchored) //Object isn't anchored
+	if(anchored) //Object isn't anchored
 		to_chat(usr, "<span class='warning'>You can't pick that up!</span>")
 		return
 	if(!usr.hand && usr.r_hand) //Right hand is not full
@@ -376,12 +429,11 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 	if(usr.hand && usr.l_hand) //Left hand is not full
 		to_chat(usr, "<span class='warning'>Your left hand is full.</span>")
 		return
-	if(!istype(src.loc, /turf)) //Object is on a turf
+	if(!isturf(loc)) //Object is on a turf
 		to_chat(usr, "<span class='warning'>You can't pick that up!</span>")
 		return
 	//All checks are done, time to pick it up!
 	usr.UnarmedAttack(src)
-	return
 
 
 //This proc is executed when someone clicks the on-screen UI button.
@@ -424,28 +476,29 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 
 	playsound(loc, src.hitsound, 30, 1, -1)
 
+	user.do_attack_animation(M)
+
 	if(M != user)
 		M.visible_message("<span class='danger'>[user] has stabbed [M] in the eye with [src]!</span>", \
 							"<span class='userdanger'>[user] stabs you in the eye with [src]!</span>")
-		user.do_attack_animation(M)
 	else
 		user.visible_message( \
-			"<span class='danger'>[user] has stabbed themself in the eyes with [src]!</span>", \
+			"<span class='danger'>[user] has stabbed [user.p_them()]self in the eyes with [src]!</span>", \
 			"<span class='userdanger'>You stab yourself in the eyes with [src]!</span>" \
 		)
 
-	add_logs(user, M, "attacked", "[name]", "(INTENT: [uppertext(user.a_intent)])")
+	add_attack_logs(user, M, "Eye-stabbed with [src] (INTENT: [uppertext(user.a_intent)])")
 
 	if(istype(H))
 		var/obj/item/organ/internal/eyes/eyes = H.get_int_organ(/obj/item/organ/internal/eyes)
 		if(!eyes) // should still get stabbed in the head
 			var/obj/item/organ/external/head/head = H.bodyparts_by_name["head"]
-			head.take_damage(rand(10,14), 1)
+			head.receive_damage(rand(10,14), 1)
 			return
-		eyes.take_damage(rand(3,4), 1)
+		eyes.receive_damage(rand(3,4), 1)
 		if(eyes.damage >= eyes.min_bruised_damage)
 			if(M.stat != 2)
-				if(!(eyes.status & ORGAN_ROBOT) || !(eyes.status & ORGAN_ASSISTED))  //robot eyes bleeding might be a bit silly
+				if(!eyes.is_robotic())  //robot eyes bleeding might be a bit silly
 					to_chat(M, "<span class='danger'>Your eyes start to bleed profusely!</span>")
 			if(prob(50))
 				if(M.stat != DEAD)
@@ -458,57 +511,12 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 				if(M.stat != 2)
 					to_chat(M, "<span class='danger'>You go blind!</span>")
 		var/obj/item/organ/external/affecting = H.get_organ("head")
-		if(affecting.take_damage(7))
+		if(affecting.receive_damage(7))
 			H.UpdateDamageIcon()
 	else
 		M.take_organ_damage(7)
 	M.AdjustEyeBlurry(rand(3,4))
 	return
-
-/obj/item/clean_blood()
-	. = ..()
-	if(blood_overlay)
-		overlays.Remove(blood_overlay)
-	if(istype(src, /obj/item/clothing/gloves))
-		var/obj/item/clothing/gloves/G = src
-		G.transfer_blood = 0
-
-
-/obj/item/add_blood(mob/living/carbon/human/M as mob)
-	if(!..())
-		return 0
-
-	if(istype(src, /obj/item/weapon/melee/energy))
-		return
-
-	//if we haven't made our blood_overlay already
-	if( !blood_overlay )
-		generate_blood_overlay()
-
-	//apply the blood-splatter overlay if it isn't already in there
-	if(!blood_DNA.len)
-		blood_overlay.color = blood_color
-		overlays += blood_overlay
-
-	//if this blood isn't already in the list, add it
-	if(istype(M))
-		if(blood_DNA[M.dna.unique_enzymes])
-			return 0 //already bloodied with this blood. Cannot add more.
-		blood_DNA[M.dna.unique_enzymes] = M.dna.b_type
-	return 1 //we applied blood to the item
-
-/obj/item/proc/generate_blood_overlay()
-	if(blood_overlay)
-		return
-
-	var/icon/I = new /icon(icon, icon_state)
-	I.Blend(new /icon('icons/effects/blood.dmi', rgb(255,255,255)),ICON_ADD) //fills the icon_state with white (except where it's transparent)
-	I.Blend(new /icon('icons/effects/blood.dmi', "itemblood"),ICON_MULTIPLY) //adds blood and the remaining white areas become transparant
-
-	//not sure if this is worth it. It attaches the blood_overlay to every item of the same type if they don't have one already made.
-	for(var/obj/item/A in world)
-		if(A.type == type && !A.blood_overlay)
-			A.blood_overlay = image(I)
 
 /obj/item/singularity_pull(S, current_size)
 	spawn(0) //this is needed or multiple items will be thrown sequentially and not simultaneously
@@ -517,16 +525,17 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 		else ..()
 
 /obj/item/throw_impact(atom/A)
-	if(A && !qdeleted(A))
+	if(A && !QDELETED(A))
+		SEND_SIGNAL(src, COMSIG_MOVABLE_IMPACT, A)
 		var/itempush = 1
-		if(w_class < 4)
+		if(w_class < WEIGHT_CLASS_BULKY)
 			itempush = 0 // too light to push anything
 		return A.hitby(src, 0, itempush)
 
-/obj/item/throw_at(atom/target, range, speed, mob/thrower, spin=1, diagonals_first = 0, datum/callback/callback)
+/obj/item/throw_at(atom/target, range, speed, mob/thrower, spin=1, diagonals_first = 0, datum/callback/callback, force)
 	thrownby = thrower
 	callback = CALLBACK(src, .proc/after_throw, callback) //replace their callback with our own
-	. = ..(target, range, speed, thrower, spin, diagonals_first, callback)
+	. = ..(target, range, speed, thrower, spin, diagonals_first, callback, force)
 
 /obj/item/proc/after_throw(datum/callback/callback)
 	if(callback) //call the original callback
@@ -536,11 +545,11 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 /obj/item/proc/pwr_drain()
 	return 0 // Process Kill
 
-/obj/item/proc/remove_item_from_storage(atom/newLoc) //please use this if you're going to snowflake an item out of a obj/item/weapon/storage
+/obj/item/proc/remove_item_from_storage(atom/newLoc) //please use this if you're going to snowflake an item out of a obj/item/storage
 	if(!newLoc)
 		return 0
-	if(istype(loc,/obj/item/weapon/storage))
-		var/obj/item/weapon/storage/S = loc
+	if(istype(loc,/obj/item/storage))
+		var/obj/item/storage/S = loc
 		S.remove_from_storage(src,newLoc)
 		return 1
 	return 0
@@ -559,3 +568,30 @@ var/global/image/fire_overlay = image("icon" = 'icons/goonstation/effects/fire.d
 
 /obj/item/proc/is_crutch() //Does an item prop up a human mob and allow them to stand if they are missing a leg/foot?
 	return 0
+
+// Return true if you don't want regular throw handling
+/obj/item/proc/override_throw(mob/user, atom/target)
+	return FALSE
+
+/obj/item/proc/is_equivalent(obj/item/I)
+	return I == src
+
+/obj/item/Crossed(atom/movable/AM)
+	. = ..()
+	if(prob(trip_chance) && ishuman(AM))
+		var/mob/living/carbon/human/H = AM
+		on_trip(H)
+
+/obj/item/proc/on_trip(mob/living/carbon/human/H)
+	if(H.slip(src, trip_stun, trip_weaken, trip_tiles, trip_walksafe, trip_any, trip_verb))
+		return TRUE
+
+/obj/item/attack_hulk(mob/living/carbon/human/user)
+	return FALSE
+
+/obj/item/proc/check_martial_counter(mob/living/carbon/human/target, mob/living/carbon/human/user) //handles block for CQC
+	if(target.check_block())
+		target.visible_message("<span class='danger'>[target.name] blocks [src] and twists [user]'s arm behind [user.p_their()] back!</span>",
+					"<span class='userdanger'>You block the attack!</span>")
+		user.Stun(2)
+		return TRUE

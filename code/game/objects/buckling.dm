@@ -5,6 +5,7 @@
 	var/buckle_lying = -1 //bed-like behaviour, forces mob.lying = buckle_lying if != -1 //except -1 actually means "rotate 90 degrees to the left" as it is used by 1*buckle_lying.
 	var/buckle_requires_restraints = 0 //require people to be handcuffed before being able to buckle. eg: pipes
 	var/mob/living/buckled_mob = null
+	var/buckle_offset = 0
 
 
 //Interaction
@@ -70,13 +71,16 @@
 		buckled_mob.clear_alert("buckled")
 		buckled_mob = null
 
-		post_buckle_mob(.)
+		post_unbuckle_mob(.)
 
 //Handle any extras after buckling/unbuckling
 //Called on buckle_mob() and unbuckle_mob()
 /atom/movable/proc/post_buckle_mob(mob/living/M)
 	return
 
+//same but for unbuckle
+/atom/movable/proc/post_unbuckle_mob(mob/living/M)
+	return
 
 //Wrapper procs that handle sanity and user feedback
 /atom/movable/proc/user_buckle_mob(mob/living/M, mob/user)

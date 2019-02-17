@@ -25,32 +25,45 @@
 /obj/machinery/mech_bay_recharge_port/New()
 	..()
 	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/mech_recharger(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(null)
+	component_parts += new /obj/item/circuitboard/mech_recharger(null)
+	component_parts += new /obj/item/stock_parts/capacitor(null)
+	component_parts += new /obj/item/stock_parts/capacitor(null)
+	component_parts += new /obj/item/stock_parts/capacitor(null)
+	component_parts += new /obj/item/stock_parts/capacitor(null)
+	component_parts += new /obj/item/stock_parts/capacitor(null)
 	component_parts += new /obj/item/stack/cable_coil(null, 1)
 	RefreshParts()
+	update_recharge_turf()
+
+/obj/machinery/mech_bay_recharge_port/proc/update_recharge_turf()
 	recharging_turf = get_step(loc, dir)
 
 /obj/machinery/mech_bay_recharge_port/upgraded/New()
 	..()
 	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/mech_recharger(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor/super(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor/super(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor/super(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor/super(null)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor/super(null)
+	component_parts += new /obj/item/circuitboard/mech_recharger(null)
+	component_parts += new /obj/item/stock_parts/capacitor/super(null)
+	component_parts += new /obj/item/stock_parts/capacitor/super(null)
+	component_parts += new /obj/item/stock_parts/capacitor/super(null)
+	component_parts += new /obj/item/stock_parts/capacitor/super(null)
+	component_parts += new /obj/item/stock_parts/capacitor/super(null)
 	component_parts += new /obj/item/stack/cable_coil(null, 1)
 	RefreshParts()
-	recharging_turf = get_step(loc, dir)
+	update_recharge_turf()
+
+/obj/machinery/mech_bay_recharge_port/upgraded/unsimulated/process()
+	if(!recharging_mecha)
+		recharging_mecha = locate(/obj/mecha) in recharging_turf
+	if(recharging_mecha && recharging_mecha.cell)
+		if(recharging_mecha.cell.charge < recharging_mecha.cell.maxcharge)
+			var/delta = min(max_charge, recharging_mecha.cell.maxcharge - recharging_mecha.cell.charge)
+			recharging_mecha.give_power(delta)
+		if(recharging_mecha.loc != recharging_turf)
+			recharging_mecha = null
 
 /obj/machinery/mech_bay_recharge_port/RefreshParts()
 	var/MC
-	for(var/obj/item/weapon/stock_parts/capacitor/C in component_parts)
+	for(var/obj/item/stock_parts/capacitor/C in component_parts)
 		MC += C.rating
 	max_charge = MC * 25
 
@@ -102,7 +115,7 @@
 	icon_keyboard = "tech_key"
 	icon_screen = "recharge_comp"
 	light_color = LIGHT_COLOR_FADEDPURPLE
-	circuit = /obj/item/weapon/circuitboard/mech_bay_power_console
+	circuit = /obj/item/circuitboard/mech_bay_power_console
 	var/obj/machinery/mech_bay_recharge_port/recharge_port
 
 
@@ -145,7 +158,7 @@
 	ui_interact(user)
 
 /obj/machinery/computer/mech_bay_power_console/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, force_open)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		// the ui does not exist, so we'll create a new() one
         // for a list of parameters and their descriptions see the code docs in \code\modules\nano\nanoui.dm
@@ -159,11 +172,11 @@
 	var/data[0]
 	if(!recharge_port)
 		reconnect()
-	if(recharge_port && !qdeleted(recharge_port))
+	if(recharge_port && !QDELETED(recharge_port))
 		data["recharge_port"] = list("mech" = null)
-		if(recharge_port.recharging_mecha && !qdeleted(recharge_port.recharging_mecha))
+		if(recharge_port.recharging_mecha && !QDELETED(recharge_port.recharging_mecha))
 			data["recharge_port"]["mech"] = list("health" = recharge_port.recharging_mecha.health, "maxhealth" = initial(recharge_port.recharging_mecha.health), "cell" = null)
-			if(recharge_port.recharging_mecha.cell && !qdeleted(recharge_port.recharging_mecha.cell))
+			if(recharge_port.recharging_mecha.cell && !QDELETED(recharge_port.recharging_mecha.cell))
 				data["has_mech"] = 1
 				data["mecha_name"] = recharge_port.recharging_mecha || "None"
 				data["mecha_charge"] = isnull(recharge_port.recharging_mecha) ? 0 : recharge_port.recharging_mecha.cell.charge
@@ -174,7 +187,7 @@
 
 	return data
 
-/obj/machinery/computer/mech_bay_power_console/initialize()
+/obj/machinery/computer/mech_bay_power_console/Initialize()
 	reconnect()
 	update_icon()
 	return ..()

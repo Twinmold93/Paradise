@@ -5,7 +5,7 @@
 	icon_state = "seed-poppy"
 	species = "poppy"
 	plantname = "Poppy Plants"
-	product = /obj/item/weapon/reagent_containers/food/snacks/grown/poppy
+	product = /obj/item/reagent_containers/food/snacks/grown/poppy
 	endurance = 10
 	maturation = 8
 	yield = 6
@@ -17,7 +17,7 @@
 	mutatelist = list(/obj/item/seeds/poppy/geranium, /obj/item/seeds/poppy/lily)
 	reagents_add = list("bicaridine" = 0.2, "plantmatter" = 0.05)
 
-/obj/item/weapon/reagent_containers/food/snacks/grown/poppy
+/obj/item/reagent_containers/food/snacks/grown/poppy
 	seed = /obj/item/seeds/poppy
 	name = "poppy"
 	desc = "Long-used as a symbol of rest, peace, and death."
@@ -25,6 +25,7 @@
 	slot_flags = SLOT_HEAD
 	filling_color = "#FF6347"
 	bitesize_mod = 3
+	distill_reagent = "vermouth"
 
 // Lily
 /obj/item/seeds/poppy/lily
@@ -33,10 +34,10 @@
 	icon_state = "seed-lily"
 	species = "lily"
 	plantname = "Lily Plants"
-	product = /obj/item/weapon/reagent_containers/food/snacks/grown/poppy/lily
+	product = /obj/item/reagent_containers/food/snacks/grown/poppy/lily
 	mutatelist = list()
 
-/obj/item/weapon/reagent_containers/food/snacks/grown/poppy/lily
+/obj/item/reagent_containers/food/snacks/grown/poppy/lily
 	seed = /obj/item/seeds/poppy/lily
 	name = "lily"
 	desc = "A beautiful orange flower"
@@ -50,10 +51,10 @@
 	icon_state = "seed-geranium"
 	species = "geranium"
 	plantname = "Geranium Plants"
-	product = /obj/item/weapon/reagent_containers/food/snacks/grown/poppy/geranium
+	product = /obj/item/reagent_containers/food/snacks/grown/poppy/geranium
 	mutatelist = list()
 
-/obj/item/weapon/reagent_containers/food/snacks/grown/poppy/geranium
+/obj/item/reagent_containers/food/snacks/grown/poppy/geranium
 	seed = /obj/item/seeds/poppy/geranium
 	name = "geranium"
 	desc = "A beautiful blue flower"
@@ -68,7 +69,7 @@
 	icon_state = "seed-harebell"
 	species = "harebell"
 	plantname = "Harebells"
-	product = /obj/item/weapon/reagent_containers/food/snacks/grown/harebell
+	product = /obj/item/reagent_containers/food/snacks/grown/harebell
 	lifespan = 100
 	endurance = 20
 	maturation = 7
@@ -80,7 +81,7 @@
 	growing_icon = 'icons/obj/hydroponics/growing_flowers.dmi'
 	reagents_add = list("plantmatter" = 0.04)
 
-/obj/item/weapon/reagent_containers/food/snacks/grown/harebell
+/obj/item/reagent_containers/food/snacks/grown/harebell
 	seed = /obj/item/seeds/harebell
 	name = "harebell"
 	desc = "\"I'll sweeten thy sad grave: thou shalt not lack the flower that's like thy face, pale primrose, nor the azured hare-bell, like thy veins; no, nor the leaf of eglantine, whom not to slander, out-sweeten'd not thy breath.\""
@@ -88,6 +89,7 @@
 	slot_flags = SLOT_HEAD
 	filling_color = "#E6E6FA"
 	bitesize_mod = 3
+	distill_reagent = "vermouth"
 
 
 // Sunflower
@@ -97,7 +99,7 @@
 	icon_state = "seed-sunflower"
 	species = "sunflower"
 	plantname = "Sunflowers"
-	product = /obj/item/weapon/grown/sunflower
+	product = /obj/item/grown/sunflower
 	endurance = 20
 	production = 2
 	yield = 2
@@ -108,7 +110,7 @@
 	mutatelist = list(/obj/item/seeds/sunflower/moonflower, /obj/item/seeds/sunflower/novaflower)
 	reagents_add = list("cornoil" = 0.08, "plantmatter" = 0.04)
 
-/obj/item/weapon/grown/sunflower // FLOWER POWER!
+/obj/item/grown/sunflower // FLOWER POWER!
 	seed = /obj/item/seeds/sunflower
 	name = "sunflower"
 	desc = "It's beautiful! A certain person might beat you to death if you trample these."
@@ -117,11 +119,11 @@
 	force = 0
 	slot_flags = SLOT_HEAD
 	throwforce = 0
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	throw_speed = 1
 	throw_range = 3
 
-/obj/item/weapon/grown/sunflower/attack(mob/M, mob/user)
+/obj/item/grown/sunflower/attack(mob/M, mob/user)
 	to_chat(M, "<font color='green'><b> [user] smacks you with a sunflower!</font><font color='yellow'><b>FLOWER POWER<b></font>")
 	to_chat(user, "<font color='green'>Your sunflower's </font><font color='yellow'><b>FLOWER POWER</b></font><font color='green'>strikes [M]</font>")
 
@@ -132,12 +134,12 @@
 	icon_state = "seed-moonflower"
 	species = "moonflower"
 	plantname = "Moonflowers"
-	product = /obj/item/weapon/reagent_containers/food/snacks/grown/moonflower
+	product = /obj/item/reagent_containers/food/snacks/grown/moonflower
 	mutatelist = list()
 	reagents_add = list("moonshine" = 0.2, "vitamin" = 0.02, "plantmatter" = 0.02)
 	rarity = 15
 
-/obj/item/weapon/reagent_containers/food/snacks/grown/moonflower
+/obj/item/reagent_containers/food/snacks/grown/moonflower
 	seed = /obj/item/seeds/sunflower/moonflower
 	name = "moonflower"
 	desc = "Store in a location at least 50 yards away from werewolves."
@@ -145,6 +147,7 @@
 	slot_flags = SLOT_HEAD
 	filling_color = "#E6E6FA"
 	bitesize_mod = 2
+	distill_reagent = "absinthe" 
 
 // Novaflower
 /obj/item/seeds/sunflower/novaflower
@@ -153,12 +156,12 @@
 	icon_state = "seed-novaflower"
 	species = "novaflower"
 	plantname = "Novaflowers"
-	product = /obj/item/weapon/grown/novaflower
+	product = /obj/item/grown/novaflower
 	mutatelist = list()
 	reagents_add = list("condensedcapsaicin" = 0.25, "capsaicin" = 0.3, "plantmatter" = 0)
 	rarity = 20
 
-/obj/item/weapon/grown/novaflower
+/obj/item/grown/novaflower
 	seed = /obj/item/seeds/sunflower/novaflower
 	name = "novaflower"
 	desc = "These beautiful flowers have a crisp smokey scent, like a summer bonfire."
@@ -167,16 +170,16 @@
 	force = 0
 	slot_flags = SLOT_HEAD
 	throwforce = 0
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	throw_speed = 1
 	throw_range = 3
 	attack_verb = list("roasted", "scorched", "burned")
 
-/obj/item/weapon/grown/novaflower/add_juice()
+/obj/item/grown/novaflower/add_juice()
 	..()
 	force = round((5 + seed.potency / 5), 1)
 
-/obj/item/weapon/grown/novaflower/attack(mob/living/carbon/M, mob/user)
+/obj/item/grown/novaflower/attack(mob/living/carbon/M, mob/user)
 	..()
 	if(isliving(M))
 		to_chat(M, "<span class='danger'>You are lit on fire from the intense heat of the [name]!</span>")
@@ -185,7 +188,7 @@
 			message_admins("[key_name_admin(user)] set [key_name_admin(M)] on fire")
 			log_game("[key_name(user)] set [key_name(M)] on fire")
 
-/obj/item/weapon/grown/novaflower/afterattack(atom/A as mob|obj, mob/user,proximity)
+/obj/item/grown/novaflower/afterattack(atom/A as mob|obj, mob/user,proximity)
 	if(!proximity)
 		return
 	if(force > 0)
@@ -195,7 +198,7 @@
 		usr.unEquip(src)
 		qdel(src)
 
-/obj/item/weapon/grown/novaflower/pickup(mob/living/carbon/human/user)
+/obj/item/grown/novaflower/pickup(mob/living/carbon/human/user)
 	..()
 	if(!user.gloves)
 		to_chat(user, "<span class='danger'>The [name] burns your bare hand!</span>")

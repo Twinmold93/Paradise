@@ -27,6 +27,8 @@
 	var/obj/screen/move_intent
 	var/obj/screen/module_store_icon
 
+	var/obj/screen/devil/soul_counter/devilsouldisplay
+
 	var/list/static_inventory = list()		//the screen objects which are static
 	var/list/toggleable_inventory = list()	//the screen objects which can be hidden
 	var/list/hotkeybuttons = list()			//the buttons that can be used via hotkeys
@@ -35,8 +37,6 @@
 
 	var/obj/screen/movable/action_button/hide_toggle/hide_actions_toggle
 	var/action_buttons_hidden = 0
-
-	var/obj/screen/internals
 
 /mob/proc/create_mob_hud()
 	if(client && !hud_used)
@@ -81,7 +81,7 @@
 	alien_plasma_display = null
 	vampire_blood_display = null
 	nightvisionicon = null
-	internals = null
+	devilsouldisplay = null
 
 	mymob = null
 	return ..()
@@ -99,6 +99,15 @@
 		display_hud_version = hud_version + 1
 	if(display_hud_version > HUD_VERSIONS)	//If the requested version number is greater than the available versions, reset back to the first version
 		display_hud_version = 1
+
+	if(mymob.client.view < world.view)
+		if(mymob.client.view < ARBITRARY_VIEWRANGE_NOHUD)
+			to_chat(mymob, "<span class='notice'>HUD is unavailable with this view range.</span>")
+			display_hud_version = HUD_STYLE_NOHUD
+		else
+			if(display_hud_version == HUD_STYLE_STANDARD)
+				to_chat(mymob, "<span class='notice'>Standard HUD mode is unavailable with a smaller-than-normal view range.</span>")
+				display_hud_version = HUD_STYLE_REDUCED
 
 	switch(display_hud_version)
 		if(HUD_STYLE_STANDARD)	//Default HUD
@@ -149,7 +158,7 @@
 				mymob.client.screen -= infodisplay
 
 	hud_version = display_hud_version
-	persistant_inventory_update()
+	persistent_inventory_update()
 	mymob.update_action_buttons(1)
 	reorganize_alerts()
 	reload_fullscreen()
@@ -165,7 +174,7 @@
 /datum/hud/proc/hidden_inventory_update()
 	return
 
-/datum/hud/proc/persistant_inventory_update()
+/datum/hud/proc/persistent_inventory_update()
 	return
 
 //Triggered when F12 is pressed (Unless someone changed something in the DMF)

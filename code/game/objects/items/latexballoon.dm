@@ -5,7 +5,7 @@
 	item_state = "lgloves"
 	force = 0
 	throwforce = 0
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	throw_speed = 1
 	throw_range = 7
 	var/state
@@ -15,7 +15,7 @@
 	QDEL_NULL(air_contents)
 	return ..()
 
-/obj/item/latexballon/proc/blow(obj/item/weapon/tank/tank, mob/user)
+/obj/item/latexballon/proc/blow(obj/item/tank/tank, mob/user)
 	if(icon_state == "latexballon_bursted")
 		return
 	icon_state = "latexballon_blow"
@@ -28,7 +28,7 @@
 /obj/item/latexballon/proc/burst()
 	if(!air_contents || icon_state != "latexballon_blow")
 		return
-	playsound(src, 'sound/weapons/Gunshot.ogg', 100, 1)
+	playsound(src, 'sound/weapons/gunshots/gunshot.ogg', 100, 1)
 	icon_state = "latexballon_bursted"
 	item_state = "lgloves"
 	if(isliving(loc))
@@ -55,9 +55,9 @@
 	return
 
 /obj/item/latexballon/attackby(obj/item/W, mob/user, params)
-	if(istype(W, /obj/item/weapon/tank))
-		var/obj/item/weapon/tank/T = W
+	if(istype(W, /obj/item/tank))
+		var/obj/item/tank/T = W
 		blow(T, user)
 		return
-	if(is_sharp(W) || is_hot(W) || can_puncture(W))
+	if(is_sharp(W) || is_hot(W) || is_pointed(W))
 		burst()

@@ -20,7 +20,7 @@ var/list/sting_paths
 
 /obj/effect/proc_holder/changeling/evolution_menu/proc/create_menu(var/datum/changeling/changeling)
 	var/dat
-	dat +="<html><head><title>Changling Evolution Menu</title></head>"
+	dat +="<html><head><title>Changeling Evolution Menu</title></head>"
 
 	//javascript, the part that does most of the work~
 	dat += {"
@@ -375,7 +375,7 @@ var/list/sting_paths
 			path.on_purchase(src)
 
 	var/mob/living/carbon/C = src		//only carbons have dna now, so we have to typecaste
-	mind.changeling.absorbed_dna |= C.dna
+	mind.changeling.absorbed_dna |= C.dna.Clone()
 	mind.changeling.trim_dna()
 	return 1
 
@@ -407,7 +407,7 @@ var/list/sting_paths
 			mind.changeling.changeling_speak = 0
 			mind.changeling.reset()
 			for(var/obj/effect/proc_holder/changeling/p in mind.changeling.purchasedpowers)
-				if(p.dna_cost == 0 && keep_free_powers)
+				if((p.dna_cost == 0 && keep_free_powers) || p.always_keep)
 					continue
 				mind.changeling.purchasedpowers -= p
 				p.on_refund(src)

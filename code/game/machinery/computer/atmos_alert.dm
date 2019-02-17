@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
-
 var/global/list/priority_air_alarms = list()
 var/global/list/minor_air_alarms = list()
 
@@ -7,7 +5,7 @@ var/global/list/minor_air_alarms = list()
 /obj/machinery/computer/atmos_alert
 	name = "atmospheric alert computer"
 	desc = "Used to access the station's atmospheric sensors."
-	circuit = /obj/item/weapon/circuitboard/atmos_alert
+	circuit = /obj/item/circuitboard/atmos_alert
 	icon_keyboard = "atmos_key"
 	icon_screen = "alert:0"
 	light_color = LIGHT_COLOR_CYAN
@@ -24,7 +22,7 @@ var/global/list/minor_air_alarms = list()
 	ui_interact(user)
 
 /obj/machinery/computer/atmos_alert/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, force_open)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "atmos_alert.tmpl", src.name, 500, 500)
 		ui.open()

@@ -7,7 +7,7 @@
 	anchored = 1 //There's a reason this is here, Mport. God fucking damn it -Agouri. Find&Fix by Pete. The reason this is here is to stop the curving of emitter shots.
 	flags = ABSTRACT
 	pass_flags = PASSTABLE
-	mouse_opacity = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	hitsound = 'sound/weapons/pierce.ogg'
 	var/hitsound_wall = ""
 	pressure_resistance = INFINITY
@@ -28,15 +28,21 @@
 	var/speed = 1			//Amount of deciseconds it takes for projectile to travel
 	var/Angle = 0
 	var/spread = 0			//amount (in degrees) of projectile spread
-	var/legacy = 0			//legacy projectile system
+	var/legacy = FALSE			//legacy projectile system
 	animate_movement = 0
-
+	
+	var/ignore_source_check = FALSE
+	
 	var/damage = 10
+	var/tile_dropoff = 0	//how much damage should be decremented as the bullet moves
+	var/tile_dropoff_s = 0	//same as above but for stamina
 	var/damage_type = BRUTE //BRUTE, BURN, TOX, OXY, CLONE are the only things that should be in here
-	var/nodamage = 0 //Determines if the projectile will skip any damage inflictions
+	var/nodamage = FALSE //Determines if the projectile will skip any damage inflictions
 	var/flag = "bullet" //Defines what armor to use when it hits things.  Must be set to bullet, laser, energy,or bomb	//Cael - bio and rad are also valid
 	var/projectile_type = "/obj/item/projectile"
 	var/range = 50 //This will de-increment every step. When 0, it will delete the projectile.
+	var/is_reflectable = FALSE // Can it be reflected or not?
+	var/alwayslog = FALSE // ALWAYS log this projectile on hit even if it doesn't hit a living target. Useful for AOE explosion / EMP.
 	//Effects
 	var/stun = 0
 	var/weaken = 0
@@ -48,9 +54,11 @@
 	var/drowsy = 0
 	var/stamina = 0
 	var/jitter = 0
-	var/embed = 0 // whether or not the projectile can embed itself in the mob
 	var/forcedodge = 0 //to pass through everything
 	var/dismemberment = 0 //The higher the number, the greater the bonus to dismembering. 0 will not dismember at all.
+	var/ricochets = 0
+	var/ricochets_max = 2
+	var/ricochet_chance = 0
 
 	var/log_override = FALSE //whether print to admin attack logs or just keep it in the diary
 
@@ -60,17 +68,54 @@
 
 /obj/item/projectile/proc/Range()
 	range--
+	if(damage && tile_dropoff)
+		damage = max(0, damage - tile_dropoff) // decrement projectile damage based on dropoff value for each tile it moves
+	if(stamina && tile_dropoff_s)
+		stamina = max(0, stamina - tile_dropoff_s) // as above, but with stamina
 	if(range <= 0 && loc)
+		on_range()
+	if(!damage && !stamina && (tile_dropoff || tile_dropoff_s))
 		on_range()
 
 /obj/item/projectile/proc/on_range() //if we want there to be effects when they reach the end of their range
 	qdel(src)
 
 /obj/item/projectile/proc/on_hit(atom/target, blocked = 0, hit_zone)
+	var/turf/target_loca = get_turf(target)
+	if(alwayslog)
+		add_attack_logs(firer, target, "Shot with a [type]")
 	if(!isliving(target))
 		return 0
 	var/mob/living/L = target
+	var/mob/living/carbon/human/H
 	if(blocked < 100) // not completely blocked
+		if(damage && L.blood_volume && damage_type == BRUTE)
+			var/splatter_dir = dir
+			if(starting)
+				splatter_dir = get_dir(starting, target_loca)
+			if(isalien(L))
+				new /obj/effect/temp_visual/dir_setting/bloodsplatter/xenosplatter(target_loca, splatter_dir)
+			else
+				var/blood_color = "#C80000"
+				if(ishuman(target))
+					H = target
+					blood_color = H.dna.species.blood_color
+				new /obj/effect/temp_visual/dir_setting/bloodsplatter(target_loca, splatter_dir, blood_color)
+			if(prob(33))
+				var/list/shift = list("x" = 0, "y" = 0)
+				var/turf/step_over = get_step(target_loca, splatter_dir)
+
+				if(get_splatter_blockage(step_over, target, splatter_dir, target_loca)) //If you can't cross the tile or any of its relevant obstacles...
+					shift = pixel_shift_dir(splatter_dir) //Pixel shift the blood there instead (so you can't see wallsplatter through walls).
+				else
+					target_loca = step_over
+				L.add_splatter_floor(target_loca, shift_x = shift["x"], shift_y = shift["y"])
+				if(istype(H))
+					for(var/mob/living/carbon/human/M in step_over) //Bloody the mobs who're infront of the spray.
+						M.bloody_hands(H)
+						/* Uncomment when bloody_body stops randomly not transferring blood colour.
+						M.bloody_body(H) */
+
 		var/organ_hit_text = ""
 		if(L.has_limbs)
 			organ_hit_text = " in \the [parse_zone(def_zone)]"
@@ -85,14 +130,28 @@
 								"<span class='userdanger'>[L] is hit by \a [src][organ_hit_text]!</span>")	//X has fired Y is now given by the guns so you cant tell who shot you if you could not see the shooter
 
 	var/reagent_note
+	var/has_reagents = FALSE
 	if(reagents && reagents.reagent_list)
 		reagent_note = " REAGENTS:"
 		for(var/datum/reagent/R in reagents.reagent_list)
 			reagent_note += R.id + " ("
 			reagent_note += num2text(R.volume) + ") "
-	if(!log_override && firer && original)
-		add_logs(firer, L, "shot", src, reagent_note)
+			has_reagents = TRUE
+	if(!log_override && firer && !alwayslog)
+		if(has_reagents)
+			add_attack_logs(firer, L, "Shot with a [type] (containing [reagent_note])")
+		else
+			add_attack_logs(firer, L, "Shot with a [type]")
 	return L.apply_effects(stun, weaken, paralyze, irradiate, slur, stutter, eyeblur, drowsy, blocked, stamina, jitter)
+
+/obj/item/projectile/proc/get_splatter_blockage(var/turf/step_over, var/atom/target, var/splatter_dir, var/target_loca) //Check whether the place we want to splatter blood is blocked (i.e. by windows).
+	var/turf/step_cardinal = !(splatter_dir in list(NORTH, SOUTH, EAST, WEST)) ? get_step(target_loca, get_cardinal_dir(target_loca, step_over)) : null
+
+	if(step_over.density && !step_over.CanPass(target, step_over, 1)) //Preliminary simple check.
+		return TRUE
+	for(var/atom/movable/border_obstacle in step_over) //Check to see if we're blocked by a (non-full) window or some such. Do deeper investigation if we're splattering blood diagonally.
+		if(border_obstacle.flags&ON_BORDER && get_dir(step_cardinal ? step_cardinal : target_loca, step_over) ==  turn(border_obstacle.dir, 180))
+			return TRUE
 
 /obj/item/projectile/proc/vol_by_damage()
 	if(damage)
@@ -103,6 +162,14 @@
 /obj/item/projectile/Bump(atom/A, yes)
 	if(!yes) //prevents double bumps.
 		return
+		
+	if(check_ricochet(A) && check_ricochet_flag(A) && ricochets < ricochets_max)
+		ricochets++
+	if(A.handle_ricochet(src))
+		on_ricochet(A)
+		ignore_source_check = TRUE
+		range = initial(range)
+		return TRUE
 	if(firer)
 		if(A == firer || (A == firer.loc && istype(A, /obj/mecha))) //cannot shoot yourself or your mech
 			loc = A.loc
@@ -226,3 +293,21 @@ obj/item/projectile/Crossed(atom/movable/AM) //A mob moving on a tile with a pro
 /obj/item/projectile/proc/dumbfire(var/dir)
 	current = get_ranged_target_turf(src, dir, world.maxx) //world.maxx is the range. Not sure how to handle this better.
 	fire()
+	
+
+/obj/item/projectile/proc/on_ricochet(atom/A)
+	return
+
+/obj/item/projectile/proc/check_ricochet()
+	if(prob(ricochet_chance))
+		return TRUE
+	return FALSE
+
+/obj/item/projectile/proc/check_ricochet_flag(atom/A)
+	if(A.flags_2 & CHECK_RICOCHET_1)
+		return TRUE
+	return FALSE
+	
+/obj/item/projectile/proc/setAngle(new_angle)	//wrapper for overrides.
+	Angle = new_angle
+	return TRUE

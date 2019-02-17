@@ -17,7 +17,7 @@
 	var/ert_reason = "Reason for ERT"
 
 	anchored = 1
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 2
 	active_power_usage = 6
 	power_channel = ENVIRON
@@ -28,11 +28,11 @@
 	to_chat(user, "<span class='warning'>The station AI is not to interact with these devices.</span>")
 	return
 
-/obj/machinery/keycard_auth/attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+/obj/machinery/keycard_auth/attackby(obj/item/W as obj, mob/user as mob, params)
 	if(stat & (NOPOWER|BROKEN))
 		to_chat(user, "This device is not powered.")
 		return
-	if(istype(W, /obj/item/weapon/card/id) || istype(W, /obj/item/device/pda))
+	if(istype(W, /obj/item/card/id) || istype(W, /obj/item/pda))
 		if(check_access(W))
 			if(active == 1)
 				//This is not the device that made the initial request. It is the device confirming the request.
@@ -70,7 +70,7 @@
 
 	user.set_machine(src)
 
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, force_open)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "keycard_auth.tmpl", "Keycard Authentication Device UI", 540, 320)
 		ui.open()
@@ -98,7 +98,7 @@
 	if(href_list["ert"])
 		ert_reason = input(usr, "Reason for ERT Call:", "", "")
 
-	nanomanager.update_uis(src)
+	SSnanoui.update_uis(src)
 	add_fingerprint(usr)
 	return
 
@@ -154,19 +154,25 @@
 		if("Revoke Emergency Maintenance Access")
 			revoke_maint_all_access()
 			feedback_inc("alert_keycard_auth_maintRevoke",1)
+		if("Activate Station-Wide Emergency Access")
+			make_station_all_access()
+			feedback_inc("alert_keycard_auth_stationGrant",1)
+		if("Deactivate Station-Wide Emergency Access")
+			revoke_station_all_access()
+			feedback_inc("alert_keycard_auth_stationRevoke",1)
 		if("Emergency Response Team")
 			if(is_ert_blocked())
 				to_chat(usr, "<span class='warning'>All Emergency Response Teams are dispatched and can not be called at this time.</span>")
 				return
 			to_chat(usr, "<span class = 'notice'>ERT request transmitted.</span>")
-
+			print_centcom_report(ert_reason, station_time_timestamp() + " ERT Request")
 
 			var/fullmin_count = 0
-			for(var/client/C in admins)
+			for(var/client/C in GLOB.admins)
 				if(check_rights(R_EVENT, 0, C.mob))
 					fullmin_count++
 			if(fullmin_count)
-				ert_request_answered = 0
+				ert_request_answered = TRUE
 				ERT_Announce(ert_reason , event_triggered_by, 0)
 				ert_reason = "Reason for ERT"
 				feedback_inc("alert_keycard_auth_ert",1)
@@ -180,6 +186,7 @@
 	return ticker.mode && ticker.mode.ert_disabled
 
 var/global/maint_all_access = 0
+var/global/station_all_access = 0
 
 /proc/make_maint_all_access()
 	for(var/area/maintenance/A in world)
@@ -196,3 +203,19 @@ var/global/maint_all_access = 0
 			D.update_icon(0)
 	minor_announcement.Announce("Access restrictions on maintenance and external airlocks have been re-added.")
 	maint_all_access = 0
+
+/proc/make_station_all_access()
+	for(var/obj/machinery/door/airlock/D in GLOB.airlocks)
+		if(is_station_level(D.z))
+			D.emergency = 1
+			D.update_icon(0)
+	minor_announcement.Announce("Access restrictions on all station airlocks have been removed due to an ongoing crisis. Trespassing laws still apply unless ordered otherwise by Command staff.")
+	station_all_access = 1
+
+/proc/revoke_station_all_access()
+	for(var/obj/machinery/door/airlock/D in GLOB.airlocks)
+		if(is_station_level(D.z))
+			D.emergency = 0
+			D.update_icon(0)
+	minor_announcement.Announce("Access restrictions on all station airlocks have been re-added. Seek station AI or a colleague's assistance if you are stuck.")
+	station_all_access = 0

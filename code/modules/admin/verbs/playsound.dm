@@ -6,11 +6,11 @@ var/list/sounds_cache = list()
 	if(!check_rights(R_SOUNDS))
 		return
 
-	var/sound/awful_sound = sound(null, repeat = 0, wait = 0, channel = 777)
+	var/sound/awful_sound = sound(null, repeat = 0, wait = 0, channel = CHANNEL_ADMIN)
 
 	log_admin("[key_name(src)] stopped admin sounds.")
 	message_admins("[key_name_admin(src)] stopped admin sounds.", 1)
-	for(var/mob/M in player_list)
+	for(var/mob/M in GLOB.player_list)
 		M << awful_sound
 
 /client/proc/play_sound(S as sound)
@@ -18,7 +18,7 @@ var/list/sounds_cache = list()
 	set name = "Play Global Sound"
 	if(!check_rights(R_SOUNDS))	return
 
-	var/sound/uploaded_sound = sound(S, repeat = 0, wait = 1, channel = 777)
+	var/sound/uploaded_sound = sound(S, repeat = 0, wait = 1, channel = CHANNEL_ADMIN)
 	uploaded_sound.priority = 250
 
 	sounds_cache += S
@@ -28,7 +28,7 @@ var/list/sounds_cache = list()
 
 	log_admin("[key_name(src)] played sound [S]")
 	message_admins("[key_name_admin(src)] played sound [S]", 1)
-	for(var/mob/M in player_list)
+	for(var/mob/M in GLOB.player_list)
 		if(M.client.prefs.sound & SOUND_MIDI)
 			M << uploaded_sound
 
@@ -92,8 +92,8 @@ var/list/sounds_cache = list()
 	if(C == "Yep")
 		ignore_power = 1
 
-	for(var/O in global_intercoms)
-		var/obj/item/device/radio/intercom/I = O
+	for(var/O in GLOB.global_intercoms)
+		var/obj/item/radio/intercom/I = O
 		if(!is_station_level(I.z) && !ignore_z)
 			continue
 		if(!I.on && !ignore_power)

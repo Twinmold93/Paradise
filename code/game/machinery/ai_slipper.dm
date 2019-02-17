@@ -4,13 +4,14 @@
 	icon_state = "motion3"
 	layer = 3
 	anchored = 1.0
+	armor = list(melee = 50, bullet = 20, laser = 20, energy = 20, bomb = 0, bio = 0, rad = 0)
 	var/uses = 20
-	var/disabled = 1
+	var/disabled = TRUE
 	var/lethal = 0
-	var/locked = 1
+	var/locked = TRUE
 	var/cooldown_time = 0
 	var/cooldown_timeleft = 0
-	var/cooldown_on = 0
+	var/cooldown_on = FALSE
 	req_access = list(access_ai_upload)
 
 /obj/machinery/ai_slipper/power_change()
@@ -22,13 +23,14 @@
 		else
 			icon_state = "motion0"
 			stat |= NOPOWER
+			disabled = TRUE
 
 /obj/machinery/ai_slipper/proc/setState(var/enabled, var/uses)
 	disabled = disabled
 	uses = uses
 	power_change()
 
-/obj/machinery/ai_slipper/attackby(obj/item/weapon/W, mob/user, params)
+/obj/machinery/ai_slipper/attackby(obj/item/W, mob/user, params)
 	if(stat & (NOPOWER|BROKEN))
 		return
 	if(istype(user, /mob/living/silicon))
@@ -48,6 +50,24 @@
 			to_chat(user, "<span class='warning'>Access denied.</span>")
 			return
 	return
+
+/obj/machinery/ai_slipper/proc/ToggleOn()
+	if(stat & (NOPOWER|BROKEN))
+		return
+	disabled = !disabled
+	icon_state = disabled? "motion0":"motion3"
+
+/obj/machinery/ai_slipper/proc/Activate()
+	if(stat & (NOPOWER|BROKEN))
+		return
+	if(cooldown_on || disabled)
+		return
+	else
+		new /obj/effect/particle_effect/foam(loc)
+		uses--
+		cooldown_on = TRUE
+		cooldown_time = world.timeofday + 100
+		slip_process()
 
 /obj/machinery/ai_slipper/attack_ai(mob/user)
 	return attack_hand(user)
@@ -87,18 +107,10 @@
 		return 1
 
 	if(href_list["toggleOn"])
-		disabled = !disabled
-		icon_state = disabled? "motion0":"motion3"
+		ToggleOn()
+
 	if(href_list["toggleUse"])
-		if(cooldown_on || disabled)
-			return
-		else
-			new /obj/structure/foam(loc)
-			uses--
-			cooldown_on = 1
-			cooldown_time = world.timeofday + 100
-			slip_process()
-			return
+		Activate()
 
 	attack_hand(usr)
 
@@ -115,5 +127,5 @@
 	if(uses <= 0)
 		return
 	if(uses >= 0)
-		cooldown_on = 0
+		cooldown_on = FALSE
 	power_change()

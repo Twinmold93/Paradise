@@ -1,7 +1,7 @@
 //Please use mob or src (not usr) in these procs. This way they can be called in the same fashion as procs.
 /client/verb/wiki(query as text)
 	set name = "wiki"
-	set desc = "Type what you want to know about.  This will open the wiki on your web browser."
+	set desc = "Type what you want to know about.  This will open the wiki in your web browser."
 	set hidden = 1
 	if(config.wikiurl)
 		if(query)
@@ -38,7 +38,7 @@
 		'html/changelog.html'
 		)
 	src << browse('html/changelog.html', "window=changes;size=675x650")
-
+	update_changelog_button()
 	if(prefs.lastchangelog != changelog_hash) //if it's already opened, no need to tell them they have unread changes
 		prefs.SetChangelog(src,changelog_hash)
 
@@ -66,6 +66,30 @@
 		to_chat(src, "<span class='danger'>The rules URL is not set in the server configuration.</span>")
 	return
 
+/client/verb/github()
+	set name = "GitHub"
+	set desc = "Visit the GitHub page."
+	set hidden = 1
+	if(config.githuburl)
+		if(alert("This will open our GitHub repository in your browser. Are you sure?",,"Yes","No")=="No")
+			return
+		src << link(config.githuburl)
+	else
+		to_chat(src, "<span class='danger'>The GitHub URL is not set in the server configuration.</span>")
+	return
+
+/client/verb/discord()
+	set name = "Discord"
+	set desc = "Join our Discord server."
+	set hidden = 1
+	if(config.discordurl)
+		if(alert("This will invite you to our Discord server. Are you sure?",,"Yes","No")=="No")
+			return
+		src << link(config.discordurl)
+	else
+		to_chat(src, "<span class='danger'>The Discord URL is not set in the server configuration.</span>")
+	return
+	
 /client/verb/donate()
 	set name = "Donate"
 	set desc = "Donate to help with hosting costs."

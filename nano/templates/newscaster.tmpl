@@ -31,6 +31,7 @@ Property of Nanotrasen</font><br>
 			{{if data.wanted_issue}}
 				<div class='line'>{{:helper.link('Read Wanted issue', 'exclamation-triangle', {'view_wanted' : 1})}}</div>
 			{{/if}}
+			<div class='line'>{{:helper.link('View available NT jobs', 'share', {'jobs' : 1})}}</div>
 			<div class='line'>{{:helper.link('Create feed channel', 'plus', {'create_channel' : 1})}}</div>
 			<div class='line'>{{:helper.link('View feed channels', 'arrow-right', {'view' : 1})}}</div>
 			<div class='line'>{{:helper.link('Submit new feed story', 'share', {'create_feed_story' : 1})}}</div>
@@ -96,6 +97,13 @@ Property of Nanotrasen</font><br>
 			</div>
 		</div>
 		<div class='item'>
+			<div class='itemLabel'>Title:</div>
+			<div class='itemContent'>
+				<a style='float: left; padding-right: 6px;'>{{:data.title}}</a>
+				{{:helper.link('Edit', 'pencil', {'set_message_title' : 1})}}
+			</div>
+		</div>
+		<div class='item'>
 			<div class='itemLabel'>Message body:</div>
 			<div class='itemContent'>
 				<a style='float: left; padding-right: 6px;'>{{:data.msg}}</a>
@@ -131,10 +139,15 @@ Property of Nanotrasen</font><br>
 		{{else}}
 			{{for data.messages}}
 				<div class='statusDisplay'>
-					- {{:value.body}}<br>
+					<p style='text-align: center;'> 
+						<font size="5"><b>{{:value.title}}</b></font><br>
+					</p>
 					{{if value.img}}
-						<img src='data:image/png;base64,{{:value.img}}' width=180><br>
-					{{/if}}
+						<img src='tmp_photo{{:value.message_number}}.png' style='display: block; margin-left: auto; margin-right: auto;' width=350><br>
+					{{/if}}		
+					<p style='text-align: justify;'> 					
+						{{:value.body}}<br>
+					</p>
 					<i><font size=1>[{{:value.message_type}} by <span class='good'>{{:value.author}}</span>]</font></i><br>
 					<i><font size=1>Message view count: {{:value.view_count}}</font></i>
 				</div>
@@ -197,7 +210,8 @@ Property of Nanotrasen</font><br>
 		<i>{{:helper.link(data.author_redacted ? 'Undo author censorship' : 'Censor channel author', null, {'censor_channel_author' : data.ref})}}</i><br><hr>
 		{{for data.messages}}
 			<div class='statusDisplay'>
-				- {{:value.body}}<br>
+				<b>{{:value.title}}</b><br>
+				{{:value.body}}<br>
 				{{if value.img}}
 					<img src='{{:value.img}}' width=180><br>
 				{{/if}}
@@ -216,7 +230,7 @@ Property of Nanotrasen</font><br>
 		</div>
 	{{else data.screen == 9}} <!-- NEWSCASTER_D_NOTICE_FC -->
 		<b>{{:data.channel_name}}</b> <i><font size=1>[created by: <span class='good'>{{:data.author}}</span>]</font></i><br>
-		<i>Channel messages listed below. If you deem them dangerous to the station, you can <div style='clear: both;'>{{:helper.link('Bestow a D-Notice upon the channel', null, {'toggle_d_notice' : data.ref})}}</div></i><br><hr>
+		<i>Channel messages listed below. If you deem them dangerous to the station, you can <div style='clear: both;'>{{:helper.link(data.censored ? 'Remove the D-Notice on the channel' : 'Bestow a D-Notice upon the channel', null, {'toggle_d_notice' : data.ref})}}</div></i><br><hr>
 		{{if data.censored}}
 			<div class='statusDisplay'>
 				<b class='bad'>ATTENTION: </b>This channel has been deemed as threatening to the welfare of the station, and marked with a Nanotrasen D-Notice. 
@@ -225,7 +239,8 @@ Property of Nanotrasen</font><br>
 		{{else}}
 			{{for data.messages}}
 				<div class='statusDisplay'>
-					- {{:value.body}}<br>
+					<b>{{:value.title}}</b><br>
+					{{:value.body}}<br>
 					{{if value.img}}
 						<img src='{{:value.img}}' width=180><br>
 					{{/if}}
@@ -285,10 +300,10 @@ Property of Nanotrasen</font><br>
 			<div class='itemContent'>{{:data.description}}</div>
 		</div>
 		<div class='item'>
-			<div class='itemLabel'>Photo:</div>
+			<div class='itemLabel'>Photo:</div><br>
 			<div class='itemContent'>
 				{{if data.photo}}
-					<img src='data:image/png;base64,{{:data.photo}}' width=180>
+					<img src='tmp_photow.png' width=350><br>
 				{{else}}
 					None
 				{{/if}}
@@ -296,6 +311,23 @@ Property of Nanotrasen</font><br>
 		</div>
 		<div class='item'>
 			<div class='line'>{{:helper.link('Back', 'arrow-left', {'setScreen' : 0})}}</div>
+		</div>
+	{{else data.screen == 12}} <!-- NEWSCASTER_JOBS -->
+		<center><h3 class='good'>CAREERS AT NANOTRASEN</h3>
+		<i><font size=1>Work for a better future.</font></i></center>
+		<hr>
+		{{for data.jobs}}
+			<div class='jobValues'>
+				{{:value.title}}<br>
+			</div>
+			{{empty}}
+				<i>No available jobs...</i>
+		{{/for}}
+		
+		<hr>
+		<div class='item'>
+			<div class='line'>{{:helper.link('Refresh', 'refresh', {'refresh' : 0})}}</div>
+			<div class='line'>{{:helper.link('Back', 'arrow-left', {'setScreen' : 1})}}</div>
 		</div>
 	{{/if}}
 {{/if}}

@@ -24,8 +24,7 @@
 
 /mob/living/carbon/human/proc/has_organ(name)
 	var/obj/item/organ/external/O = bodyparts_by_name[name]
-
-	return (O && !(O.status & ORGAN_DESTROYED)  && !O.is_stump())
+	return O
 
 /mob/living/carbon/human/proc/has_organ_for_slot(slot)
 	switch(slot)
@@ -115,7 +114,7 @@
 		if(G.tint)
 			update_tint()
 		if(G.prescription)
-			clear_fullscreen("nearsighted")
+			update_nearsighted_effects()
 		if(G.vision_flags || G.darkness_view || G.invis_override || G.invis_view)
 			update_sight()
 		update_inv_glasses()
@@ -151,9 +150,9 @@
 			update_hair()	//rebuild hair
 			update_fhair()
 			update_head_accessory()
-		if(internal)
+		if(internal && !get_organ_slot("breathing_tube"))
 			internal = null
-			update_internals_hud_icon(0)
+			update_action_buttons_icon()
 		wear_mask_update(I, toggle_off = FALSE)
 		sec_hud_set_ID()
 		update_inv_wear_mask()
@@ -267,8 +266,7 @@
 			if(G.tint)
 				update_tint()
 			if(G.prescription)
-				if(disabilities & NEARSIGHTED)
-					overlay_fullscreen("nearsighted", /obj/screen/fullscreen/impaired, 1)
+				update_nearsighted_effects()
 			if(G.vision_flags || G.darkness_view || G.invis_override || G.invis_view)
 				update_sight()
 			update_inv_glasses(redraw_mob)
@@ -323,7 +321,7 @@
 	if(put_in_active_hand(W))			return 1
 	else if(put_in_inactive_hand(W))	return 1
 	else
-		..()
+		. = ..()
 
 // Return the item currently in the slot ID
 /mob/living/carbon/human/get_item_by_slot(slot_id)
@@ -420,7 +418,7 @@
 	..(what, who, where, silent = is_silent)
 
 /mob/living/carbon/human/can_equip(obj/item/I, slot, disable_warning = 0)
-	switch(species.handle_can_equip(I, slot, disable_warning, src))
+	switch(dna.species.handle_can_equip(I, slot, disable_warning, src))
 		if(1)	return 1
 		if(2)	return 0 //if it returns 2, it wants no normal handling
 
@@ -546,7 +544,7 @@
 				return 0
 			if(I.slot_flags & SLOT_DENYPOCKET)
 				return
-			if(I.w_class <= 2 || (I.slot_flags & SLOT_POCKET))
+			if(I.w_class <= WEIGHT_CLASS_SMALL || (I.slot_flags & SLOT_POCKET))
 				return 1
 		if(slot_r_store)
 			if(I.flags & NODROP)
@@ -559,7 +557,7 @@
 				return 0
 			if(I.slot_flags & SLOT_DENYPOCKET)
 				return 0
-			if(I.w_class <= 2 || (I.slot_flags & SLOT_POCKET))
+			if(I.w_class <= WEIGHT_CLASS_SMALL || (I.slot_flags & SLOT_POCKET))
 				return 1
 			return 0
 		if(slot_s_store)
@@ -575,28 +573,28 @@
 				if(!disable_warning)
 					to_chat(src, "You somehow have a suit with no defined allowed items for suit storage, stop that.")
 				return 0
-			if(I.w_class > 4)
+			if(I.w_class > WEIGHT_CLASS_BULKY)
 				if(!disable_warning)
 					to_chat(src, "The [name] is too big to attach.")
 				return 0
-			if(istype(I, /obj/item/device/pda) || istype(I, /obj/item/weapon/pen) || is_type_in_list(I, wear_suit.allowed))
+			if(istype(I, /obj/item/pda) || istype(I, /obj/item/pen) || is_type_in_list(I, wear_suit.allowed))
 				return 1
 			return 0
 		if(slot_handcuffed)
 			if(handcuffed)
 				return 0
-			if(!istype(I, /obj/item/weapon/restraints/handcuffs))
+			if(!istype(I, /obj/item/restraints/handcuffs))
 				return 0
 			return 1
 		if(slot_legcuffed)
 			if(legcuffed)
 				return 0
-			if(!istype(I, /obj/item/weapon/restraints/legcuffs))
+			if(!istype(I, /obj/item/restraints/legcuffs))
 				return 0
 			return 1
 		if(slot_in_backpack)
-			if(back && istype(back, /obj/item/weapon/storage/backpack))
-				var/obj/item/weapon/storage/backpack/B = back
+			if(back && istype(back, /obj/item/storage/backpack))
+				var/obj/item/storage/backpack/B = back
 				if(B.contents.len < B.storage_slots && I.w_class <= B.max_w_class)
 					return 1
 			return 0

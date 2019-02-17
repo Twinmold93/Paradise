@@ -6,7 +6,6 @@
 	icon_state = "alienq_s"
 	status_flags = CANPARALYSE
 	mob_size = MOB_SIZE_LARGE
-	move_delay_add = 3
 	large = 1
 	ventcrawler = 0
 
@@ -34,7 +33,7 @@
 	create_reagents(100)
 
 	//there should only be one queen
-	for(var/mob/living/carbon/alien/humanoid/empress/E in living_mob_list)
+	for(var/mob/living/carbon/alien/humanoid/empress/E in GLOB.living_mob_list)
 		if(E == src)		continue
 		if(E.stat == DEAD)	continue
 		if(E.client)

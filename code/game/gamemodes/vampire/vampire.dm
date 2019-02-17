@@ -9,8 +9,8 @@
 	name = "vampire"
 	config_tag = "vampire"
 	restricted_jobs = list("AI", "Cyborg")
-	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Blueshield", "Nanotrasen Representative", "Security Pod Pilot", "Magistrate", "Chaplain", "Brig Physician", "Internal Affairs Agent", "Nanotrasen Navy Officer", "Special Operations Officer")
-	protected_species = list("Machine", "Plasmaman")
+	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Blueshield", "Nanotrasen Representative", "Security Pod Pilot", "Magistrate", "Chaplain", "Brig Physician", "Internal Affairs Agent", "Nanotrasen Navy Officer", "Special Operations Officer", "Syndicate Officer")
+	protected_species = list("Machine")
 	required_players = 15
 	required_enemies = 1
 	recommended_enemies = 4
@@ -175,6 +175,7 @@
 /datum/game_mode/proc/greet_vampire(var/datum/mind/vampire, var/you_are=1)
 	var/dat
 	if(you_are)
+		SEND_SOUND(vampire.current, 'sound/ambience/antag/vampalert.ogg')
 		dat = "<span class='danger'>You are a Vampire!</span><br>"
 	dat += {"To bite someone, target the head and use harm intent with an empty hand. Drink blood to gain new powers.
 You are weak to holy things and starlight. Don't go into space and avoid the Chaplain, the chapel and especially Holy Water."}
@@ -275,10 +276,12 @@ You are weak to holy things and starlight. Don't go into space and avoid the Cha
 	var/blood = 0
 	var/old_bloodtotal = 0 //used to see if we increased our blood total
 	var/old_bloodusable = 0 //used to see if we increased our blood usable
-	owner.create_attack_log("<font color='red'>Bit [H] ([H.ckey]) in the neck and draining their blood</font>")
-	H.create_attack_log("<font color='orange'>Has been bit in the neck by [owner] ([owner.ckey])</font>")
-	log_attack("[owner] ([owner.ckey]) bit [H] ([H.ckey]) in the neck")
-	owner.visible_message("<span class='danger'>[owner] grabs [H]'s neck harshly and sinks in their fangs!</span>", "<span class='danger'>You sink your fangs into [H] and begin to drain their blood.</span>", "<span class='notice'>You hear a soft puncture and a wet sucking noise.</span>")
+	if(owner.is_muzzled())
+		to_chat(owner, "<span class='warning'>[owner.wear_mask] prevents you from biting [H]!</span>")
+		draining = null
+		return
+	add_attack_logs(owner, H, "vampirebit & is draining their blood.", ATKLOG_ALMOSTALL)
+	owner.visible_message("<span class='danger'>[owner] grabs [H]'s neck harshly and sinks in [owner.p_their()] fangs!</span>", "<span class='danger'>You sink your fangs into [H] and begin to drain [owner.p_their()] blood.</span>", "<span class='notice'>You hear a soft puncture and a wet sucking noise.</span>")
 	if(!iscarbon(owner))
 		H.LAssailant = null
 	else
@@ -289,20 +292,20 @@ You are weak to holy things and starlight. Don't go into space and avoid the Cha
 			return
 		old_bloodtotal = bloodtotal
 		old_bloodusable = bloodusable
-		if(!H.vessel.get_reagent_amount("blood"))
+		if(!H.blood_volume)
 			to_chat(owner, "<span class='warning'>They've got no blood left to give.</span>")
 			break
 		if(H.stat < DEAD)
-			blood = min(20, H.vessel.get_reagent_amount("blood"))	// if they have less than 20 blood, give them the remnant else they get 20 blood
+			blood = min(20, H.blood_volume)	// if they have less than 20 blood, give them the remnant else they get 20 blood
 			bloodtotal += blood / 2	//divide by 2 to counted the double suction since removing cloneloss -Melandor0
 			bloodusable += blood / 2
 		else
-			blood = min(5, H.vessel.get_reagent_amount("blood"))	// The dead only give 5 bloods
+			blood = min(5, H.blood_volume)	// The dead only give 5 blood
 			bloodtotal += blood
 		if(old_bloodtotal != bloodtotal)
 			to_chat(owner, "<span class='notice'><b>You have accumulated [bloodtotal] [bloodtotal > 1 ? "units" : "unit"] of blood[bloodusable != old_bloodusable ? ", and have [bloodusable] left to use" : ""].</b></span>")
 		check_vampire_upgrade()
-		H.vessel.remove_reagent("blood", 25)
+		H.blood_volume = max(H.blood_volume - 25, 0)
 		if(ishuman(owner))
 			var/mob/living/carbon/human/V = owner
 			V.nutrition = min(NUTRITION_LEVEL_WELL_FED, V.nutrition + (blood / 2))
@@ -338,8 +341,7 @@ You are weak to holy things and starlight. Don't go into space and avoid the Cha
 		vampire_mind.current.create_attack_log("<span class='danger'>De-vampired</span>")
 		if(vampire_mind.vampire)
 			vampire_mind.vampire.remove_vampire_powers()
-			qdel(vampire_mind.vampire)
-			vampire_mind.vampire = null
+			QDEL_NULL(vampire_mind.vampire)
 		if(issilicon(vampire_mind.current))
 			to_chat(vampire_mind.current, "<span class='userdanger'>You have been turned into a robot! You can feel your powers fading away...</span>")
 		else
@@ -381,8 +383,8 @@ You are weak to holy things and starlight. Don't go into space and avoid the Cha
 	var/ay = owner.y
 
 	for(var/i = 1 to 20)
-		ax += sun.dx
-		ay += sun.dy
+		ax += SSsun.dx
+		ay += SSsun.dy
 
 		var/turf/T = locate(round(ax, 0.5), round(ay, 0.5), owner.z)
 
@@ -455,6 +457,5 @@ You are weak to holy things and starlight. Don't go into space and avoid the Cha
 		return
 
 	static_inventory -= vampire_blood_display
-	qdel(vampire_blood_display)
-	vampire_blood_display = null
+	QDEL_NULL(vampire_blood_display)
 	show_hud(hud_version)

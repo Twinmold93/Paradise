@@ -8,6 +8,7 @@
 #define OXY			"oxy"
 #define CLONE		"clone"
 #define STAMINA 	"stamina"
+#define BRAIN		"brain"
 
 #define STUN		"stun"
 #define WEAKEN		"weaken"
@@ -31,15 +32,13 @@
 #define CANWEAKEN	2
 #define CANPARALYSE	4
 #define CANPUSH		8
-#define LEAPING		16
-#define PASSEMOTES	32      //Mob has a cortical borer or holders inside of it that need to see emotes.
-#define GOTTAGOFAST	64
-#define GOTTAGOREALLYFAST	128
-#define IGNORESLOWDOWN	256
+#define PASSEMOTES	16      //Mob has a cortical borer or holders inside of it that need to see emotes.
+#define GOTTAGOFAST	32
+#define GOTTAGOFAST_METH	64
+#define IGNORESLOWDOWN	128
 #define GODMODE		4096
 #define FAKEDEATH	8192	//Replaces stuff like changeling.changeling_fakedeath
-#define DISFIGURED	16384	//I'll probably move this elsewhere if I ever get wround to writing a bitflag mob-damage system
-#define XENO_HOST	32768	//Tracks whether we're gonna be a baby alien's mummy.
+#define XENO_HOST	16384	//Tracks whether we're gonna be a baby alien's mummy.
 
 
 //Grab levels
@@ -63,13 +62,40 @@
 #define THROWN_PROJECTILE_ATTACK 4
 #define LEAP_ATTACK 5
 
+//attack visual effects
+#define ATTACK_EFFECT_PUNCH		"punch"
+#define ATTACK_EFFECT_KICK		"kick"
+#define ATTACK_EFFECT_SMASH		"smash"
+#define ATTACK_EFFECT_CLAW		"claw"
+#define ATTACK_EFFECT_DISARM	"disarm"
+#define ATTACK_EFFECT_BITE		"bite"
+#define ATTACK_EFFECT_MECHFIRE	"mech_fire"
+#define ATTACK_EFFECT_MECHTOXIN	"mech_toxin"
+#define ATTACK_EFFECT_BOOP		"boop" //Honk
+
+//Embedded objects
+#define EMBEDDED_PAIN_CHANCE 					15	//Chance for embedded objects to cause pain (damage user)
+#define EMBEDDED_ITEM_FALLOUT 					5	//Chance for embedded object to fall out (causing pain but removing the object)
+#define EMBED_CHANCE							45	//Chance for an object to embed into somebody when thrown (if it's sharp)
+#define EMBEDDED_PAIN_MULTIPLIER				2	//Coefficient of multiplication for the damage the item does while embedded (this*item.w_class)
+#define EMBEDDED_FALL_PAIN_MULTIPLIER			5	//Coefficient of multiplication for the damage the item does when it falls out (this*item.w_class)
+#define EMBEDDED_IMPACT_PAIN_MULTIPLIER			4	//Coefficient of multiplication for the damage the item does when it first embeds (this*item.w_class)
+#define EMBED_THROWSPEED_THRESHOLD				4	//The minimum value of an item's throw_speed for it to embed (Unless it has embedded_ignore_throwspeed_threshold set to 1)
+#define EMBEDDED_UNSAFE_REMOVAL_PAIN_MULTIPLIER 8	//Coefficient of multiplication for the damage the item does when removed without a surgery (this*item.w_class)
+#define EMBEDDED_UNSAFE_REMOVAL_TIME			30	//A Time in ticks, total removal time = (this*item.w_class)
+
 //Gun Stuff
- #define SAWN_INTACT  0
- #define SAWN_OFF     1
+#define SAWN_INTACT  0
+#define SAWN_OFF     1
 
- #define WEAPON_LIGHT 0
- #define WEAPON_MEDIUM 1
- #define WEAPON_HEAVY 2
+#define WEAPON_LIGHT 0
+#define WEAPON_MEDIUM 1
+#define WEAPON_HEAVY 2
 
-// Embedded objects
-#define EMBED_THROWSPEED_THRESHOLD 15
+#define EXPLODE_NONE 0				//Don't even ask me why we need this.
+#define EXPLODE_DEVASTATE 1
+#define EXPLODE_HEAVY 2
+#define EXPLODE_LIGHT 3
+
+#define EMP_HEAVY 1
+#define EMP_LIGHT 2

@@ -12,7 +12,7 @@
 	speak_chance = 1
 	turns_per_move = 5
 	see_in_dark = 6
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat = 4)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat = 4)
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "kicks the"
@@ -27,6 +27,7 @@
 	stop_automated_movement_when_pulled = 1
 	var/milk_content = 0
 	can_collar = 1
+	blood_volume = BLOOD_VOLUME_NORMAL
 
 /mob/living/simple_animal/hostile/retaliate/goat/handle_automated_movement()
 	..()
@@ -51,7 +52,7 @@
 	if(SV)
 		SV.eat(src)
 
-/mob/living/simple_animal/hostile/retaliate/goat/Life()
+/mob/living/simple_animal/hostile/retaliate/goat/Life(seconds, times_fired)
 	. = ..()
 	if(stat == CONSCIOUS && prob(5))
 		milk_content = min(50, milk_content+rand(5, 10))
@@ -69,9 +70,9 @@
 			SV.eat(src)
 
 /mob/living/simple_animal/hostile/retaliate/goat/attackby(var/obj/item/O as obj, var/mob/user as mob, params)
-	if(stat == CONSCIOUS && istype(O, /obj/item/weapon/reagent_containers/glass))
+	if(stat == CONSCIOUS && istype(O, /obj/item/reagent_containers/glass))
 		user.changeNext_move(CLICK_CD_MELEE)
-		var/obj/item/weapon/reagent_containers/glass/G = O
+		var/obj/item/reagent_containers/glass/G = O
 		var/transfered = min(milk_content, rand(5,10), (G.volume - G.reagents.total_volume))
 		if(transfered > 0)
 			user.visible_message("<span class='notice'>[user] milks [src] using \the [O].</span>")
@@ -99,7 +100,7 @@
 	speak_chance = 1
 	turns_per_move = 5
 	see_in_dark = 6
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat/slab = 6)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat/slab = 6)
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "kicks the"
@@ -110,14 +111,15 @@
 	var/milk_content = 0
 	can_collar = 1
 	gold_core_spawnable = CHEM_MOB_SPAWN_FRIENDLY
+	blood_volume = BLOOD_VOLUME_NORMAL
 
 /mob/living/simple_animal/cow/New()
 	..()
 
 /mob/living/simple_animal/cow/attackby(var/obj/item/O as obj, var/mob/user as mob, params, params)
-	if(stat == CONSCIOUS && istype(O, /obj/item/weapon/reagent_containers/glass))
+	if(stat == CONSCIOUS && istype(O, /obj/item/reagent_containers/glass))
 		user.changeNext_move(CLICK_CD_MELEE)
-		var/obj/item/weapon/reagent_containers/glass/G = O
+		var/obj/item/reagent_containers/glass/G = O
 		var/transfered = min(milk_content, rand(5,10), (G.volume - G.reagents.total_volume))
 		if(transfered > 0)
 			user.visible_message("<span class='notice'>[user] milks [src] using \the [O].</span>")
@@ -130,13 +132,13 @@
 	else
 		..()
 
-/mob/living/simple_animal/cow/Life()
+/mob/living/simple_animal/cow/Life(seconds, times_fired)
 	. = ..()
 	if(stat == CONSCIOUS && prob(5))
 		milk_content = min(50, milk_content+rand(5, 10))
 
 /mob/living/simple_animal/cow/attack_hand(mob/living/carbon/M as mob)
-	if(!stat && M.a_intent == I_DISARM && icon_state != icon_dead)
+	if(!stat && M.a_intent == INTENT_DISARM && icon_state != icon_dead)
 		M.visible_message("<span class='warning'>[M] tips over [src].</span>","<span class='notice'>You tip over [src].</span>")
 		Weaken(30)
 		icon_state = icon_dead
@@ -166,7 +168,7 @@
 	density = 0
 	speak_chance = 2
 	turns_per_move = 2
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat = 1)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat = 1)
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "kicks the"
@@ -186,7 +188,7 @@
 	pixel_x = rand(-6, 6)
 	pixel_y = rand(0, 10)
 
-/mob/living/simple_animal/chick/Life()
+/mob/living/simple_animal/chick/Life(seconds, times_fired)
 	. =..()
 	if(.)
 		amount_grown += rand(1,2)
@@ -213,9 +215,9 @@ var/global/chicken_count = 0
 	density = 0
 	speak_chance = 2
 	turns_per_move = 3
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat = 2)
-	var/egg_type = /obj/item/weapon/reagent_containers/food/snacks/egg
-	var/food_type = /obj/item/weapon/reagent_containers/food/snacks/grown/wheat
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat = 2)
+	var/egg_type = /obj/item/reagent_containers/food/snacks/egg
+	var/food_type = /obj/item/reagent_containers/food/snacks/grown/wheat
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "kicks the"
@@ -232,7 +234,7 @@ var/global/chicken_count = 0
 	can_hide = 1
 	can_collar = 1
 	var/list/feedMessages = list("It clucks happily.","It clucks happily.")
-	var/list/layMessage = list("lays an egg.","squats down and croons.","begins making a huge racket.","begins clucking raucously.")
+	var/list/layMessage = EGG_LAYING_MESSAGES
 	var/list/validColors = list("brown","black","white")
 	gold_core_spawnable = CHEM_MOB_SPAWN_FRIENDLY
 
@@ -248,7 +250,10 @@ var/global/chicken_count = 0
 	chicken_count += 1
 
 /mob/living/simple_animal/chicken/death(gibbed)
-	..(gibbed)
+	// Only execute the below if we successfully died
+	. = ..(gibbed)
+	if(!.)
+		return
 	chicken_count -= 1
 
 /mob/living/simple_animal/chicken/attackby(obj/item/O, mob/user, params)
@@ -265,7 +270,7 @@ var/global/chicken_count = 0
 	else
 		..()
 
-/mob/living/simple_animal/chicken/Life()
+/mob/living/simple_animal/chicken/Life(seconds, times_fired)
 	. = ..()
 	if((. && prob(3) && eggsleft > 0) && egg_type)
 		visible_message("[src] [pick(layMessage)]")
@@ -277,8 +282,8 @@ var/global/chicken_count = 0
 			if(chicken_count < MAX_CHICKENS && prob(25))
 				processing_objects.Add(E)
 
-/obj/item/weapon/reagent_containers/food/snacks/egg/var/amount_grown = 0
-/obj/item/weapon/reagent_containers/food/snacks/egg/process()
+/obj/item/reagent_containers/food/snacks/egg/var/amount_grown = 0
+/obj/item/reagent_containers/food/snacks/egg/process()
 	if(isturf(loc))
 		amount_grown += rand(1,2)
 		if(amount_grown >= 100)
@@ -303,7 +308,7 @@ var/global/chicken_count = 0
 	speak_chance = 1
 	turns_per_move = 5
 	see_in_dark = 6
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat/ham = 6)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat/ham = 6)
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "kicks the"
@@ -312,6 +317,7 @@ var/global/chicken_count = 0
 	maxHealth = 50
 	can_collar = 1
 	gold_core_spawnable = CHEM_MOB_SPAWN_FRIENDLY
+	blood_volume = BLOOD_VOLUME_NORMAL
 
 /mob/living/simple_animal/turkey
 	name = "turkey"
@@ -326,7 +332,7 @@ var/global/chicken_count = 0
 	speak_chance = 1
 	turns_per_move = 5
 	see_in_dark = 6
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat = 4)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat = 4)
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "kicks the"
@@ -349,7 +355,7 @@ var/global/chicken_count = 0
 	speak_chance = 1
 	turns_per_move = 5
 	see_in_dark = 6
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat = 6)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat = 6)
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "kicks the"
@@ -372,7 +378,7 @@ var/global/chicken_count = 0
 	speak_chance = 1
 	turns_per_move = 5
 	see_in_dark = 6
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat = 6)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat = 6)
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "kicks the"
@@ -381,6 +387,7 @@ var/global/chicken_count = 0
 	maxHealth = 50
 	can_collar = 1
 	gold_core_spawnable = CHEM_MOB_SPAWN_FRIENDLY
+	blood_volume = BLOOD_VOLUME_NORMAL
 
 /mob/living/simple_animal/walrus
 	name = "walrus"
@@ -395,7 +402,7 @@ var/global/chicken_count = 0
 	speak_chance = 1
 	turns_per_move = 5
 	see_in_dark = 6
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat = 6)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat = 6)
 	response_help  = "pets the"
 	response_disarm = "gently pushes aside the"
 	response_harm   = "kicks the"
@@ -404,3 +411,4 @@ var/global/chicken_count = 0
 	maxHealth = 50
 	can_collar = 1
 	gold_core_spawnable = CHEM_MOB_SPAWN_FRIENDLY
+	blood_volume = BLOOD_VOLUME_NORMAL

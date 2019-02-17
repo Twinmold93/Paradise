@@ -1,5 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
-
 // Mulebot - carries crates around for Quartermaster
 // Navigates via floor navbeacons
 // Remote Controlled from QM's PDA
@@ -13,12 +11,12 @@
 	desc = "A Multiple Utility Load Effector bot."
 	icon_state = "mulebot0"
 	density = 1
-	anchored = 1
-	animate_movement=1
+	move_resist = MOVE_FORCE_STRONG
+	animate_movement = 1
 	health = 50
 	maxHealth = 50
 	damage_coeff = list(BRUTE = 0.5, BURN = 0.7, TOX = 0, CLONE = 0, STAMINA = 0, OXY = 0)
-	a_intent = "harm" //No swapping
+	a_intent = INTENT_HARM //No swapping
 	buckle_lying = 0
 	mob_size = MOB_SIZE_LARGE
 	radio_channel = "Supply"
@@ -28,6 +26,8 @@
 	model = "MULE"
 	bot_purpose = "deliver crates and other packages between departments, as requested"
 	bot_core_type = /obj/machinery/bot_core/mulebot
+	path_image_color = "#7F5200"
+
 
 	suffix = ""
 
@@ -44,7 +44,7 @@
 	var/auto_pickup = 1 	// true if auto-pickup at beacon
 	var/report_delivery = 1 // true if bot will announce an arrival to a location.
 
-	var/obj/item/weapon/stock_parts/cell/cell
+	var/obj/item/stock_parts/cell/cell
 	var/datum/wires/mulebot/wires = null
 	var/bloodiness = 0
 	var/currentBloodColor = "#A10808"
@@ -81,28 +81,28 @@
 	reached_target = 0
 
 /mob/living/simple_animal/bot/mulebot/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/weapon/screwdriver))
+	if(istype(I, /obj/item/screwdriver))
 		..()
 		if(open)
 			on = FALSE
 		update_controls()
-	else if(istype(I,/obj/item/weapon/stock_parts/cell) && open && !cell)
+	else if(istype(I,/obj/item/stock_parts/cell) && open && !cell)
 		if(!user.drop_item())
 			return
-		var/obj/item/weapon/stock_parts/cell/C = I
+		var/obj/item/stock_parts/cell/C = I
 		C.forceMove(src)
 		cell = C
 		visible_message("[user] inserts a cell into [src].",
 						"<span class='notice'>You insert the new cell into [src].</span>")
 		update_controls()
-	else if(istype(I, /obj/item/weapon/crowbar) && open && cell)
+	else if(istype(I, /obj/item/crowbar) && open && cell)
 		cell.add_fingerprint(usr)
 		cell.forceMove(loc)
 		cell = null
 		visible_message("[user] crowbars out the power cell from [src].",
 						"<span class='notice'>You pry the powercell out of [src].</span>")
 		update_controls()
-	else if(istype(I, /obj/item/weapon/wrench))
+	else if(istype(I, /obj/item/wrench))
 		if(health < maxHealth)
 			adjustBruteLoss(-25)
 			updatehealth()
@@ -112,7 +112,7 @@
 			)
 		else
 			to_chat(user, "<span class='notice'>[src] does not need a repair!</span>")
-	else if((istype(I, /obj/item/device/multitool) || istype(I, /obj/item/weapon/wirecutters)) && open)
+	else if((istype(I, /obj/item/multitool) || istype(I, /obj/item/wirecutters)) && open)
 		return attack_hand(user)
 	else if(load && ismob(load))  // chance to knock off rider
 		if(prob(1 + I.force * 2))
@@ -188,7 +188,7 @@
 			visible_message("[usr] switches [on ? "on" : "off"] [src].")
 		if("cellremove")
 			if(open && cell && !usr.get_active_hand())
-				cell.updateicon()
+				cell.update_icon()
 				usr.put_in_active_hand(cell)
 				cell.add_fingerprint(usr)
 				cell = null
@@ -196,7 +196,7 @@
 				usr.visible_message("<span class='notice'>[usr] removes the power cell from [src].</span>", "<span class='notice'>You remove the power cell from [src].</span>")
 		if("cellinsert")
 			if(open && !cell)
-				var/obj/item/weapon/stock_parts/cell/C = usr.get_active_hand()
+				var/obj/item/stock_parts/cell/C = usr.get_active_hand()
 				if(istype(C))
 					usr.drop_item()
 					cell = C
@@ -214,7 +214,7 @@
 			if(mode == BOT_IDLE || mode == BOT_DELIVER)
 				start_home()
 		if("destination")
-			var/new_dest = input(usr, "Enter Destination:", name, destination) as null|anything in deliverybeacontags
+			var/new_dest = input(usr, "Enter Destination:", name, destination) as null|anything in GLOB.deliverybeacontags
 			if(new_dest)
 				set_destination(new_dest)
 		if("setid")
@@ -222,7 +222,7 @@
 			if(new_id)
 				set_suffix(new_id)
 		if("sethome")
-			var/new_home = input(usr, "Enter Home:", name, home_destination) as null|anything in deliverybeacontags
+			var/new_home = input(usr, "Enter Home:", name, home_destination) as null|anything in GLOB.deliverybeacontags
 			if(new_home)
 				home_destination = new_home
 		if("unload")
@@ -401,9 +401,16 @@
 			M.layer = layer + 0.1
 
 	else //post unbuckling
-		load = null
-		M.layer = initial(M.layer)
-		M.pixel_y = initial(M.pixel_y)
+		reset_buckled_mob(M)
+
+/mob/living/simple_animal/bot/mulebot/post_unbuckle_mob(mob/living/M)
+	. = ..()
+	reset_buckled_mob(M)
+
+/mob/living/simple_animal/bot/mulebot/proc/reset_buckled_mob(mob/living/M)
+	load = null
+	M.layer = initial(M.layer)
+	M.pixel_y = initial(M.pixel_y)
 
 // called to unload the bot
 // argument is optional direction to unload
@@ -504,7 +511,7 @@
 				var/turf/next = path[1]
 				reached_target = 0
 				if(next == loc)
-					path -= next
+					increment_path()
 					return
 				if(istype(next, /turf/simulated))
 //					to_chat(world, "at ([x],[y]) moving to ([next.x],[next.y])")
@@ -515,7 +522,7 @@
 					if(moved && oldloc!=loc)	// successful move
 //						to_chat(world, "Successful move.")
 						blockcount = 0
-						path -= loc
+						increment_path()
 
 						if(destination == home_destination)
 							mode = BOT_GO_HOME
@@ -568,28 +575,11 @@
 
 					mode = BOT_NO_ROUTE
 
-/mob/living/simple_animal/bot/mulebot/Move(turf/simulated/next)
-	var/turf/simulated/last = loc
-
-	if(istype(last) && bloodiness)
-		last.AddTracks(/obj/effect/decal/cleanable/blood/tracks/wheels, currentDNA, 0, get_dir(last, next), currentBloodColor)
-
-	. = ..()
-
-	if(. && istype(next))
-		if(bloodiness)
-			next.AddTracks(/obj/effect/decal/cleanable/blood/tracks/wheels, currentDNA, get_dir(last, next), 0, currentBloodColor)
-			bloodiness--
-
-		for(var/mob/living/carbon/human/H in next)
-			if(H != load)
-				RunOver(H)
-
 // calculates a path to the current destination
 // given an optional turf to avoid
 /mob/living/simple_animal/bot/mulebot/calc_path(turf/avoid = null)
 	check_bot_access()
-	path = get_path_to(src, target, /turf/proc/Distance_cardinal, 0, 250, id=access_card, exclude=avoid)
+	set_path(get_path_to(src, target, /turf/proc/Distance_cardinal, 0, 250, id=access_card, exclude=avoid))
 
 // sets the current destination
 // signals all beacons matching the delivery code
@@ -668,6 +658,30 @@
 
 	return
 
+/mob/living/simple_animal/bot/mulebot/Move(turf/simulated/next)
+	. = ..()
+
+	if(. && istype(next))
+		if(bloodiness)
+			var/obj/effect/decal/cleanable/blood/tracks/B = locate() in next
+			if(!B)
+				B = new /obj/effect/decal/cleanable/blood/tracks(loc)
+			if(blood_DNA && blood_DNA.len)
+				B.blood_DNA |= blood_DNA.Copy()
+			B.basecolor = currentBloodColor
+			var/newdir = get_dir(next, loc)
+			if(newdir == dir)
+				B.setDir(newdir)
+			else
+				newdir = newdir | dir
+				if(newdir == 3)
+					newdir = 1
+				else if(newdir == 12)
+					newdir = 4
+				B.setDir(newdir)
+			B.update_icon()
+			bloodiness--
+
 // called when bot bumps into anything
 /mob/living/simple_animal/bot/mulebot/Bump(atom/obs)
 	if(!wires.MobAvoid())	// usually just bumps, but if avoidance disabled knock over mobs
@@ -676,17 +690,18 @@
 			if(istype(M,/mob/living/silicon/robot))
 				visible_message("<span class='danger'>[src] bumps into [M]!</span>")
 			else
-				add_logs(src, M, "knocked down")
-				visible_message("<span class='danger'>[src] knocks over [M]!</span>")
-				M.stop_pulling()
-				M.Stun(8)
-				M.Weaken(5)
+				if(!paicard)
+					add_attack_logs(src, M, "Knocked down")
+					visible_message("<span class='danger'>[src] knocks over [M]!</span>")
+					M.stop_pulling()
+					M.Stun(8)
+					M.Weaken(5)
 	return ..()
 
 /mob/living/simple_animal/bot/mulebot/proc/RunOver(mob/living/carbon/human/H)
-	add_logs(src, H, "run over", null, "(DAMTYPE: [uppertext(BRUTE)])")
+	add_attack_logs(src, H, "Run over (DAMTYPE: [uppertext(BRUTE)])")
 	H.visible_message("<span class='danger'>[src] drives over [H]!</span>", \
-					"<span class='userdanger'>[src] drives over you!<span>")
+					"<span class='userdanger'>[src] drives over you!</span>")
 	playsound(loc, 'sound/effects/splat.ogg', 50, 1)
 
 	var/damage = rand(5,15)
@@ -697,21 +712,22 @@
 	H.apply_damage(0.5*damage, BRUTE, "l_arm", run_armor_check("l_arm", "melee"))
 	H.apply_damage(0.5*damage, BRUTE, "r_arm", run_armor_check("r_arm", "melee"))
 
-	var/obj/effect/decal/cleanable/blood/B = new(loc)
-	B.blood_DNA = list()
-	B.blood_DNA[H.dna.unique_enzymes] = H.dna.b_type
-	currentDNA = B.blood_DNA
 
+
+
+	if(NO_BLOOD in H.dna.species.species_traits)//Does the run over mob have blood?
+		return//If it doesn't it shouldn't bleed (Though a check should be made eventually for things with liquid in them, like slime people, vox armalis, etc.)
+
+	var/turf/T = get_turf(src)//Where are we?
+	H.add_mob_blood(H)//Cover the victim in their own blood.
+	H.add_splatter_floor(T)//Put the blood where we are.
 	bloodiness += 4
 
-	currentBloodColor = "#A10808"
-	if(istype(H))
-		var/datum/reagent/blood/bld = H.get_blood(H.vessel)
-		if(bld.data["blood_colour"])
-			currentBloodColor = bld.data["blood_colour"]
-			return
-	B.basecolor = currentBloodColor
-	B.update_icon()
+	var/list/blood_dna = H.get_blood_dna_list()
+	if(blood_dna)
+		transfer_blood_dna(blood_dna)
+		currentBloodColor = H.dna.species.blood_color
+		return
 
 /mob/living/simple_animal/bot/mulebot/bot_control_message(command, mob/user, user_turf)
 	switch(command)
@@ -800,7 +816,7 @@
 	if(!on || !wires.BeaconRX())
 		return
 
-	for(var/obj/machinery/navbeacon/NB in deliverybeacons)
+	for(var/obj/machinery/navbeacon/NB in GLOB.deliverybeacons)
 		if(NB.location == new_destination)	// if the beacon location matches the set destination
 			destination = new_destination	// the we will navigate there
 			target = NB.loc
@@ -822,7 +838,7 @@
 	visible_message("<span class='userdanger'>[src] blows apart!</span>")
 	var/turf/Tsec = get_turf(src)
 
-	new /obj/item/device/assembly/prox_sensor(Tsec)
+	new /obj/item/assembly/prox_sensor(Tsec)
 	new /obj/item/stack/rods(Tsec)
 	new /obj/item/stack/rods(Tsec)
 	new /obj/item/stack/cable_coil/cut(Tsec)
@@ -831,9 +847,7 @@
 		cell.update_icon()
 		cell = null
 
-	var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	do_sparks(3, 1, src)
 
 	new /obj/effect/decal/cleanable/blood/oil(loc)
 	..()

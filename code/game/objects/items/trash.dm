@@ -4,7 +4,7 @@
 //Added by Jack Rost
 /obj/item/trash
 	icon = 'icons/obj/trash.dmi'
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	desc = "This is rubbish."
 	burn_state = FLAMMABLE
 
@@ -86,6 +86,12 @@
 /obj/item/trash/tastybread
 	name = "bread tube"
 	icon_state = "tastybread"
+
+/obj/item/trash/spentcasing
+	icon = 'icons/obj/ammo.dmi'
+	name = "bullet casing"
+	desc = "A spent bullet casing. Smells like cordite."
+	icon_state = "gshell"
 
 /obj/item/trash/tapetrash
 	name = "old duct tape"

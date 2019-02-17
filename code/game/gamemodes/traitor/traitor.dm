@@ -11,7 +11,7 @@
 	name = "traitor"
 	config_tag = "traitor"
 	restricted_jobs = list("Cyborg")//They are part of the AI if he is traitor so are they, they use to get double chances
-	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Internal Affairs Agent", "Captain", "Blueshield", "Nanotrasen Representative", "Security Pod Pilot", "Magistrate", "Internal Affairs Agent", "Brig Physician", "Nanotrasen Navy Officer", "Special Operations Officer")
+	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Blueshield", "Nanotrasen Representative", "Security Pod Pilot", "Magistrate", "Internal Affairs Agent", "Brig Physician", "Nanotrasen Navy Officer", "Special Operations Officer", "Syndicate Officer")
 	required_players = 0
 	required_enemies = 1
 	recommended_enemies = 4
@@ -70,10 +70,6 @@
 	modePlayer += traitors
 	..()
 
-/datum/game_mode/traitor/setup_chumps()
-	//since we actually have potential collaborators, we don't prepare any chumps to avoid extra people knowing our codewords.
-	return
-
 /datum/game_mode/proc/forge_traitor_objectives(datum/mind/traitor)
 	if(istype(traitor.current, /mob/living/silicon))
 		var/objective_count = 0
@@ -123,7 +119,7 @@
 		var/list/active_ais = active_ais()
 		for(var/i = objective_count, i < config.traitor_objectives_amount, i++)
 			if(prob(50))
-				if(active_ais.len && prob(100/player_list.len))
+				if(active_ais.len && prob(100/GLOB.player_list.len))
 					var/datum/objective/destroy/destroy_objective = new
 					destroy_objective.owner = traitor
 					destroy_objective.find_target()
@@ -178,6 +174,10 @@
 
 
 /datum/game_mode/proc/greet_traitor(var/datum/mind/traitor)
+	if(istype(traitor.current, /mob/living/silicon))
+		SEND_SOUND(traitor.current, 'sound/ambience/antag/malf.ogg')
+	else
+		SEND_SOUND(traitor.current, 'sound/ambience/antag/tatoralert.ogg')
 	to_chat(traitor.current, "<B><font size=3 color=red>You are the traitor.</font></B>")
 	var/obj_count = 1
 	for(var/datum/objective/objective in traitor.objectives)
@@ -251,7 +251,7 @@
 			var/TC_uses = 0
 			var/uplink_true = 0
 			var/purchases = ""
-			for(var/obj/item/device/uplink/H in world_uplinks)
+			for(var/obj/item/uplink/H in world_uplinks)
 				if(H && H.uplink_owner && H.uplink_owner==traitor.key)
 					TC_uses += H.used_TC
 					uplink_true=1
@@ -301,17 +301,17 @@
 			traitor_mob.mutations.Remove(CLUMSY)
 
 	// find a radio! toolbox(es), backpack, belt, headset
-	var/obj/item/R = locate(/obj/item/device/pda) in traitor_mob.contents //Hide the uplink in a PDA if available, otherwise radio
+	var/obj/item/R = locate(/obj/item/pda) in traitor_mob.contents //Hide the uplink in a PDA if available, otherwise radio
 	if(!R)
-		R = locate(/obj/item/device/radio) in traitor_mob.contents
+		R = locate(/obj/item/radio) in traitor_mob.contents
 
 	if(!R)
 		to_chat(traitor_mob, "Unfortunately, the Syndicate wasn't able to get you a radio.")
 		. = 0
 	else
-		if(istype(R, /obj/item/device/radio))
+		if(istype(R, /obj/item/radio))
 			// generate list of radio freqs
-			var/obj/item/device/radio/target_radio = R
+			var/obj/item/radio/target_radio = R
 			var/freq = PUBLIC_LOW_FREQ
 			var/list/freqlist = list()
 			while(freq <= PUBLIC_HIGH_FREQ)
@@ -322,40 +322,26 @@
 					freq += 1
 			freq = freqlist[rand(1, freqlist.len)]
 
-			var/obj/item/device/uplink/hidden/T = new(R)
+			var/obj/item/uplink/hidden/T = new(R)
 			target_radio.hidden_uplink = T
 			T.uplink_owner = "[traitor_mob.key]"
 			target_radio.traitor_frequency = freq
 			to_chat(traitor_mob, "The Syndicate have cunningly disguised a Syndicate Uplink as your [R.name] [T.loc]. Simply dial the frequency [format_frequency(freq)] to unlock its hidden features.")
 			traitor_mob.mind.store_memory("<B>Radio Freq:</B> [format_frequency(freq)] ([R.name] [T.loc]).")
-		else if(istype(R, /obj/item/device/pda))
+		else if(istype(R, /obj/item/pda))
 			// generate a passcode if the uplink is hidden in a PDA
 			var/pda_pass = "[rand(100,999)] [pick("Alpha","Bravo","Delta","Omega")]"
 
-			var/obj/item/device/uplink/hidden/T = new(R)
+			var/obj/item/uplink/hidden/T = new(R)
 			R.hidden_uplink = T
 			T.uplink_owner = "[traitor_mob.key]"
-			var/obj/item/device/pda/P = R
+			var/obj/item/pda/P = R
 			P.lock_code = pda_pass
 
 			to_chat(traitor_mob, "The Syndicate have cunningly disguised a Syndicate Uplink as your [R.name] [T.loc]. Simply enter the code \"[pda_pass]\" into the ringtone select to unlock its hidden features.")
 			traitor_mob.mind.store_memory("<B>Uplink Passcode:</B> [pda_pass] ([R.name] [T.loc]).")
 	if(!safety)//If they are not a rev. Can be added on to.
 		give_codewords(traitor_mob)
-
-	// Tell them about people they might want to contact.
-	var/mob/living/carbon/human/M = get_nt_opposed()
-	if(M && M != traitor_mob)
-		to_chat(traitor_mob, "We have received credible reports that [M.real_name] might be willing to help our cause. If you need assistance, consider contacting them.")
-		traitor_mob.mind.store_memory("<b>Potential Collaborator</b>: [M.real_name]")
-		//let's also inform their contact that they might be called upon, but leave it vague.
-		inform_collab(M)
-
-/datum/game_mode/traitor/inform_collab(mob/living/carbon/human/M)
-	if(M.mind in traitors)		//if you are already a traitor, you already know the codewords and your role, so skip this message.
-		return
-	..(M)
-
 
 /datum/game_mode/proc/remove_traitor(datum/mind/traitor_mind)
 	if(traitor_mind in traitors)
@@ -423,11 +409,11 @@
 	//Spawn and equip documents
 	var/mob/living/carbon/human/mob = owner.current
 
-	var/obj/item/weapon/folder/syndicate/folder
+	var/obj/item/folder/syndicate/folder
 	if(owner == exchange_red)
-		folder = new/obj/item/weapon/folder/syndicate/red(mob.locs)
+		folder = new/obj/item/folder/syndicate/red(mob.locs)
 	else
-		folder = new/obj/item/weapon/folder/syndicate/blue(mob.locs)
+		folder = new/obj/item/folder/syndicate/blue(mob.locs)
 
 	var/list/slots = list (
 		"backpack" = slot_in_backpack,

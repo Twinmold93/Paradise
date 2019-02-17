@@ -7,7 +7,7 @@
 	slot_flags = SLOT_BELT
 	var/list/part = null
 	var/sabotaged = 0 //Emagging limbs can have repercussions when installed as prosthetics.
-	var/model_info
+	var/model_info = "Unbranded"
 	dir = SOUTH
 
 /obj/item/robot_parts/New(newloc, model)
@@ -23,33 +23,38 @@
 	else
 		name = "robot [initial(name)]"
 
+/obj/item/robot_parts/attack_self(mob/user)
+	var/choice = input(user, "Select the company appearance for this limb.", "Limb Company Selection") as null|anything in selectable_robolimbs
+	if(!choice)
+		return
+	if(loc != user)
+		return
+	model_info = choice
+	to_chat(usr, "<span class='notice'>You change the company limb model to [choice].</span>")
+
 /obj/item/robot_parts/l_arm
 	name = "left arm"
 	desc = "A skeletal limb wrapped in pseudomuscles, with a low-conductivity case."
 	icon_state = "l_arm"
 	part = list("l_arm","l_hand")
-	model_info = 1
 
 /obj/item/robot_parts/r_arm
 	name = "right arm"
 	desc = "A skeletal limb wrapped in pseudomuscles, with a low-conductivity case."
 	icon_state = "r_arm"
 	part = list("r_arm","r_hand")
-	model_info = 1
 
 /obj/item/robot_parts/l_leg
 	name = "left leg"
 	desc = "A skeletal limb wrapped in pseudomuscles, with a low-conductivity case."
 	icon_state = "l_leg"
 	part = list("l_leg","l_foot")
-	model_info = 1
 
 /obj/item/robot_parts/r_leg
 	name = "right leg"
 	desc = "A skeletal limb wrapped in pseudomuscles, with a low-conductivity case."
 	icon_state = "r_leg"
 	part = list("r_leg","r_foot")
-	model_info = 1
 
 /obj/item/robot_parts/chest
 	name = "torso"
@@ -57,7 +62,7 @@
 	icon_state = "chest"
 	part = list("groin","chest")
 	var/wired = FALSE
-	var/obj/item/weapon/stock_parts/cell/cell = null
+	var/obj/item/stock_parts/cell/cell = null
 
 /obj/item/robot_parts/chest/Destroy()
 	QDEL_NULL(cell)
@@ -68,8 +73,8 @@
 	desc = "A standard reinforced braincase, with spine-plugged neural socket and sensor gimbals."
 	icon_state = "head"
 	part = list("head")
-	var/obj/item/device/flash/flash1 = null
-	var/obj/item/device/flash/flash2 = null
+	var/obj/item/flash/flash1 = null
+	var/obj/item/flash/flash2 = null
 
 /obj/item/robot_parts/head/Destroy()
 	QDEL_NULL(flash1)
@@ -80,6 +85,7 @@
 	name = "endoskeleton"
 	desc = "A complex metal backbone with standard limb sockets and pseudomuscle anchors."
 	icon_state = "robo_suit"
+	model_info = null
 	var/obj/item/robot_parts/l_arm/l_arm = null
 	var/obj/item/robot_parts/r_arm/r_arm = null
 	var/obj/item/robot_parts/l_leg/l_leg = null
@@ -108,6 +114,9 @@
 	forced_ai = null
 	return ..()
 
+/obj/item/robot_parts/robot_suit/attack_self(mob/user)
+	return
+
 /obj/item/robot_parts/robot_suit/proc/updateicon()
 	overlays.Cut()
 	if(l_arm)
@@ -135,7 +144,7 @@
 	..()
 	if(istype(W, /obj/item/stack/sheet/metal) && !l_arm && !r_arm && !l_leg && !r_leg && !chest && !head)
 		var/obj/item/stack/sheet/metal/M = W
-		var/obj/item/weapon/ed209_assembly/B = new /obj/item/weapon/ed209_assembly
+		var/obj/item/ed209_assembly/B = new /obj/item/ed209_assembly
 		B.forceMove(get_turf(src))
 		to_chat(user, "You armed the robot frame")
 		M.use(1)
@@ -201,14 +210,14 @@
 		else
 			to_chat(user, "<span class='notice'>You need to attach a flash to it first!</span>")
 
-	if(istype(W, /obj/item/device/multitool))
+	if(istype(W, /obj/item/multitool))
 		if(check_completion())
 			Interact(user)
 		else
 			to_chat(user, "<span class='warning'>The endoskeleton must be assembled before debugging can begin!</span>")
 
-	if(istype(W, /obj/item/device/mmi))
-		var/obj/item/device/mmi/M = W
+	if(istype(W, /obj/item/mmi))
+		var/obj/item/mmi/M = W
 		if(check_completion())
 			if(!isturf(loc))
 				to_chat(user, "<span class='warning'>You can't put [M] in, the frame has to be standing on the ground to be perfectly precise.</span>")
@@ -220,12 +229,12 @@
 			if(!M.brainmob.key)
 				var/ghost_can_reenter = 0
 				if(M.brainmob.mind)
-					for(var/mob/dead/observer/G in player_list)
+					for(var/mob/dead/observer/G in GLOB.player_list)
 						if(G.can_reenter_corpse && G.mind == M.brainmob.mind)
 							ghost_can_reenter = 1
 							break
-					for(var/mob/living/simple_animal/S in player_list)
-						if(S in respawnable_list)
+					for(var/mob/living/simple_animal/S in GLOB.player_list)
+						if(S in GLOB.respawnable_list)
 							ghost_can_reenter = 1
 							break
 				if(!ghost_can_reenter)
@@ -310,7 +319,7 @@
 		else
 			to_chat(user, "<span class='warning'>The MMI must go in after everything else!</span>")
 
-	if(istype(W,/obj/item/weapon/pen))
+	if(istype(W,/obj/item/pen))
 		to_chat(user, "<span class='warning'>You need to use a multitool to name [src]!</span>")
 	return
 
@@ -332,7 +341,7 @@
 
 	var/mob/living/living_user = usr
 	var/obj/item/item_in_hand = living_user.get_active_hand()
-	if(!istype(item_in_hand, /obj/item/device/multitool))
+	if(!istype(item_in_hand, /obj/item/multitool))
 		to_chat(living_user, "<span class='warning'>You need a multitool!</span>")
 		return
 
@@ -365,7 +374,7 @@
 
 /obj/item/robot_parts/chest/attackby(obj/item/W as obj, mob/user as mob, params)
 	..()
-	if(istype(W, /obj/item/weapon/stock_parts/cell))
+	if(istype(W, /obj/item/stock_parts/cell))
 		if(cell)
 			to_chat(user, "<span class='notice'>You have already inserted a cell!</span>")
 			return
@@ -387,7 +396,7 @@
 
 /obj/item/robot_parts/head/attackby(obj/item/W as obj, mob/user as mob, params)
 	..()
-	if(istype(W, /obj/item/device/flash))
+	if(istype(W, /obj/item/flash))
 		if(istype(user,/mob/living/silicon/robot))
 			to_chat(user, "<span class='warning'>How do you propose to do that?</span>")
 			return
@@ -404,7 +413,7 @@
 			W.forceMove(src)
 			flash1 = W
 			to_chat(user, "<span class='notice'>You insert the flash into the eye socket!</span>")
-	else if(istype(W, /obj/item/weapon/stock_parts/manipulator))
+	else if(istype(W, /obj/item/stock_parts/manipulator))
 		to_chat(user, "<span class='notice'>You install some manipulators and modify the head, creating a functional spider-bot!</span>")
 		new /mob/living/simple_animal/spiderbot(get_turf(loc))
 		user.drop_item()

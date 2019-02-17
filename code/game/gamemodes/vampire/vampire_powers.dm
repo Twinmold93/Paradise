@@ -76,8 +76,8 @@
 	//Vampires who have reached their full potential can affect nearly everything
 	if(user.mind.vampire.get_ability(/datum/vampire_passive/full))
 		return 1
-	//Chaplains are resistant to vampire powers
-	if(target.mind && target.mind.assigned_role == "Chaplain")
+	//Holy characters are resistant to vampire powers
+	if(target.mind && target.mind.isholy)
 		return 0
 	return 1
 
@@ -175,7 +175,7 @@
 
 /obj/effect/proc_holder/spell/vampire/targetted/hypnotise/cast(list/targets, mob/user = usr)
 	for(var/mob/living/target in targets)
-		user.visible_message("<span class='warning'>[user]'s eyes flash briefly as he stares into [target]'s eyes</span>")
+		user.visible_message("<span class='warning'>[user]'s eyes flash briefly as [user.p_they()] stare[user.p_s()] into [target]'s eyes</span>")
 		if(do_mob(user, target, 50))
 			if(!affects(target))
 				to_chat(user, "<span class='warning'>Your piercing gaze fails to knock out [target].</span>")
@@ -215,7 +215,7 @@
 	stat_allowed = 1
 
 /obj/effect/proc_holder/spell/vampire/mob_aoe/glare/cast(list/targets, mob/user = usr)
-	user.visible_message("<span class='warning'><b>[user]'s eyes emit a blinding flash!</span>")
+	user.visible_message("<span class='warning'>[user]'s eyes emit a blinding flash!</span>")
 	if(istype(user:glasses, /obj/item/clothing/glasses/sunglasses/blindfold))
 		to_chat(user, "<span class='warning'>You're blindfolded!</span>")
 		return
@@ -236,15 +236,21 @@
 
 /obj/effect/proc_holder/spell/vampire/self/shapeshift/cast(list/targets, mob/user = usr)
 	user.visible_message("<span class='warning'>[user] transforms!</span>")
-	user.client.prefs.real_name = user.generate_name()
-	user.client.prefs.random_character()
-	user.client.prefs.copy_to(user)
-	user.regenerate_icons()
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		scramble(1, H, 100)
+		H.real_name = random_name(H.gender, H.dna.species.name) //Give them a name that makes sense for their species.
+		H.sync_organ_dna(assimilate = 1)
+		H.update_body(0)
+		H.reset_hair() //No more winding up with hairstyles you're not supposed to have, and blowing your cover.
+		H.reset_markings() //...Or markings.
+		H.dna.ResetUIFrom(H)
+	user.update_icons()
 
 /obj/effect/proc_holder/spell/vampire/self/screech
-	name = "Chiroptean Screech (30)"
+	name = "Chiropteran Screech (30)"
 	desc = "An extremely loud shriek that stuns nearby humans and breaks windows as well."
-	gain_desc = "You have gained the Chriopteran Screech ability which stuns anything with ears in a large radius and shatters glass in the process."
+	gain_desc = "You have gained the Chiropteran Screech ability which stuns anything with ears in a large radius and shatters glass in the process."
 	action_icon_state = "vampire_screech"
 	required_blood = 30
 
@@ -259,12 +265,12 @@
 			continue
 		to_chat(C, "<span class='warning'><font size='3'><b>You hear a ear piercing shriek and your senses dull!</font></b></span>")
 		C.Weaken(4)
-		C.AdjustEarDeaf(20)
+		C.MinimumDeafTicks(20)
 		C.Stuttering(20)
 		C.Stun(4)
 		C.Jitter(150)
 	for(var/obj/structure/window/W in view(4))
-		W.destroy()
+		W.deconstruct(FALSE)
 	playsound(user.loc, 'sound/effects/creepyshriek.ogg', 100, 1)
 
 
@@ -294,11 +300,11 @@
 
 /obj/effect/proc_holder/spell/vampire/targetted/enthrall/proc/can_enthrall(mob/living/user, mob/living/carbon/C)
 	var/enthrall_safe = 0
-	for(var/obj/item/weapon/implant/mindshield/L in C)
+	for(var/obj/item/implant/mindshield/L in C)
 		if(L && L.implanted)
 			enthrall_safe = 1
 			break
-	for(var/obj/item/weapon/implant/traitor/T in C)
+	for(var/obj/item/implant/traitor/T in C)
 		if(T && T.implanted)
 			enthrall_safe = 1
 			break
@@ -313,6 +319,7 @@
 		return 0
 	if(!affects(C))
 		C.visible_message("<span class='warning'>[C] seems to resist the takeover!</span>", "<span class='notice'>Your faith of [ticker.Bible_deity_name] has kept your mind clear of all evil.</span>")
+		return 0
 	if(!ishuman(C))
 		to_chat(user, "<span class='warning'>You can only enthrall humans!</span>")
 		return 0
@@ -338,9 +345,10 @@
 	ticker.mode.vampire_enthralled.Add(H.mind)
 	ticker.mode.vampire_enthralled[H.mind] = user.mind
 	H.mind.special_role = SPECIAL_ROLE_VAMPIRE_THRALL
-	to_chat(H, "<span class='danger'>You have been Enthralled by [user]. Follow their every command.</span>")
-	to_chat(user, "<span class='warning'>You have successfully Enthralled [H]. <i>If they refuse to do as you say just adminhelp.</i></span>")
-	add_logs(user, H, "vampire-thralled")
+	to_chat(H, "<span class='danger'>You have been Enthralled by [user]. Follow [user.p_their()] every command.</span>")
+	to_chat(user, "<span class='warning'>You have successfully Enthralled [H]. <i>If [H.p_they()] refuse[H.p_s()] to do as you say just adminhelp.</i></span>")
+	add_attack_logs(user, H, "Vampire-thralled")
+
 
 /obj/effect/proc_holder/spell/vampire/self/cloak
 	name = "Cloak of Darkness"
@@ -400,6 +408,7 @@
 	action_icon_state = "jaunt"
 	charge_max = 600
 	required_blood = 30
+	centcom_cancast = 0
 	var/jaunt_duration = 50 //in deciseconds
 
 /obj/effect/proc_holder/spell/vampire/self/jaunt/cast(list/targets, mob/user = usr)
@@ -423,7 +432,7 @@
 		flick("liquify", animation)
 		user.forceMove(holder)
 		user.client.eye = holder
-		var/datum/effect/system/steam_spread/steam = new /datum/effect/system/steam_spread()
+		var/datum/effect_system/steam_spread/steam = new /datum/effect_system/steam_spread()
 		steam.set_up(10, 0, originalloc)
 		steam.start()
 		sleep(jaunt_duration)
@@ -458,6 +467,7 @@
 	action_icon_state = "blink"
 	charge_max = 20
 	required_blood = 30
+	centcom_cancast = 0
 
 	// Teleport radii
 	var/inner_tele_radius = 0
@@ -525,3 +535,73 @@
 
 /datum/vampire_passive/full
 	gain_desc = "You have reached your full potential and are no longer weak to the effects of anything holy and your vision has been improved greatly."
+
+
+/obj/effect/proc_holder/spell/targeted/raise_vampires
+	name = "Raise Vampires"
+	desc = "Summons deadly vampires from bluespace."
+	school = "transmutation"
+	charge_max = 100
+	clothes_req = 0
+	human_req = 1
+	invocation = "none"
+	invocation_type = "none"
+	max_targets = 0
+	range = 3
+	cooldown_min = 20
+	action_icon_state = "revive_thrall"
+	sound = 'sound/magic/wandodeath.ogg'
+
+/obj/effect/proc_holder/spell/targeted/raise_vampires/cast(list/targets, mob/user = usr)
+	new /obj/effect/temp_visual/cult/sparks(user.loc)
+	var/turf/T = get_turf(user)
+	to_chat(user, "<span class='warning'>You call out within bluespace, summoning more vampiric spirits to aid you!</span>")
+	for(var/mob/living/carbon/human/H in targets)
+		T.Beam(H, "sendbeam", 'icons/effects/effects.dmi', time=30, maxdistance=7, beam_type=/obj/effect/ebeam)
+		new /obj/effect/temp_visual/cult/sparks(H.loc)
+		H.raise_vampire(user)
+
+
+/mob/living/carbon/human/proc/raise_vampire(var/mob/M)
+	if(!istype(M))
+		log_debug("human/proc/raise_vampire called with invalid argument.")
+		return
+	if(!mind)
+		visible_message("[src] looks to be too stupid to understand what is going on.")
+		return
+	if(dna && (NO_BLOOD in dna.species.species_traits) || dna.species.exotic_blood || !blood_volume)
+		visible_message("[src] looks unfazed!")
+		return
+	if(mind.vampire || mind.special_role == SPECIAL_ROLE_VAMPIRE || mind.special_role == SPECIAL_ROLE_VAMPIRE_THRALL)
+		visible_message("<span class='notice'>[src] looks refreshed!</span>")
+		adjustBruteLoss(-60)
+		adjustFireLoss(-60)
+		for(var/obj/item/organ/external/E in bodyparts)
+			if(prob(25))
+				if(E.mend_fracture())
+					E.perma_injury = 0
+		return
+	if(stat != DEAD)
+		if(weakened)
+			visible_message("<span class='warning'>[src] looks to be in pain!</span>")
+			adjustBrainLoss(60)
+		else
+			visible_message("<span class='warning'>[src] looks to be stunned by the energy!</span>")
+			Weaken(20)
+		return
+	for(var/obj/item/implant/mindshield/L in src)
+		if(L && L.implanted)
+			qdel(L)
+	for(var/obj/item/implant/traitor/T in src)
+		if(T && T.implanted)
+			qdel(T)
+	visible_message("<span class='warning'>[src] gets an eerie red glow in their eyes!</span>")
+	var/datum/objective/protect/protect_objective = new
+	protect_objective.owner = mind
+	protect_objective.target = M.mind
+	protect_objective.explanation_text = "Protect [M.real_name]."
+	mind.objectives += protect_objective
+	add_attack_logs(M, src, "Vampire-sired")
+	mind.make_Vampire()
+	revive()
+	Weaken(20)

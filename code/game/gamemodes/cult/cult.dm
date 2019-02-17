@@ -1,4 +1,4 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
+#define SUMMON_POSSIBILITIES 3
 var/global/list/all_cults = list()
 
 /datum/game_mode
@@ -39,11 +39,12 @@ var/global/list/all_cults = list()
 /datum/game_mode/cult
 	name = "cult"
 	config_tag = "cult"
-	restricted_jobs = list("Chaplain","AI", "Cyborg", "Internal Affairs Agent", "Security Officer", "Warden", "Detective", "Security Pod Pilot", "Head of Security", "Captain", "Head of Personnel", "Blueshield", "Nanotrasen Representative", "Magistrate", "Brig Physician", "Nanotrasen Navy Officer", "Special Operations Officer")
+	restricted_jobs = list("Chaplain","AI", "Cyborg", "Internal Affairs Agent", "Security Officer", "Warden", "Detective", "Security Pod Pilot", "Head of Security", "Captain", "Head of Personnel", "Blueshield", "Nanotrasen Representative", "Magistrate", "Brig Physician", "Nanotrasen Navy Officer", "Special Operations Officer", "Syndicate Officer")
 	protected_jobs = list()
 	required_players = 30
 	required_enemies = 3
 	recommended_enemies = 4
+	free_golems_disabled = TRUE
 
 	var/datum/mind/sacrifice_target = null
 	var/finished = 0
@@ -107,13 +108,20 @@ var/global/list/all_cults = list()
 	modePlayer += cult
 	acolytes_needed = acolytes_needed + round((num_players_started() / 10))
 
+	if(!summon_spots.len)
+		while(summon_spots.len < SUMMON_POSSIBILITIES)
+			var/area/summon = pick(return_sorted_areas() - summon_spots)
+			if(summon && is_station_level(summon.z) && summon.valid_territory)
+				summon_spots += summon
+
 	for(var/datum/mind/cult_mind in cult)
+		SEND_SOUND(cult_mind.current, 'sound/ambience/antag/bloodcult.ogg')
 		equip_cultist(cult_mind.current)
 		cult_mind.current.faction |= "cult"
 		var/datum/action/innate/cultcomm/C = new()
 		C.Grant(cult_mind.current)
 		update_cult_icons_added(cult_mind)
-		to_chat(cult_mind.current, "<span class='cultitalic'>You catch a glimpse of the Realm of [ticker.mode.cultdat.entity_name], [ticker.mode.cultdat.entity_title3]. You now see how flimsy the world is, you see that it should be open to the knowledge of [ticker.mode.cultdat.entity_name].</span>")
+		to_chat(cult_mind.current, "<span class='cultitalic'>You catch a glimpse of the Realm of [ticker.cultdat.entity_name], [ticker.cultdat.entity_title3]. You now see how flimsy the world is, you see that it should be open to the knowledge of [ticker.cultdat.entity_name].</span>")
 
 	first_phase()
 
@@ -127,16 +135,16 @@ var/global/list/all_cults = list()
 			if("survive")
 				explanation = "Our knowledge must live on. Make sure at least [acolytes_needed] acolytes escape on the shuttle to spread their work on an another station."
 			if("convert")
-				explanation = "We must increase our influence before we can summon [ticker.mode.cultdat.entity_name], Convert [convert_target] crew members. Take it slowly to avoid raising suspicions."
+				explanation = "We must increase our influence before we can summon [ticker.cultdat.entity_name], Convert [convert_target] crew members. Take it slowly to avoid raising suspicions."
 			if("bloodspill")
-				explanation = "We must prepare this place for [ticker.mode.cultdat.entity_title1]'s coming. Spill blood and gibs over [spilltarget] floor tiles."
+				explanation = "We must prepare this place for [ticker.cultdat.entity_title1]'s coming. Spill blood and gibs over [spilltarget] floor tiles."
 			if("sacrifice")
 				if(sacrifice_target)
 					explanation = "Sacrifice [sacrifice_target.current.real_name], the [sacrifice_target.assigned_role]. You will need the sacrifice rune and three acolytes to do so."
 				else
 					explanation = "Free objective."
 			if("eldergod")
-				explanation = "Summon [ticker.mode.cultdat.entity_name]. It will only work if nine cultists stand on and around it."
+				explanation = "Summon [ticker.cultdat.entity_name] by invoking the 'Tear Reality' rune.<b>The summoning can only be accomplished in [english_list(summon_spots)] - where the veil is weak enough for the ritual to begin.</b>"
 		to_chat(cult_mind.current, "<B>Objective #[obj_count]</B>: [explanation]")
 		cult_mind.memory += "<B>Objective #[obj_count]</B>: [explanation]<BR>"
 
@@ -150,7 +158,7 @@ var/global/list/all_cults = list()
 			to_chat(mob, "Your training has allowed you to overcome your clownish nature, allowing you to wield weapons without harming yourself.")
 			mob.mutations.Remove(CLUMSY)
 
-	var/obj/item/weapon/paper/talisman/supply/T = new(mob)
+	var/obj/item/paper/talisman/supply/T = new(mob)
 	var/list/slots = list (
 		"backpack" = slot_in_backpack,
 		"left pocket" = slot_l_store,
@@ -197,7 +205,7 @@ var/global/list/all_cults = list()
 		update_cult_icons_removed(cult_mind)
 		if(show_message)
 			for(var/mob/M in viewers(cult_mind.current))
-				to_chat(M, "<FONT size = 3>[cult_mind.current] looks like they just reverted to their old faith!</FONT>")
+				to_chat(M, "<FONT size = 3>[cult_mind.current] looks like [cult_mind.current.p_they()] just reverted to [cult_mind.current.p_their()] old faith!</FONT>")
 
 
 /datum/game_mode/proc/update_cult_icons_added(datum/mind/cult_mind)
@@ -215,7 +223,7 @@ var/global/list/all_cults = list()
 
 /datum/game_mode/cult/proc/get_unconvertables()
 	var/list/ucs = list()
-	for(var/mob/living/carbon/human/player in player_list)
+	for(var/mob/living/carbon/human/player in GLOB.player_list)
 		if(!is_convertable_to_cult(player.mind))
 			ucs += player.mind
 	return ucs
@@ -250,7 +258,7 @@ var/global/list/all_cults = list()
 			var/area/A = get_area(cult_mind.current )
 			if( is_type_in_list(A, centcom_areas))
 				acolytes_survived++
-			else if(A == shuttle_master.emergency.areaInstance && shuttle_master.emergency.mode >= SHUTTLE_ESCAPE)  //snowflaked into objectives because shitty bay shuttles had areas to auto-determine this
+			else if(A == SSshuttle.emergency.areaInstance && SSshuttle.emergency.mode >= SHUTTLE_ESCAPE)  //snowflaked into objectives because shitty bay shuttles had areas to auto-determine this
 				acolytes_survived++
 
 	if(acolytes_survived>=acolytes_needed)
@@ -267,11 +275,11 @@ var/global/list/all_cults = list()
 	bonus_check()
 
 	if(!check_cult_victory())
-		feedback_set_details("round_end_result","win - cult win")
+		feedback_set_details("round_end_result","cult win - cult win")
 		feedback_set("round_end_result",acolytes_survived)
 		to_chat(world, "<span class='danger'> <FONT size = 3> The cult wins! It has succeeded in serving its dark masters!</FONT></span>")
 	else
-		feedback_set_details("round_end_result","loss - staff stopped the cult")
+		feedback_set_details("round_end_result","cult loss - staff stopped the cult")
 		feedback_set("round_end_result",acolytes_survived)
 		to_chat(world, "<span class='warning'> <FONT size = 3>The staff managed to stop the cult!</FONT></span>")
 
@@ -302,10 +310,10 @@ var/global/list/all_cults = list()
 							feedback_add_details("cult_objective","cult_sacrifice|FAIL|GIBBED")
 				if("eldergod")
 					if(!eldergod)
-						explanation = "Summon [ticker.mode.cultdat.entity_name]. <font color='green'><B>Success!</B></font>"
+						explanation = "Summon [ticker.cultdat.entity_name]. <font color='green'><B>Success!</B></font>"
 						feedback_add_details("cult_objective","cult_narsie|SUCCESS")
 					else
-						explanation = "Summon [ticker.mode.cultdat.entity_name]. <font color='red'>Fail.</font>"
+						explanation = "Summon [ticker.cultdat.entity_name]. <font color='red'>Fail.</font>"
 						feedback_add_details("cult_objective","cult_narsie|FAIL")
 				if("slaughter")
 					if(demons_summoned)
@@ -333,10 +341,10 @@ var/global/list/all_cults = list()
 
 				if("harvest")
 					if(harvested > harvest_target)
-						explanation = "Offer [harvest_target] humans for [ticker.mode.cultdat.entity_name]'s first meal of the day. ([harvested] sacrificed) <font color='green'><B>Success!</B></font>"
+						explanation = "Offer [harvest_target] humans for [ticker.cultdat.entity_name]'s first meal of the day. ([harvested] sacrificed) <font color='green'><B>Success!</B></font>"
 						feedback_add_details("cult_objective","cult_harvest|SUCCESS")
 					else
-						explanation = "Offer [harvest_target] humans for [ticker.mode.cultdat.entity_name]'s first meal of the day. ([harvested] sacrificed) <font color='red'><B>Fail!</B></font>"
+						explanation = "Offer [harvest_target] humans for [ticker.cultdat.entity_name]'s first meal of the day. ([harvested] sacrificed) <font color='red'><B>Fail!</B></font>"
 						feedback_add_details("cult_objective","cult_harvest|FAIL")
 
 				if("hijack")

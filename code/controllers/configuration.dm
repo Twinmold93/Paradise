@@ -22,6 +22,7 @@
 	var/log_hrefs = 0					// logs all links clicked in-game. Could be used for debugging and tracking down exploits
 	var/sql_enabled = 0					// for sql switching
 	var/allow_admin_ooccolor = 0		// Allows admins with relevant permissions to have their own ooc colour
+	var/pregame_timestart = 240			// Time it takes for the server to start the game
 	var/allow_vote_restart = 0 			// allow votes to restart
 	var/allow_vote_mode = 0				// allow votes to change mode
 	var/vote_delay = 6000				// minimum time between voting sessions (deciseconds, 10 minute default)
@@ -55,7 +56,6 @@
 	var/guest_jobban = 1
 	var/usewhitelist = 0
 	var/mods_are_mentors = 0
-	var/kick_inactive = 0				//force disconnect for inactive players
 	var/load_jobs_from_txt = 0
 	var/ToRban = 0
 	var/automute_on = 0					//enables automuting/spam prevention
@@ -67,7 +67,11 @@
 	var/assistantlimit = 0 //enables assistant limiting
 	var/assistantratio = 2 //how many assistants to security members
 
+	var/prob_free_golems = 75 //chance for free golems spawners to appear roundstart
+	var/unrestricted_free_golems = FALSE //if true, free golems can appear on all roundtypes
+
 	var/traitor_objectives_amount = 2
+	var/shadowling_max_age = 0
 
 	var/max_maint_drones = 5				//This many drones can spawn,
 	var/allow_drone_spawn = 1				//assuming the admin allow them to.
@@ -82,8 +86,10 @@
 	var/wikiurl = "http://example.org"
 	var/forumurl = "http://example.org"
 	var/rulesurl = "http://example.org"
+	var/githuburl = "http://example.org"
 	var/donationsurl = "http://example.org"
 	var/repositoryurl = "http://example.org"
+	var/discordurl = "http://example.org"
 
 	var/overflow_server_url
 	var/forbid_singulo_possession = 0
@@ -96,11 +102,7 @@
 	var/health_threshold_crit = 0
 	var/health_threshold_dead = -100
 
-	var/organ_health_multiplier = 1
-	var/organ_regeneration_multiplier = 1
-
 	var/bones_can_break = 1
-	var/limbs_can_break = 1
 
 	var/revival_pod_plants = 1
 	var/revival_cloning = 1
@@ -146,7 +148,6 @@
 	var/admin_irc = ""
 	var/admin_notify_irc = ""
 	var/cidrandomizer_irc = ""
-	var/python_path = "" //Path to the python executable.  Defaults to "python" on windows and "/usr/bin/env python2" on unix
 
 	var/default_laws = 0 //Controls what laws the AI spawns with.
 
@@ -176,6 +177,9 @@
 	var/disable_away_missions = 0 // disable away missions
 	var/disable_space_ruins = 0 //disable space ruins
 
+	var/extra_space_ruin_levels_min = 2
+	var/extra_space_ruin_levels_max = 4
+
 	var/ooc_allowed = 1
 	var/looc_allowed = 1
 	var/dooc_allowed = 1
@@ -192,22 +196,34 @@
 
 	var/disable_karma = 0 // Disable all karma functions and unlock karma jobs by default
 
-/datum/configuration/New()
-	var/list/L = subtypesof(/datum/game_mode)
-	for(var/T in L)
-		// I wish I didn't have to instance the game modes in order to look up
-		// their information, but it is the only way (at least that I know of).
-		var/datum/game_mode/M = new T()
+	// StonedMC
+	var/tick_limit_mc_init = TICK_LIMIT_MC_INIT_DEFAULT	//SSinitialization throttling
 
-		if(M.config_tag)
-			if(!(M.config_tag in modes))		// ensure each mode is added only once
-				diary << "Adding game mode [M.name] ([M.config_tag]) to configuration."
-				src.modes += M.config_tag
-				src.mode_names[M.config_tag] = M.name
-				src.probabilities[M.config_tag] = M.probability
-				if(M.votable)
-					src.votable_modes += M.config_tag
-		qdel(M)
+	// Highpop tickrates
+	var/base_mc_tick_rate = 1
+	var/high_pop_mc_tick_rate = 1.1
+
+	var/high_pop_mc_mode_amount = 65
+	var/disable_high_pop_mc_mode_amount = 60
+
+	// Nightshift
+	var/randomize_shift_time = FALSE
+	var/enable_night_shifts = FALSE
+
+	// Developer
+	var/developer_express_start = 0
+
+/datum/configuration/New()
+	for(var/T in subtypesof(/datum/game_mode))
+		var/datum/game_mode/M = T
+
+		if(initial(M.config_tag))
+			if(!(initial(M.config_tag) in modes))		// ensure each mode is added only once
+				src.modes += initial(M.config_tag)
+				src.mode_names[initial(M.config_tag)] = initial(M.name)
+				src.probabilities[initial(M.config_tag)] = initial(M.probability)
+				if(initial(M.votable))
+					src.votable_modes += initial(M.config_tag)
 	src.votable_modes += "secret"
 
 /datum/configuration/proc/load(filename, type = "config") //the type can also be game_options, in which case it uses a different switch. not making it separate to not copypaste code - Urist
@@ -264,6 +280,15 @@
 				if("jobs_have_minimal_access")
 					config.jobs_have_minimal_access = 1
 
+				if("prob_free_golems")
+					config.prob_free_golems = text2num(value)
+
+				if("unrestricted_free_golems")
+					config.unrestricted_free_golems = TRUE
+
+				if("shadowling_max_age")
+					config.shadowling_max_age = text2num(value)
+
 				if("log_ooc")
 					config.log_ooc = 1
 
@@ -317,6 +342,9 @@
 
 				if("allow_admin_ooccolor")
 					config.allow_admin_ooccolor = 1
+
+				if("pregame_timestart")
+					config.pregame_timestart = text2num(value)
 
 				if("allow_vote_restart")
 					config.allow_vote_restart = 1
@@ -372,6 +400,12 @@
 				if("rulesurl")
 					config.rulesurl = value
 
+				if("githuburl")
+					config.githuburl = value
+
+				if("discordurl")
+					config.discordurl = value
+
 				if("donationsurl")
 					config.donationsurl = value
 
@@ -410,15 +444,12 @@
 						if(prob_name in config.modes)
 							config.probabilities[prob_name] = text2num(prob_value)
 						else
-							diary << "Unknown game mode probability configuration definition: [prob_name]."
+							log_config("Unknown game mode probability configuration definition: [prob_name].")
 					else
-						diary << "Incorrect probability configuration definition: [prob_name]  [prob_value]."
+						log_config("Incorrect probability configuration definition: [prob_name]  [prob_value].")
 
 				if("allow_random_events")
 					config.allow_random_events = 1
-
-				if("kick_inactive")
-					config.kick_inactive = 1
 
 				if("load_jobs_from_txt")
 					load_jobs_from_txt = 1
@@ -498,12 +529,12 @@
 
 				if("python_path")
 					if(value)
-						config.python_path = value
+						python_path = value
 					else
 						if(world.system_type == UNIX)
-							config.python_path = "/usr/bin/env python2"
+							python_path = "/usr/bin/env python2"
 						else //probably windows, if not this should work anyway
-							config.python_path = "pythonw"
+							python_path = "pythonw"
 
 				if("assistant_limit")
 					config.assistantlimit = 1
@@ -570,6 +601,14 @@
 				if("disable_cid_warn_popup")
 					config.disable_cid_warn_popup = 1
 
+				if("extra_space_ruin_levels_min")
+					var/vvalue = text2num(value)
+					config.extra_space_ruin_levels_min = max(vvalue, 0)
+
+				if("extra_space_ruin_levels_max")
+					var/vvalue = text2num(value)
+					config.extra_space_ruin_levels_max = max(vvalue, 0)
+
 				if("max_loadout_points")
 					config.max_loadout_points = text2num(value)
 
@@ -592,15 +631,25 @@
 					shutdown_shell_command = value
 
 				if("disable_karma")
-					disable_karma = 1
+					config.disable_karma = 1
 
+				if("tick_limit_mc_init")
+					config.tick_limit_mc_init = text2num(value)
+				if("base_mc_tick_rate")
+					config.base_mc_tick_rate = text2num(value)
+				if("high_pop_mc_tick_rate")
+					config.high_pop_mc_tick_rate = text2num(value)
+				if("high_pop_mc_mode_amount")
+					config.high_pop_mc_mode_amount = text2num(value)
+				if("disable_high_pop_mc_mode_amount")
+					config.disable_high_pop_mc_mode_amount = text2num(value)
+				if("developer_express_start")
+					config.developer_express_start = 1
 				else
-					diary << "Unknown setting in configuration: '[name]'"
+					log_config("Unknown setting in configuration: '[name]'")
 
 
 		else if(type == "game_options")
-			if(!value)
-				diary << "Unknown value for setting [name] in [filename]."
 			value = text2num(value)
 
 			switch(name)
@@ -632,14 +681,8 @@
 					config.slime_delay = value
 				if("animal_delay")
 					config.animal_delay = value
-				if("organ_health_multiplier")
-					config.organ_health_multiplier = value / 100
-				if("organ_regeneration_multiplier")
-					config.organ_regeneration_multiplier = value / 100
 				if("bones_can_break")
 					config.bones_can_break = value
-				if("limbs_can_break")
-					config.limbs_can_break = value
 				if("shuttle_refuel_delay")
 					config.shuttle_refuel_delay     = text2num(value)
 				if("traitor_objectives_amount")
@@ -662,11 +705,16 @@
 					MAX_EX_FLAME_RANGE = BombCap
 				if("default_laws")
 					config.default_laws = text2num(value)
+				if("randomize_shift_time")
+					config.randomize_shift_time = TRUE
+				if("enable_night_shifts")
+					config.enable_night_shifts = TRUE
 				else
-					diary << "Unknown setting in configuration: '[name]'"
+					log_config("Unknown setting in configuration: '[name]'")
 
 /datum/configuration/proc/loadsql(filename)  // -- TLE
 	var/list/Lines = file2list(filename)
+	var/db_version = 0
 	for(var/t in Lines)
 		if(!t)	continue
 
@@ -704,8 +752,18 @@
 				sqlfdbkpass = value
 			if("feedback_tableprefix")
 				sqlfdbktableprefix = value
+			if("db_version")
+				db_version = text2num(value)
 			else
-				diary << "Unknown setting in configuration: '[name]'"
+				log_config("Unknown setting in configuration: '[name]'")
+	if(config.sql_enabled && db_version != SQL_VERSION)
+		config.sql_enabled = 0
+		log_config("WARNING: DB_CONFIG DEFINITION MISMATCH!")
+		spawn(60)
+			if(ticker.current_state == GAME_STATE_PREGAME)
+				going = 0
+				spawn(600)
+					to_chat(world, "<span class='alert'>DB_CONFIG MISMATCH, ROUND START DELAYED. <BR>Please check database version for recent upstream changes!</span>")
 
 /datum/configuration/proc/loadoverflowwhitelist(filename)
 	var/list/Lines = file2list(filename)
@@ -721,13 +779,10 @@
 		config.overflow_whitelist += t
 
 /datum/configuration/proc/pick_mode(mode_name)
-	// I wish I didn't have to instance the game modes in order to look up
-	// their information, but it is the only way (at least that I know of).
 	for(var/T in subtypesof(/datum/game_mode))
-		var/datum/game_mode/M = new T()
-		if(M.config_tag && M.config_tag == mode_name)
-			return M
-		qdel(M)
+		var/datum/game_mode/M = T
+		if(initial(M.config_tag) && initial(M.config_tag) == mode_name)
+			return new T()
 	return new /datum/game_mode/extended()
 
 /datum/configuration/proc/get_runnable_modes()

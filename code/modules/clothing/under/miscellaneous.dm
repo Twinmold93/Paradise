@@ -53,13 +53,6 @@
 	item_state = "b_suit"
 	item_color = "mailman"
 
-/obj/item/clothing/under/sexyclown
-	name = "sexy-clown suit"
-	desc = "It makes you look HONKable!"
-	icon_state = "sexyclown"
-	item_state = "sexyclown"
-	item_color = "sexyclown"
-
 /obj/item/clothing/under/rank/vice
 	name = "vice officer's jumpsuit"
 	desc = "It's the standard issue pretty-boy outfit, as seen on Holo-Vision."
@@ -103,7 +96,7 @@
 	item_color = "centcom"
 
 /obj/item/clothing/under/rank/centcom/officer
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Lieutenant-Commander\" and bears \"N.C.V. Fearless CV-286\" on the left shounder."
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Lieutenant-Commander\" and bears \"N.C.V. Fearless CV-286\" on the left shoulder."
 	name = "\improper Nanotrasen Officers Uniform"
 	icon_state = "officer"
 	item_state = "g_suit"
@@ -112,7 +105,7 @@
 	flags_size = ONESIZEFITSALL
 
 /obj/item/clothing/under/rank/centcom/captain
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Captain\" and bears \"N.C.V. Fearless CV-286\" on the left shounder."
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Captain\" and bears \"N.C.V. Fearless CV-286\" on the left shoulder."
 	name = "\improper Nanotrasen Captains Uniform"
 	icon_state = "centcom"
 	item_state = "dg_suit"
@@ -120,7 +113,7 @@
 	displays_id = 0
 
 /obj/item/clothing/under/rank/centcom/blueshield
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Lieutenant\" and bears \"N.S.S. Cyberiad\" on the left shounder."
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Lieutenant\" and bears \"N.S.S. Cyberiad\" on the left shoulder."
 	name = "\improper Nanotrasen Navy Uniform"
 	icon_state = "officer"
 	item_state = "g_suit"
@@ -128,14 +121,35 @@
 	displays_id = 0
 	flags_size = ONESIZEFITSALL
 
+/obj/item/clothing/under/rank/centcom/blueshield/New()
+	..()
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Lieutenant\" and bears [station_name()] on the left shoulder."
+
 /obj/item/clothing/under/rank/centcom/representative
-	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Ensign\" and bears \"N.S.S. Cyberiad\" on the left shounder."
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Ensign\" and bears \"N.S.S. Cyberiad\" on the left shoulder."
 	name = "\improper Nanotrasen Navy Uniform"
 	icon_state = "officer"
 	item_state = "g_suit"
 	item_color = "officer"
 	displays_id = 0
 	flags_size = ONESIZEFITSALL
+
+/obj/item/clothing/under/rank/centcom/representative/New()
+	..()
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Ensign\" and bears [station_name()] on the left shoulder."
+
+/obj/item/clothing/under/rank/centcom/magistrate
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Magistrate\" and bears \"N.S.S. Cyberiad\" on the left shoulder."
+	name = "\improper Nanotrasen Navy Uniform"
+	icon_state = "officer"
+	item_state = "g_suit"
+	item_color = "officer"
+	displays_id = 0
+	flags_size = ONESIZEFITSALL
+
+/obj/item/clothing/under/rank/centcom/magistrate/New()
+	..()
+	desc = "Gold trim on space-black cloth, this uniform displays the rank of \"Magistrate\" and bears [station_name()] on the left shoulder."
 
 /obj/item/clothing/under/rank/centcom/diplomatic
 	desc = "A very gaudy and official looking uniform of the Nanotrasen Diplomatic Corps."
@@ -167,7 +181,7 @@
 	icon_state = "black"
 	item_state = "bl_suit"
 	item_color = "black"
-	w_class = 4//bulky item
+	w_class = WEIGHT_CLASS_BULKY
 	gas_transfer_coefficient = 0.01
 	permeability_coefficient = 0.02
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS
@@ -751,11 +765,12 @@
 	item_state = "noble_clothes"
 
 /obj/item/clothing/under/contortionist
-	name = "Contortionist's Jumpsuit"
+	name = "atmospheric technician's jumpsuit"
 	desc = "A light jumpsuit useful for squeezing through narrow vents."
 	icon_state = "atmos"
 	item_state = "atmos_suit"
 	item_color = "atmos"
+	burn_state = FIRE_PROOF
 
 /obj/item/clothing/under/contortionist/equipped(mob/living/carbon/human/user, slot)
 	if(!user.ventcrawler)
@@ -787,3 +802,53 @@
 	lefthand_file = 'icons/goonstation/mob/inhands/clothing_lefthand.dmi'
 	righthand_file = 'icons/goonstation/mob/inhands/clothing_righthand.dmi'
 	flags = NODROP
+	has_sensor = 0 // HUNKE
+
+/obj/item/clothing/under/victdress
+	name = "black victorian dress"
+	desc = "A victorian style dress, fancy!"
+	icon_state = "victorianblackdress"
+	item_state = "victorianblackdress"
+	item_color = "victorianblackdress"
+	body_parts_covered = UPPER_TORSO|LOWER_TORSO
+
+/obj/item/clothing/under/victdress/red
+	name = "red victorian dress"
+	icon_state = "victorianreddress"
+	item_state = "victorianreddress"
+	item_color = "victorianreddress"
+
+/obj/item/clothing/under/victsuit
+	name = "victorian suit"
+	desc = "A victorian style suit, fancy!"
+	icon_state = "victorianvest"
+	item_state = "victorianvest"
+	item_color = "victorianvest"
+	body_parts_covered = UPPER_TORSO|LOWER_TORSO
+
+/obj/item/clothing/under/victsuit/redblk
+	name = "red and black victorian suit"
+	icon_state = "victorianblred"
+	item_state = "victorianblred"
+	item_color = "victorianblred"
+
+/obj/item/clothing/under/victsuit/red
+	name = "red victorian suit"
+	icon_state = "victorianredvest"
+	item_state = "victorianredvest"
+	item_color = "victorianredvest"
+
+/obj/item/clothing/under/medigown
+	name = "medical gown"
+	desc = "a flimsy examination gown, the back ties never close."
+	icon_state = "medicalgown"
+	item_state = "medicalgown"
+	item_color = "medicalgown"
+	body_parts_covered = UPPER_TORSO|LOWER_TORSO
+
+/obj/item/clothing/under/burial
+	name = "burial garments"
+	desc = "Traditional burial garments from the early 22nd century."
+	icon_state = "burial"
+	item_state = "burial"
+	item_color = "burial"

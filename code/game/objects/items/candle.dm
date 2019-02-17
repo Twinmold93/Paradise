@@ -4,7 +4,7 @@
 	icon = 'icons/obj/candle.dmi'
 	icon_state = "candle1"
 	item_state = "candle1"
-	w_class = 1
+	w_class = WEIGHT_CLASS_TINY
 	var/wax = 200
 	var/lit = 0
 	var/infinite = 0
@@ -31,18 +31,18 @@
 	icon_state = "candle[i][lit ? "_lit" : ""]"
 
 
-/obj/item/candle/attackby(obj/item/weapon/W, mob/user, params)
+/obj/item/candle/attackby(obj/item/W, mob/user, params)
 	..()
-	if(istype(W, /obj/item/weapon/weldingtool))
-		var/obj/item/weapon/weldingtool/WT = W
+	if(istype(W, /obj/item/weldingtool))
+		var/obj/item/weldingtool/WT = W
 		if(WT.isOn()) //Badasses dont get blinded by lighting their candle with a welding tool
 			light("<span class='notice'>[user] casually lights [src] with [WT], what a badass.")
-	else if(istype(W, /obj/item/weapon/lighter))
-		var/obj/item/weapon/lighter/L = W
+	else if(istype(W, /obj/item/lighter))
+		var/obj/item/lighter/L = W
 		if(L.lit)
 			light("<span class='notice'>After some fiddling, [user] manages to light [src] with [L].</span>")
-	else if(istype(W, /obj/item/weapon/match))
-		var/obj/item/weapon/match/M = W
+	else if(istype(W, /obj/item/match))
+		var/obj/item/match/M = W
 		if(M.lit)
 			light("<span class='notice'>[user] lights [src] with [M]</span>")
 	else if(istype(W, /obj/item/candle))

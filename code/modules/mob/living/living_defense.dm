@@ -37,16 +37,15 @@
 /mob/living/proc/getarmor(var/def_zone, var/type)
 	return 0
 
+/mob/living/proc/is_mouth_covered(head_only = FALSE, mask_only = FALSE)
+	return FALSE
+
+/mob/living/proc/is_eyes_covered(check_glasses = TRUE, check_head = TRUE, check_mask = TRUE)
+	return FALSE
 
 /mob/living/bullet_act(var/obj/item/projectile/P, var/def_zone)
 	//Armor
 	var/armor = run_armor_check(def_zone, P.flag, armour_penetration = P.armour_penetration)
-	var/proj_sharp = is_sharp(P)
-	var/proj_edge = has_edge(P)
-	if((proj_sharp || proj_edge) && prob(getarmor(def_zone, P.flag)))
-		proj_sharp = 0
-		proj_edge = 0
-
 	if(!P.nodamage)
 		apply_damage(P.damage, P.damage_type, def_zone, armor)
 		if(P.dismemberment)
@@ -74,14 +73,14 @@
 		return 0
 
 //this proc handles being hit by a thrown atom
-/mob/living/hitby(atom/movable/AM, skipcatch, hitpush = 1, blocked = 0)//Standardization and logging -Sieve
+/mob/living/hitby(atom/movable/AM, skipcatch, hitpush = 1, blocked = 0, datum/thrownthing/throwingdatum)//Standardization and logging -Sieve
 	if(istype(AM, /obj/item))
 		var/obj/item/I = AM
 		var/zone = ran_zone("chest", 65)//Hits a random part of the body, geared towards the chest
 		var/dtype = BRUTE
 		var/volume = I.get_volume_by_throwforce_and_or_w_class()
-		if(istype(I, /obj/item/weapon))
-			var/obj/item/weapon/W = I
+		if(istype(I, /obj/item))
+			var/obj/item/W = I
 			dtype = W.damtype
 			if(W.throwforce > 0) //If the weapon's throwforce is greater than zero...
 				if(W.hitsound) //...and hitsound is defined...
@@ -97,9 +96,9 @@
 			visible_message("<span class='danger'>[src] has been hit by [I].</span>",
 							"<span class='userdanger'>[src] has been hit by [I].</span>")
 			var/armor = run_armor_check(zone, "melee", "Your armor has protected your [parse_zone(zone)].", "Your armor has softened hit to your [parse_zone(zone)].", I.armour_penetration)
-			apply_damage(I.throwforce, dtype, zone, armor, is_sharp(I), has_edge(I), I)
+			apply_damage(I.throwforce, dtype, zone, armor, is_sharp(I), I)
 			if(I.thrownby)
-				add_logs(I.thrownby, src, "hit", I)
+				add_attack_logs(I.thrownby, src, "Hit with thrown [I]")
 		else
 			return 1
 	else
@@ -108,7 +107,7 @@
 
 
 /mob/living/mech_melee_attack(obj/mecha/M)
-	if(M.occupant.a_intent == I_HARM)
+	if(M.occupant.a_intent == INTENT_HARM)
 		if(M.damtype == "brute")
 			step_away(src,M,15)
 		switch(M.damtype)
@@ -118,23 +117,19 @@
 				playsound(src, 'sound/weapons/punch4.ogg', 50, 1)
 			if("fire")
 				take_overall_damage(0, rand(M.force/2, M.force))
-				playsound(src, 'sound/items/Welder.ogg', 50, 1)
+				playsound(src, 'sound/items/welder.ogg', 50, 1)
 			if("tox")
 				M.mech_toxin_damage(src)
 			else
 				return
-		updatehealth()
+		updatehealth("mech melee attack")
 		M.occupant_message("<span class='danger'>You hit [src].</span>")
 		visible_message("<span class='danger'>[src] has been hit by [M.name].</span>", \
 						"<span class='userdanger'>[src] has been hit by [M.name].</span>")
-		create_attack_log("<font color='orange'>Has been attacked by \the [M] controlled by [key_name(M.occupant)] (INTENT: [uppertext(M.occupant.a_intent)])</font>")
-		M.occupant.create_attack_log("<font color='red'>Attacked [src] with \the [M] (INTENT: [uppertext(M.occupant.a_intent)])</font>")
-		msg_admin_attack("[key_name_admin(M.occupant)] attacked [key_name_admin(src)] with \the [M] (INTENT: [uppertext(M.occupant.a_intent)])")
-
+		add_attack_logs(M.occupant, src, "Mecha-meleed with [M]")
 	else
-
 		step_away(src,M)
-		add_logs(M.occupant, src, "pushed", object=M, admin=0, print_attack_log = 0)
+		add_attack_logs(M.occupant, src, "Mecha-pushed with [M]", ATKLOG_ALL)
 		M.occupant_message("<span class='warning'>You push [src] out of the way.</span>")
 		visible_message("<span class='warning'>[M] pushes [src] out of the way.</span>")
 		return
@@ -234,22 +229,22 @@
 
 // End BS12 momentum-transfer code.
 
-/mob/living/proc/grabbedby(mob/living/carbon/user,var/supress_message = 0)
+/mob/living/proc/grabbedby(mob/living/carbon/user, supress_message = FALSE)
 	if(user == src || anchored)
 		return 0
 	if(!(status_flags & CANPUSH))
 		return 0
 
-	for(var/obj/item/weapon/grab/G in src.grabbed_by)
+	for(var/obj/item/grab/G in grabbed_by)
 		if(G.assailant == user)
 			to_chat(user, "<span class='notice'>You already grabbed [src].</span>")
 			return
 
-	add_logs(user, src, "grabbed", addition="passively")
+	add_attack_logs(user, src, "Grabbed passively", ATKLOG_ALL)
 
-	var/obj/item/weapon/grab/G = new /obj/item/weapon/grab(user, src)
+	var/obj/item/grab/G = new /obj/item/grab(user, src)
 	if(buckled)
-		to_chat(user, "<span class='notice'>You cannot grab [src], \he is buckled in!</span>")
+		to_chat(user, "<span class='notice'>You cannot grab [src]; [p_they()] [p_are()] buckled in!</span>")
 	if(!G)	//the grab will delete itself in New if src is anchored
 		return 0
 	user.put_in_active_hand(G)
@@ -266,6 +261,83 @@
 	if(!supress_message)
 		visible_message("<span class='warning'>[user] has grabbed [src] passively!</span>")
 
-/mob/living/incapacitated()
-	if(stat || paralysis || stunned || weakened || restrained())
+	return G
+
+/mob/living/attack_slime(mob/living/carbon/slime/M)
+	if(!ticker)
+		to_chat(M, "You cannot attack people before the game has started.")
+		return
+
+	if(M.Victim)
+		return // can't attack while eating!
+
+	if(stat != DEAD)
+		M.do_attack_animation(src)
+		visible_message("<span class='danger'>The [M.name] glomps [src]!</span>", \
+				"<span class='userdanger'>The [M.name] glomps [src]!</span>")
+
+		if(M.powerlevel > 0)
+			var/stunprob = M.powerlevel * 7 + 10  // 17 at level 1, 80 at level 10
+			if(prob(stunprob))
+				M.powerlevel -= 3
+				if(M.powerlevel < 0)
+					M.powerlevel = 0
+
+				visible_message("<span class='danger'>The [M.name] has shocked [src]!</span>", \
+				"<span class='userdanger'>The [M.name] has shocked [src]!</span>")
+
+				do_sparks(5, 1, src)
+				return 1
+	add_attack_logs(src, M, "Slime'd")
+	return
+
+/mob/living/attack_animal(mob/living/simple_animal/M)
+	if((M.a_intent == INTENT_HELP && M.ckey) || M.melee_damage_upper == 0)
+		M.custom_emote(1, "[M.friendly] [src].")
+		return 0
+	else
+		if(M.attack_sound)
+			playsound(loc, M.attack_sound, 50, 1, 1)
+		M.do_attack_animation(src)
+		visible_message("<span class='danger'>\The [M] [M.attacktext] [src]!</span>", \
+						"<span class='userdanger'>\The [M] [M.attacktext] [src]!</span>")
+		add_attack_logs(M, src, "Animal attacked")
 		return 1
+
+/mob/living/attack_larva(mob/living/carbon/alien/larva/L)
+	switch(L.a_intent)
+		if(INTENT_HELP)
+			visible_message("<span class='notice'>[L.name] rubs its head against [src].</span>")
+			return 0
+
+		else
+			L.do_attack_animation(src)
+			if(prob(90))
+				add_attack_logs(L, src, "Larva attacked")
+				visible_message("<span class='danger'>[L.name] bites [src]!</span>", \
+						"<span class='userdanger'>[L.name] bites [src]!</span>")
+				playsound(loc, 'sound/weapons/bite.ogg', 50, 1, -1)
+				return 1
+			else
+				visible_message("<span class='danger'>[L.name] has attempted to bite [src]!</span>", \
+					"<span class='userdanger'>[L.name] has attempted to bite [src]!</span>")
+	return 0
+
+/mob/living/attack_alien(mob/living/carbon/alien/humanoid/M)
+	switch(M.a_intent)
+		if(INTENT_HELP)
+			visible_message("<span class='notice'>[M] caresses [src] with its scythe like arm.</span>")
+			return FALSE
+		if(INTENT_GRAB)
+			grabbedby(M)
+			return FALSE
+		if(INTENT_HARM)
+			M.do_attack_animation(src)
+			return TRUE
+		if(INTENT_DISARM)
+			M.do_attack_animation(src, ATTACK_EFFECT_DISARM)
+			return TRUE
+
+//defined here, overridden for humans in human_defense. By default, living mobs don't get to block anything
+/mob/living/proc/check_block()
+	return FALSE

@@ -50,7 +50,7 @@ var/global/list/obj/machinery/message_server/message_servers = list()
 	name = "Messaging Server"
 	density = 1
 	anchored = 1.0
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 10
 	active_power_usage = 100
 
@@ -140,6 +140,9 @@ var/global/list/obj/machinery/message_server/message_servers = list()
 	variable = param_variable
 	value = param_value
 
+/datum/feedback_variable/vv_edit_var(var_name, var_value)
+	return FALSE // come on guys don't break the stats
+
 /datum/feedback_variable/proc/inc(var/num = 1)
 	if(isnum(value))
 		value += num
@@ -189,13 +192,14 @@ var/global/list/obj/machinery/message_server/message_servers = list()
 
 var/obj/machinery/blackbox_recorder/blackbox
 
+//TODO: kill whoever designed this cancer
 /obj/machinery/blackbox_recorder
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "blackbox"
 	name = "Blackbox Recorder"
 	density = 1
 	anchored = 1.0
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 10
 	active_power_usage = 100
 	var/list/messages = list()		//Stores messages of non-standard frequencies
@@ -263,7 +267,7 @@ var/obj/machinery/blackbox_recorder/blackbox
 	var/pda_msg_amt = 0
 	var/rc_msg_amt = 0
 
-	for(var/obj/machinery/message_server/MS in machines)
+	for(var/obj/machinery/message_server/MS in GLOB.machines)
 		if(MS.pda_msgs.len > pda_msg_amt)
 			pda_msg_amt = MS.pda_msgs.len
 		if(MS.rc_msgs.len > rc_msg_amt)
@@ -313,6 +317,9 @@ var/obj/machinery/blackbox_recorder/blackbox
 		var/sql = "INSERT INTO [format_table_name("feedback")] VALUES (null, Now(), [round_id], \"[FV.get_variable()]\", [FV.get_value()], \"[FV.get_details()]\")"
 		var/DBQuery/query_insert = dbcon.NewQuery(sql)
 		query_insert.Execute()
+
+/obj/machinery/blackbox_recorder/vv_edit_var(var_name, var_value)
+	return FALSE // don't fuck with the stupid blackbox shit
 
 
 proc/feedback_set(var/variable,var/value)

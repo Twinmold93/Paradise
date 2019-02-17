@@ -35,7 +35,8 @@
 /obj/item/organ/internal/body_egg/spider_eggs/remove(var/mob/living/carbon/M, var/special = 0)
 	..()
 	M.reagents.del_reagent("spidereggs") //purge all remaining spider eggs reagent if caught, in time.
-	qdel(src) //We don't want people re-implanting these for near instant gibbings.
+	if(!QDELETED(src))
+		qdel(src) // prevent people re-implanting them into others
 	return null
 
 
@@ -67,7 +68,7 @@
 			to_chat(owner,"<span class='notice'>The pain has faded, and stopped bleeding, though the skin around it has turned black.</span>")
 			owner.adjustBruteLoss(-10)
 		if(30) // 1m... the point where the venom uses and accellerates the healing process, to feed the eggs
-			to_chat(owner,"<span class='notice'>Your bite wound has completely sealed up, though the skin is still black. You feel significantly better.</span>")
+			to_chat(owner,"<span class='notice'>Your wound has completely sealed up, though the skin is still black. You feel significantly better.</span>")
 			owner.adjustBruteLoss(-20)
 		if(90) // 3m... where the eggs are developing, and the wound is turning into a hatching site, but invisibly
 			to_chat(owner,"<span class='notice'>The black flesh around your old spider bite wound has started to peel off.</span>")
@@ -82,37 +83,32 @@
 				// Actually, let's make it slightly worse... just to discourage people from bringing back infections.
 				alternate_ending = 1
 			to_chat(owner,"<span class='danger'>The shapes extend tendrils out of your wound... no... those are legs! SPIDER LEGS! You have spiderlings growing inside you! You scratch at the wound, but it just aggrivates them - they swarm out of the wound, biting you all over!</span>")
-			owner.visible_message("<span class='danger'>[owner] flails around on the floor as spiderlings erupt from their skin and swarm all over them! </span>")
+			owner.visible_message("<span class='danger'>[owner] flails around on the floor as spiderlings erupt from [owner.p_their()] skin and swarm all over them! </span>")
 			owner.Stun(20)
 			owner.Weaken(20)
 			// yes, this is a long stun - that's intentional. Gotta give the spiderlings time to escape.
-			var/obj/structure/spider/spiderling/terror_spiderling/S1 = new(get_turf(owner))
-			S1.grow_as = /mob/living/simple_animal/hostile/poison/terror_spider/red
-			S1.name = "red spiderling"
-			if(prob(50))
-				S1.stillborn = 1
-			var/obj/structure/spider/spiderling/terror_spiderling/S2 = new(get_turf(owner))
-			S2.grow_as = /mob/living/simple_animal/hostile/poison/terror_spider/gray
-			S2.name = "gray spiderling"
-			if(prob(50))
-				S2.stillborn = 1
-			var/obj/structure/spider/spiderling/terror_spiderling/S3 = new(get_turf(owner))
-			S3.grow_as = /mob/living/simple_animal/hostile/poison/terror_spider/green
-			S3.name = "green spiderling"
-			if(prob(50))
-				S3.stillborn = 1
 			if(alternate_ending)
-				S1.stillborn = 1
-				S2.stillborn = 1
-				S3.stillborn = 1
 				owner.gib()
 			else
 				owner.adjustToxLoss(rand(100,180)) // normal case, range: 100-180, average 140, almost crit (150).
+				if(prob(50))
+					var/obj/structure/spider/spiderling/terror_spiderling/S1 = new(get_turf(owner))
+					S1.grow_as = /mob/living/simple_animal/hostile/poison/terror_spider/red
+					S1.name = "red spiderling"
+				if(prob(50))
+					var/obj/structure/spider/spiderling/terror_spiderling/S2 = new(get_turf(owner))
+					S2.grow_as = /mob/living/simple_animal/hostile/poison/terror_spider/gray
+					S2.name = "gray spiderling"
+				if(prob(50))
+					var/obj/structure/spider/spiderling/terror_spiderling/S3 = new(get_turf(owner))
+					S3.grow_as = /mob/living/simple_animal/hostile/poison/terror_spider/green
+					S3.name = "green spiderling"
 		if(130) // 4m 20s
 			to_chat(owner,"<span class='danger'>The spiderlings are gone. Your wound, though, looks worse than ever. Remnants of tiny spider eggs, and dead spiders, inside your flesh. Disgusting.</span>")
 			qdel(src)
 
 /obj/item/organ/internal/body_egg/terror_eggs/remove(var/mob/living/carbon/M, var/special = 0)
 	..()
-	qdel(src) // prevent people re-implanting them into others
+	if(!QDELETED(src))
+		qdel(src) // prevent people re-implanting them into others
 	return null

@@ -25,20 +25,24 @@
 	mind = null
 	return ..()
 
-/obj/item/seeds/replicapod/attackby(obj/item/weapon/W, mob/user, params)
-	if(istype(W,/obj/item/weapon/reagent_containers/syringe))
+/obj/item/seeds/replicapod/attackby(obj/item/W, mob/user, params)
+	if(istype(W,/obj/item/reagent_containers/syringe))
 		if(!contains_sample)
 			for(var/datum/reagent/blood/bloodSample in W.reagents.reagent_list)
 				if(bloodSample.data["mind"] && bloodSample.data["cloneable"] == 1)
-					mind = bloodSample.data["mind"]
-					ckey = bloodSample.data["ckey"]
-					realName = bloodSample.data["real_name"]
-					blood_gender = bloodSample.data["gender"]
-					blood_type = bloodSample.data["blood_type"]
-					factions = bloodSample.data["factions"]
-					W.reagents.clear_reagents()
-					to_chat(user, "<span class='notice'>You inject the contents of the syringe into the seeds.</span>")
-					contains_sample = 1
+					var/datum/mind/tempmind = bloodSample.data["mind"]
+					if(tempmind.is_revivable())
+						mind = bloodSample.data["mind"]
+						ckey = bloodSample.data["ckey"]
+						realName = bloodSample.data["real_name"]
+						blood_gender = bloodSample.data["gender"]
+						blood_type = bloodSample.data["blood_type"]
+						factions = bloodSample.data["factions"]
+						W.reagents.clear_reagents()
+						to_chat(user, "<span class='notice'>You inject the contents of the syringe into the seeds.</span>")
+						contains_sample = 1
+					else
+						to_chat(user, "<span class='warning'>The seeds reject the sample!</span>")
 				else
 					to_chat(user, "<span class='warning'>The seeds reject the sample!</span>")
 		else
@@ -59,7 +63,7 @@
 	var/ckey_holder = null
 	if(config.revival_pod_plants)
 		if(ckey)
-			for(var/mob/M in player_list)
+			for(var/mob/M in GLOB.player_list)
 				if(isobserver(M))
 					var/mob/dead/observer/O = M
 					if(O.ckey == ckey && O.can_reenter_corpse)
@@ -70,7 +74,7 @@
 						make_podman = 1
 						break
 		else //If the player has ghosted from his corpse before blood was drawn, his ckey is no longer attached to the mob, so we need to match up the cloned player through the mind key
-			for(var/mob/M in player_list)
+			for(var/mob/M in GLOB.player_list)
 				if(mind && M.mind && ckey(M.mind.key) == ckey(mind.key) && M.ckey && M.client && M.stat == DEAD && !M.suiciding)
 					if(isobserver(M))
 						var/mob/dead/observer/O = M
@@ -79,6 +83,9 @@
 					make_podman = 1
 					ckey_holder = M.ckey
 					break
+
+	if(mind && !mind.is_revivable())
+		make_podman = 0
 
 	if(make_podman)	//all conditions met!
 		var/mob/living/carbon/human/diona/podman = new /mob/living/carbon/human/diona(parent.loc)

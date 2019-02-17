@@ -22,9 +22,10 @@
 
 	..()
 	icon_state = ""
-	layer = 10
+	layer = AREA_LAYER
 	uid = ++global_uid
-	all_areas += src
+	GLOB.all_areas += src
+	map_name = name // Save the initial (the name set in the map) name of the area.
 
 	if(type == /area)	// override defaults for space. TODO: make space areas of type /area/space rather than /area
 		requires_power = 1
@@ -41,9 +42,32 @@
 		power_equip = 0			//rastaf0
 		power_environ = 0		//rastaf0
 
-	power_change()		// all machines set to current power level, also updates lighting icon
-
 	blend_mode = BLEND_MULTIPLY // Putting this in the constructor so that it stops the icons being screwed up in the map editor.
+
+/area/Initialize()
+	. = ..()
+
+	if(contents.len)
+		var/list/areas_in_z = space_manager.areas_in_z
+		var/z
+		for(var/i in 1 to contents.len)
+			var/atom/thing = contents[i]
+			if(!thing)
+				continue
+			z = thing.z
+			break
+		if(!z)
+			WARNING("No z found for [src]")
+			return
+		if(!areas_in_z["[z]"])
+			areas_in_z["[z]"] = list()
+		areas_in_z["[z]"] += src
+
+	return INITIALIZE_HINT_LATELOAD
+
+/area/LateInitialize()
+	. = ..()
+	power_change()		// all machines set to current power level, also updates lighting icon
 
 /area/proc/get_cameras()
 	var/list/cameras = list()
@@ -52,15 +76,15 @@
 	return cameras
 
 
-/area/proc/atmosalert(danger_level, var/alarm_source)
+/area/proc/atmosalert(danger_level, var/alarm_source, var/force = FALSE)
 	if(danger_level == ATMOS_ALARM_NONE)
 		atmosphere_alarm.clearAlarm(src, alarm_source)
 	else
 		atmosphere_alarm.triggerAlarm(src, alarm_source, severity = danger_level)
 
-	//Check all the alarms before lowering atmosalm. Raising is perfectly fine.
+	//Check all the alarms before lowering atmosalm. Raising is perfectly fine. If force = 1 we don't care.
 	for(var/obj/machinery/alarm/AA in src)
-		if(!(AA.stat & (NOPOWER|BROKEN)) && !AA.shorted && AA.report_danger_level)
+		if(!(AA.stat & (NOPOWER|BROKEN)) && !AA.shorted && AA.report_danger_level && !force)
 			danger_level = max(danger_level, AA.danger_level)
 
 	if(danger_level != atmosalm)
@@ -86,7 +110,7 @@
 			if(!D.welded)
 				D.activate_alarm()
 				if(D.operating)
-					D.nextstate = CLOSED
+					D.nextstate = FD_CLOSED
 				else if(!D.density)
 					spawn(0)
 						D.close()
@@ -108,14 +132,14 @@
 	if(!fire)
 		fire = 1	//used for firedoor checks
 		updateicon()
-		mouse_opacity = 0
+		mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 		air_doors_close()
 
 /area/proc/fire_reset()
 	if(fire)
 		fire = 0	//used for firedoor checks
 		updateicon()
-		mouse_opacity = 0
+		mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 		air_doors_open()
 
 	return
@@ -141,7 +165,7 @@
 /area/proc/set_fire_alarm_effect()
 	fire = 1
 	updateicon()
-	mouse_opacity = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 /area/proc/readyalert()
 	if(!eject)
@@ -153,34 +177,21 @@
 		eject = 0
 		updateicon()
 
-/area/proc/radiation_alert()
-	if(!radalert)
-		radalert = 1
-		updateicon()
-
-/area/proc/reset_radiation_alert()
-	if(radalert)
-		radalert = 0
-		updateicon()
-
 /area/proc/partyalert()
 	if(!party)
 		party = 1
 		updateicon()
-		mouse_opacity = 0
+		mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 
 /area/proc/partyreset()
 	if(party)
 		party = 0
-		mouse_opacity = 0
+		mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 		updateicon()
 
 /area/proc/updateicon()
-	if(radalert) // always show the radiation alert, regardless of power
-		icon_state = "radiation"
-		invisibility = INVISIBILITY_LIGHTING
-	else if((fire || eject || party) && (!requires_power||power_environ))//If it doesn't require power, can still activate this proc.
-		if(fire && !radalert && !eject && !party)
+	if((fire || eject || party) && (!requires_power||power_environ))//If it doesn't require power, can still activate this proc.
+		if(fire && !eject && !party)
 			icon_state = "red"
 		else if(!fire && eject && !party)
 			icon_state = "red"
@@ -190,9 +201,15 @@
 			icon_state = "blue-red"
 		invisibility = INVISIBILITY_LIGHTING
 	else
-	//	new lighting behaviour with obj lights
-		icon_state = null
-		invisibility = INVISIBILITY_MAXIMUM
+		var/weather_icon
+		for(var/V in SSweather.processing)
+			var/datum/weather/W = V
+			if(W.stage != END_STAGE && (src in W.impacted_areas))
+				W.update_areas()
+				weather_icon = TRUE
+		if(!weather_icon)
+			icon_state = null
+			invisibility = INVISIBILITY_MAXIMUM
 
 /area/space/updateicon()
 	icon_state = null
@@ -292,8 +309,8 @@
 		var/mob/M=A
 
 		if(!M.lastarea)
-			M.lastarea = get_area_master(M)
-		newarea = get_area_master(M)
+			M.lastarea = get_area(M)
+		newarea = get_area(M)
 		oldarea = M.lastarea
 
 		if(newarea==oldarea) return
@@ -307,20 +324,21 @@
 
 	var/mob/living/L = A
 	if(!L.ckey)	return
-	if((oldarea.has_gravity == 0) && (newarea.has_gravity == 1) && (L.m_intent == "run")) // Being ready when you change areas gives you a chance to avoid falling all together.
+	if((oldarea.has_gravity == 0) && (newarea.has_gravity == 1) && (L.m_intent == MOVE_INTENT_RUN)) // Being ready when you change areas gives you a chance to avoid falling all together.
 		thunk(L)
 
 	// Ambience goes down here -- make sure to list each area seperately for ease of adding things in later, thanks! Note: areas adjacent to each other should have the same sounds to prevent cutoff when possible.- LastyScratch
 	if(L && L.client && !L.client.ambience_playing && (L.client.prefs.sound & SOUND_BUZZ))	//split off the white noise from the rest of the ambience because of annoyance complaints - Kluys
 		L.client.ambience_playing = 1
-		L << sound('sound/ambience/shipambience.ogg', repeat = 1, wait = 0, volume = 35, channel = 2)
-	else if(L && L.client && !(L.client.prefs.sound & SOUND_BUZZ)) L.client.ambience_playing = 0
+		L << sound('sound/ambience/shipambience.ogg', repeat = 1, wait = 0, volume = 35, channel = CHANNEL_BUZZ)
+	else if(L && L.client && !(L.client.prefs.sound & SOUND_BUZZ))
+		L.client.ambience_playing = 0
 
 	if(prob(35) && L && L.client && (L.client.prefs.sound & SOUND_AMBIENCE))
 		var/sound = pick(ambientsounds)
 
 		if(!L.client.played)
-			L << sound(sound, repeat = 0, wait = 0, volume = 25, channel = 1)
+			L << sound(sound, repeat = 0, wait = 0, volume = 25, channel = CHANNEL_AMBIENCE)
 			L.client.played = 1
 			spawn(600)			//ewww - this is very very bad
 				if(L.&& L.client)
@@ -344,7 +362,7 @@
 	if(istype(get_turf(M), /turf/space)) // Can't fall onto nothing.
 		return
 
-	if((istype(M,/mob/living/carbon/human/)) && (M.m_intent == "run")).
+	if((istype(M,/mob/living/carbon/human/)) && (M.m_intent == MOVE_INTENT_RUN)).
 		M.Stun(5)
 		M.Weaken(5)
 
@@ -377,3 +395,9 @@
 		temp_airlock.prison_open()
 	for(var/obj/machinery/door/window/temp_windoor in src)
 		temp_windoor.open()
+
+/area/AllowDrop()
+	CRASH("Bad op: area/AllowDrop() called")
+
+/area/drop_location()
+	CRASH("Bad op: area/drop_location() called")

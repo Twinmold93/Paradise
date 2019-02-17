@@ -18,8 +18,9 @@
 			            access_research, access_engine, access_mining, access_medical, access_construction, access_mailsorting,
 			            access_heads, access_hos, access_RC_announce, access_keycard_auth, access_gateway, access_pilot, access_weapons)
 	minimal_player_age = 21
-	exp_requirements = 600
+	exp_requirements = 1200
 	exp_type = EXP_TYPE_CREW
+	disabilities_allowed = 0
 	outfit = /datum/outfit/job/hos
 
 /datum/outfit/job/hos
@@ -31,21 +32,21 @@
 	gloves = /obj/item/clothing/gloves/color/black/hos
 	shoes = /obj/item/clothing/shoes/jackboots
 	head = /obj/item/clothing/head/HoS
-	l_ear = /obj/item/device/radio/headset/heads/hos/alt
+	l_ear = /obj/item/radio/headset/heads/hos/alt
 	glasses = /obj/item/clothing/glasses/hud/security/sunglasses
-	id = /obj/item/weapon/card/id/hos
-	suit_store = /obj/item/weapon/gun/energy/gun
-	pda = /obj/item/device/pda/heads/hos
+	id = /obj/item/card/id/hos
+	suit_store = /obj/item/gun/energy/gun
+	pda = /obj/item/pda/heads/hos
 	backpack_contents = list(
-		/obj/item/weapon/restraints/handcuffs = 1,
-		/obj/item/weapon/melee/classic_baton/telescopic = 1
+		/obj/item/restraints/handcuffs = 1,
+		/obj/item/melee/classic_baton/telescopic = 1
 	)
 
-	implants = list(/obj/item/weapon/implant/mindshield)
+	implants = list(/obj/item/implant/mindshield)
 
-	backpack = /obj/item/weapon/storage/backpack/security
-	satchel = /obj/item/weapon/storage/backpack/satchel_sec
-	dufflebag = /obj/item/weapon/storage/backpack/duffel/security
+	backpack = /obj/item/storage/backpack/security
+	satchel = /obj/item/storage/backpack/satchel_sec
+	dufflebag = /obj/item/storage/backpack/duffel/security
 
 
 
@@ -62,7 +63,7 @@
 	access = list(access_security, access_sec_doors, access_brig, access_armory, access_court, access_maint_tunnels, access_morgue, access_weapons)
 	minimal_access = list(access_security, access_sec_doors, access_brig, access_armory, access_court, access_maint_tunnels, access_weapons)
 	minimal_player_age = 21
-	exp_requirements = 300
+	exp_requirements = 600
 	exp_type = EXP_TYPE_CREW
 	outfit = /datum/outfit/job/warden
 
@@ -75,21 +76,21 @@
 	gloves = /obj/item/clothing/gloves/color/black
 	shoes = /obj/item/clothing/shoes/jackboots
 	head = /obj/item/clothing/head/warden
-	l_ear = /obj/item/device/radio/headset/headset_sec/alt
+	l_ear = /obj/item/radio/headset/headset_sec/alt
 	glasses = /obj/item/clothing/glasses/hud/security/sunglasses
-	id = /obj/item/weapon/card/id/security
-	l_pocket = /obj/item/device/flash
-	suit_store = /obj/item/weapon/gun/energy/gun/advtaser
-	pda = /obj/item/device/pda/warden
+	id = /obj/item/card/id/security
+	l_pocket = /obj/item/flash
+	suit_store = /obj/item/gun/energy/gun/advtaser
+	pda = /obj/item/pda/warden
 	backpack_contents = list(
-		/obj/item/weapon/restraints/handcuffs = 1
+		/obj/item/restraints/handcuffs = 1
 	)
 
-	implants = list(/obj/item/weapon/implant/mindshield)
+	implants = list(/obj/item/implant/mindshield)
 
-	backpack = /obj/item/weapon/storage/backpack/security
-	satchel = /obj/item/weapon/storage/backpack/satchel_sec
-	dufflebag = /obj/item/weapon/storage/backpack/duffel/security
+	backpack = /obj/item/storage/backpack/security
+	satchel = /obj/item/storage/backpack/satchel_sec
+	dufflebag = /obj/item/storage/backpack/duffel/security
 
 
 
@@ -108,7 +109,7 @@
 	minimal_access = list(access_sec_doors, access_forensics_lockers, access_morgue, access_maint_tunnels, access_court, access_weapons)
 	alt_titles = list("Forensic Technician")
 	minimal_player_age = 14
-	exp_requirements = 300
+	exp_requirements = 600
 	exp_type = EXP_TYPE_CREW
 	outfit = /datum/outfit/job/detective
 
@@ -121,23 +122,23 @@
 	gloves = /obj/item/clothing/gloves/color/black
 	shoes = /obj/item/clothing/shoes/brown
 	head = /obj/item/clothing/head/det_hat
-	l_ear = /obj/item/device/radio/headset/headset_sec/alt
+	l_ear = /obj/item/radio/headset/headset_sec/alt
 	glasses = /obj/item/clothing/glasses/sunglasses/noir
-	id = /obj/item/weapon/card/id/security
+	id = /obj/item/card/id/security
 	l_pocket = /obj/item/toy/crayon/white
-	r_pocket = /obj/item/weapon/lighter/zippo
-	pda = /obj/item/device/pda/detective
+	r_pocket = /obj/item/lighter/zippo
+	pda = /obj/item/pda/detective
 	backpack_contents = list(
-		/obj/item/weapon/storage/box/evidence = 1,
-		/obj/item/device/detective_scanner = 1,
-		/obj/item/weapon/melee/classic_baton/telescopic = 1
+		/obj/item/storage/box/evidence = 1,
+		/obj/item/detective_scanner = 1,
+		/obj/item/melee/classic_baton/telescopic = 1
 	)
 
-	implants = list(/obj/item/weapon/implant/mindshield)
+	implants = list(/obj/item/implant/mindshield)
 
 /datum/outfit/job/detective/pre_equip(mob/living/carbon/human/H, visualsOnly = FALSE)
 	. = ..()
-	if(H.mind.role_alt_title)
+	if(H.mind && H.mind.role_alt_title)
 		switch(H.mind.role_alt_title)
 			if("Forensic Technician")
 				suit = /obj/item/clothing/suit/storage/det_suit/forensics/blue
@@ -165,33 +166,30 @@
 	access = list(access_security, access_sec_doors, access_brig, access_court, access_maint_tunnels, access_morgue, access_weapons)
 	minimal_access = list(access_security, access_sec_doors, access_brig, access_court, access_maint_tunnels, access_weapons)
 	minimal_player_age = 14
-	exp_requirements = 300
+	exp_requirements = 600
 	exp_type = EXP_TYPE_CREW
 	outfit = /datum/outfit/job/officer
 
 /datum/outfit/job/officer
 	name = "Security Officer"
 	jobtype = /datum/job/officer
-
 	uniform = /obj/item/clothing/under/rank/security
 	suit = /obj/item/clothing/suit/armor/vest/security
 	gloves = /obj/item/clothing/gloves/color/black
 	shoes = /obj/item/clothing/shoes/jackboots
 	head = /obj/item/clothing/head/helmet
-	l_ear = /obj/item/device/radio/headset/headset_sec/alt
-	id = /obj/item/weapon/card/id/security
-	l_pocket = /obj/item/device/flash
-	suit_store = /obj/item/weapon/gun/energy/gun/advtaser
-	pda = /obj/item/device/pda/security
+	l_ear = /obj/item/radio/headset/headset_sec/alt
+	id = /obj/item/card/id/security
+	l_pocket = /obj/item/flash
+	suit_store = /obj/item/gun/energy/gun/advtaser
+	pda = /obj/item/pda/security
 	backpack_contents = list(
-		/obj/item/weapon/restraints/handcuffs = 1
+		/obj/item/restraints/handcuffs = 1
 	)
-
-	implants = list(/obj/item/weapon/implant/mindshield)
-
-	backpack = /obj/item/weapon/storage/backpack/security
-	satchel = /obj/item/weapon/storage/backpack/satchel_sec
-	dufflebag = /obj/item/weapon/storage/backpack/duffel/security
+	implants = list(/obj/item/implant/mindshield)
+	backpack = /obj/item/storage/backpack/security
+	satchel = /obj/item/storage/backpack/satchel_sec
+	dufflebag = /obj/item/storage/backpack/duffel/security
 
 
 
@@ -212,23 +210,19 @@
 /datum/outfit/job/brigdoc
 	name = "Brig Physician"
 	jobtype = /datum/job/brigdoc
-
 	uniform = /obj/item/clothing/under/rank/security/brigphys
 	suit = /obj/item/clothing/suit/storage/fr_jacket
 	shoes = /obj/item/clothing/shoes/white
-	l_ear = /obj/item/device/radio/headset/headset_sec/alt
+	l_ear = /obj/item/radio/headset/headset_sec/alt
 	glasses = /obj/item/clothing/glasses/hud/health/health_advanced
-	id = /obj/item/weapon/card/id/security
-	suit_store = /obj/item/device/flashlight/pen
-	l_hand = /obj/item/weapon/storage/firstaid/adv
-	pda = /obj/item/device/pda/medical
-
-	implants = list(/obj/item/weapon/implant/mindshield)
-
-	backpack = /obj/item/weapon/storage/backpack/medic
-	satchel = /obj/item/weapon/storage/backpack/satchel_med
-	dufflebag = /obj/item/weapon/storage/backpack/duffel/medical
-
+	id = /obj/item/card/id/security
+	suit_store = /obj/item/flashlight/pen
+	l_hand = /obj/item/storage/firstaid/adv
+	pda = /obj/item/pda/medical
+	implants = list(/obj/item/implant/mindshield)
+	backpack = /obj/item/storage/backpack/medic
+	satchel = /obj/item/storage/backpack/satchel_med
+	dufflebag = /obj/item/storage/backpack/duffel/medical
 
 
 /datum/job/pilot
@@ -249,23 +243,20 @@
 /datum/outfit/job/pilot
 	name = "Security Pod Pilot"
 	jobtype = /datum/job/pilot
-
 	uniform = /obj/item/clothing/under/rank/security/pod_pilot
 	suit = /obj/item/clothing/suit/jacket/pilot
 	gloves = /obj/item/clothing/gloves/color/black
 	shoes = /obj/item/clothing/shoes/jackboots
-	l_ear = /obj/item/device/radio/headset/headset_sec/alt
-	id = /obj/item/weapon/card/id/security
-	l_pocket = /obj/item/device/flash
-	suit_store = /obj/item/weapon/gun/energy/gun/advtaser
-	pda = /obj/item/device/pda/security
+	l_ear = /obj/item/radio/headset/headset_sec/alt
+	id = /obj/item/card/id/security
+	l_pocket = /obj/item/flash
+	suit_store = /obj/item/gun/energy/gun/advtaser
+	pda = /obj/item/pda/security
 	backpack_contents = list(
-		/obj/item/weapon/restraints/handcuffs = 1
+		/obj/item/restraints/handcuffs = 1
 	)
-
-	implants = list(/obj/item/weapon/implant/mindshield)
-
-	backpack = /obj/item/weapon/storage/backpack/security
-	satchel = /obj/item/weapon/storage/backpack/satchel_sec
-	dufflebag = /obj/item/weapon/storage/backpack/duffel/security
-	box = /obj/item/weapon/storage/box/engineer
+	implants = list(/obj/item/implant/mindshield)
+	backpack = /obj/item/storage/backpack/security
+	satchel = /obj/item/storage/backpack/satchel_sec
+	dufflebag = /obj/item/storage/backpack/duffel/security
+	box = /obj/item/storage/box/engineer

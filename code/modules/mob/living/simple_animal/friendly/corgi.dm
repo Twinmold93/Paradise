@@ -15,19 +15,20 @@
 	emote_see = list("shakes its head", "shivers")
 	speak_chance = 1
 	turns_per_move = 10
-	butcher_results = list(/obj/item/weapon/reagent_containers/food/snacks/meat/corgi = 3)
+	butcher_results = list(/obj/item/reagent_containers/food/snacks/meat/corgi = 3)
 	response_help  = "pets"
 	response_disarm = "bops"
 	response_harm   = "kicks"
 	see_in_dark = 5
 	childtype = /mob/living/simple_animal/pet/corgi/puppy
 	simplespecies = /mob/living/simple_animal/pet/corgi
+	gold_core_spawnable = CHEM_MOB_SPAWN_FRIENDLY
 	var/shaved = 0
 	var/obj/item/inventory_head
 	var/obj/item/inventory_back
 	var/facehugger
 	var/default_atmos_requirements = 0
-	gold_core_spawnable = CHEM_MOB_SPAWN_FRIENDLY
+	var/last_eaten = 0
 
 /mob/living/simple_animal/pet/corgi/New()
 	..()
@@ -36,16 +37,8 @@
 	if(gender == NEUTER)
 		gender = pick(MALE, FEMALE)
 
-/mob/living/simple_animal/pet/corgi/Life()
+/mob/living/simple_animal/pet/corgi/Life(seconds, times_fired)
 	. = ..()
-	regenerate_icons()
-
-/mob/living/simple_animal/pet/corgi/death(gibbed)
-	..()
-	regenerate_icons()
-
-/mob/living/simple_animal/pet/corgi/revive()
-	..()
 	regenerate_icons()
 
 /mob/living/simple_animal/pet/corgi/show_inv(mob/user as mob)
@@ -59,7 +52,8 @@
 	if(can_collar)
 		dat += "<tr><td>&nbsp;</td></tr>"
 		dat += "<tr><td><B>Collar:</B></td><td><A href='?src=[UID()];item=[slot_collar]'>[(collar && !(collar.flags&ABSTRACT)) ? collar : "<font color=grey>Empty</font>"]</A></td></tr>"
-
+	if(facehugger)
+		dat += "<tr><td><B>Facehugger:</B></td><td><A href='?src=[UID()];remove_hugger=1'>[facehugger]</A></td></tr>"
 	dat += {"</table>
 	<A href='?src=[user.UID()];mach_close=mob\ref[src]'>Close</A>
 	"}
@@ -73,16 +67,16 @@
 		//helmet and armor = 100% protection
 		if( istype(inventory_head,/obj/item/clothing/head/helmet) && istype(inventory_back,/obj/item/clothing/suit/armor) )
 			if( O.force )
-				to_chat(user, "<span class='warning'>[src] is wearing too much armor! You can't cause \him any damage.</span>")
+				to_chat(user, "<span class='warning'>[src] is wearing too much armor! You can't cause [p_them()] any damage.</span>")
 				visible_message("<span class='danger'> [user] hits [src] with [O], however [src] is too armored.</span>")
 			else
-				to_chat(user, "<span class='warning'>[src] is wearing too much armor! You can't reach \his skin.<span>")
+				to_chat(user, "<span class='warning'>[src] is wearing too much armor! You can't reach [p_their()] skin.</span>")
 				visible_message("[user] gently taps [src] with [O].")
 			if(health>0 && prob(15))
 				custom_emote(1, "looks at [user] with [pick("an amused","an annoyed","a confused","a resentful", "a happy", "an excited")] expression.")
 			return
 
-	if(istype(O, /obj/item/weapon/razor))
+	if(istype(O, /obj/item/razor))
 		if(shaved)
 			to_chat(user, "<span class='warning'>You can't shave this corgi, it's already been shaved!</span>")
 			return
@@ -102,11 +96,10 @@
 
 /mob/living/simple_animal/pet/corgi/Topic(href, href_list)
 	if(usr.stat) return
-
+	if((!ishuman(usr) && !isrobot(usr)) || !Adjacent(usr))
+		return
 	//Removing from inventory
 	if(href_list["remove_inv"])
-		if(!Adjacent(usr) || !(ishuman(usr) || isrobot(usr) ||  isalienadult(usr)))
-			return
 		var/remove_from = href_list["remove_inv"]
 		switch(remove_from)
 			if("head")
@@ -122,7 +115,7 @@
 					emote_see = list("shakes its head", "shivers")
 					desc = "It's a corgi."
 					set_light(0)
-					flags &= ~NO_BREATHE
+					mutations.Remove(BREATHLESS)
 					atmos_requirements = default_atmos_requirements
 					minbodytemp = initial(minbodytemp)
 					inventory_head.loc = src.loc
@@ -142,14 +135,9 @@
 				else
 					to_chat(usr, "<span class='danger'>There is nothing to remove from its [remove_from].</span>")
 					return
-
 		show_inv(usr)
-
 	//Adding things to inventory
 	else if(href_list["add_inv"])
-		if(!Adjacent(usr) || !(ishuman(usr) || isrobot(usr) ||  isalienadult(usr)))
-			return
-
 		var/add_to = href_list["add_inv"]
 
 		switch(add_to)
@@ -166,7 +154,7 @@
 					if(!item_to_add)
 						usr.visible_message("[usr] pets [src].","<span class='notice'>You rest your hand on [src]'s back for a moment.</span>")
 						return
-					if(istype(item_to_add,/obj/item/weapon/grenade/plastic/c4)) // last thing he ever wears, I guess
+					if(istype(item_to_add,/obj/item/grenade/plastic/c4)) // last thing he ever wears, I guess
 						item_to_add.afterattack(src,usr,1)
 						return
 
@@ -175,16 +163,16 @@
 						/obj/item/clothing/suit/armor/vest,
 						/obj/item/clothing/suit/space/deathsquad,
 						/obj/item/clothing/suit/space/hardsuit/engineering,
-						/obj/item/device/radio,
-						/obj/item/device/radio/off,
+						/obj/item/radio,
+						/obj/item/radio/off,
 						/obj/item/clothing/suit/cardborg,
-						/obj/item/weapon/tank/oxygen,
-						/obj/item/weapon/tank/air,
-						/obj/item/weapon/extinguisher,
+						/obj/item/tank/oxygen,
+						/obj/item/tank/air,
+						/obj/item/extinguisher,
 					)
 
 					if( ! ( item_to_add.type in allowed_types ) )
-						to_chat(usr, "<span class='warning'>You set [item_to_add] on [src]'s back, but \he shakes it off!</span>")
+						to_chat(usr, "<span class='warning'>You set [item_to_add] on [src]'s back, but [p_they()] shake[p_s()] it off!</span>")
 						if(!usr.drop_item())
 							to_chat(usr, "<span class='warning'>\The [item_to_add] is stuck to your hand, you cannot put it on [src]'s back!</span>")
 							return
@@ -200,7 +188,16 @@
 					item_to_add.loc = src
 					src.inventory_back = item_to_add
 					regenerate_icons()
-
+		show_inv(usr)
+//Removing facehuggers
+	else if(href_list["remove_hugger"])
+		if(!facehugger)
+			return
+		var/obj/item/F = facehugger
+		F.forceMove(loc)
+		facehugger = null
+		to_chat(usr, "<span class='notice'>You remove [F] from [src]'s face. [src] pants for air and barks.</span>")
+		regenerate_icons()
 		show_inv(usr)
 	else
 		..()
@@ -210,7 +207,7 @@
 //Many  hats added, Some will probably be removed, just want to see which ones are popular.
 /mob/living/simple_animal/pet/corgi/proc/place_on_head(obj/item/item_to_add, var/mob/user as mob)
 
-	if(istype(item_to_add,/obj/item/weapon/grenade/plastic/c4)) // last thing he ever wears, I guess
+	if(istype(item_to_add,/obj/item/grenade/plastic/c4)) // last thing he ever wears, I guess
 		item_to_add.afterattack(src,user,1)
 		return
 
@@ -232,7 +229,7 @@
 		switch(item_to_add.type)
 			if( /obj/item/clothing/glasses/sunglasses, /obj/item/clothing/head/that, /obj/item/clothing/head/collectable/paper,
 					/obj/item/clothing/head/hardhat, /obj/item/clothing/head/collectable/hardhat, /obj/item/clothing/head/hardhat/white,
-					/obj/item/weapon/paper)
+					/obj/item/paper)
 				valid = 1
 
 			if(/obj/item/clothing/head/helmet)
@@ -314,7 +311,7 @@
 				desc = "Result of robotics budget cuts."
 				valid = 1
 
-			if(/obj/item/weapon/bedsheet)
+			if(/obj/item/bedsheet)
 				name = "\improper Ghost"
 				speak = list("WoooOOOooo~","AUUUUUUUUUUUUUUUUUU")
 				emote_see = list("stumbles around.", "shivers.")
@@ -360,7 +357,7 @@
 				name = "Space Explorer [real_name]"
 				desc = "That's one small step for a corgi. One giant yap for corgikind."
 				valid = 1
-				flags |= NO_BREATHE
+				mutations.Add(BREATHLESS)
 				atmos_requirements = list("min_oxy" = 0, "max_oxy" = 0, "min_tox" = 0, "max_tox" = 0, "min_co2" = 0, "max_co2" = 0, "min_n2" = 0, "max_n2" = 0)
 				minbodytemp = 0
 
@@ -374,10 +371,10 @@
 			to_chat(user, "<span class='warning'>\The [item_to_add] is stuck to your hand, you cannot put it on [src]'s head!</span>")
 			return 0
 		if(health <= 0)
-			to_chat(user, "<span class ='notice'>There is merely a dull, lifeless look in [real_name]'s eyes as you put the [item_to_add] on \him.</span>")
+			to_chat(user, "<span class ='notice'>There is merely a dull, lifeless look in [real_name]'s eyes as you put the [item_to_add] on [p_them()].</span>")
 		else if(user)
 			user.visible_message("[user] puts [item_to_add] on [real_name]'s head.  [src] looks at [user] and barks once.",
-				"<span class='notice'>You put [item_to_add] on [real_name]'s head.  [src] gives you a peculiar look, then wags \his tail once and barks.</span>",
+				"<span class='notice'>You put [item_to_add] on [real_name]'s head.  [src] gives you a peculiar look, then wags [p_their()] tail once and barks.</span>",
 				"<span class='italics'>You hear a friendly-sounding bark.</span>")
 		item_to_add.loc = src
 		src.inventory_head = item_to_add
@@ -387,7 +384,7 @@
 		if(user && !user.drop_item())
 			to_chat(user, "<span class='warning'>\The [item_to_add] is stuck to your hand, you cannot put it on [src]'s head!</span>")
 			return 0
-		to_chat(user, "<span class='warning'>You set [item_to_add] on [src]'s head, but \he shakes it off!</span>")
+		to_chat(user, "<span class='warning'>You set [item_to_add] on [src]'s head, but [p_they()] shake[p_s()] it off!</span>")
 		item_to_add.loc = loc
 		if(prob(25))
 			step_rand(item_to_add)
@@ -425,7 +422,7 @@
 			if( !movement_target || !(movement_target.loc in oview(src, 3)) )
 				movement_target = null
 				stop_automated_movement = 0
-				for(var/obj/item/weapon/reagent_containers/food/snacks/S in oview(src,3))
+				for(var/obj/item/reagent_containers/food/snacks/S in oview(src,3))
 					if(isturf(S.loc) || ishuman(S.loc))
 						movement_target = S
 						break
@@ -461,12 +458,9 @@
 
 		if(prob(1))
 			custom_emote(1, pick("dances around.","chases its tail!"))
-			spawn(0)
-				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
-					dir = i
-					sleep(1)
+			spin(20, 1)
 
-/obj/item/weapon/reagent_containers/food/snacks/meat/corgi
+/obj/item/reagent_containers/food/snacks/meat/corgi
 	name = "Corgi meat"
 	desc = "Tastes like... well you know..."
 
@@ -549,22 +543,19 @@
 	if(!resting && !buckled)
 		if(prob(1))
 			custom_emote(1, pick("dances around.","chases her tail."))
-			spawn(0)
-				for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
-					dir = i
-					sleep(1)
+			spin(20, 1)
 
 /mob/living/simple_animal/pet/corgi/attack_hand(mob/living/carbon/human/M)
 	. = ..()
 	switch(M.a_intent)
-		if(I_HELP)	wuv(1,M)
-		if(I_HARM)	wuv(-1,M)
+		if(INTENT_HELP)	wuv(1,M)
+		if(INTENT_HARM)	wuv(-1,M)
 
 /mob/living/simple_animal/pet/corgi/proc/wuv(change, mob/M)
 	if(change)
 		if(change > 0)
 			if(M && stat != DEAD) // Added check to see if this mob (the corgi) is dead to fix issue 2454
-				flick_overlay(image('icons/mob/animal.dmi',src,"heart-ani2",MOB_LAYER+1), list(M.client), 20)
+				new /obj/effect/temp_visual/heart(loc)
 				custom_emote(1, "yaps happily!")
 		else
 			if(M && stat != DEAD) // Same check here, even though emote checks it as well (poor form to check it only in the help case)
@@ -613,7 +604,7 @@
 	A.fire()
 	return
 
-/mob/living/simple_animal/pet/corgi/Ian/borgi/Life()
+/mob/living/simple_animal/pet/corgi/Ian/borgi/Life(seconds, times_fired)
 	..()
 	if(emagged && prob(25))
 		var/mob/living/carbon/target = locate() in view(10,src)
@@ -622,12 +613,11 @@
 
 	//spark for no reason
 	if(prob(5))
-		var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-		s.set_up(3, 1, src)
-		s.start()
+		do_sparks(3, 1, src)
 
 /mob/living/simple_animal/pet/corgi/Ian/borgi/death(gibbed)
-	var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
-	..()
+	// Only execute the below if we successfully died
+	. = ..(gibbed)
+	if(!.)
+		return FALSE
+	do_sparks(3, 1, src)

@@ -440,8 +440,7 @@ steam.start() -- spawns the effect
 	var/obj/chemholder
 
 	Destroy()
-		qdel(chemholder)
-		chemholder = null
+		QDEL_NULL(chemholder)
 		return ..()
 
 	New()
@@ -626,6 +625,19 @@ steam.start() -- spawns the effect
 				spawn(150+rand(10,30))
 					smoke.delete()
 					src.total_smoke--
+
+/*
+// hoo boy, I think I need to refactor our smoke code
+/////////////////////////////////////////////
+// Transparent smoke
+/////////////////////////////////////////////
+//Same as the base type, but the smoke produced is not opaque
+/datum/effect_system/smoke_spread/transparent
+	effect_type = /obj/effect/particle_effect/smoke/transparent
+
+/obj/effect/particle_effect/smoke/transparent
+	opaque = FALSE
+*/
 
 /////////////////////////////////////////////
 // Mustard Gas
@@ -1097,8 +1109,8 @@ steam.start() -- spawns the effect
 /obj/structure/foamedmetal/attackby(var/obj/item/I, var/mob/user, params)
 	user.changeNext_move(CLICK_CD_MELEE)
 	user.do_attack_animation(src)
-	if(istype(I, /obj/item/weapon/grab))
-		var/obj/item/weapon/grab/G = I
+	if(istype(I, /obj/item/grab))
+		var/obj/item/grab/G = I
 		G.affecting.loc = src.loc
 		user.visible_message("<span class='warning'>[G.assailant] smashes [G.affecting] through the foamed metal wall.</span>")
 		qdel(I)

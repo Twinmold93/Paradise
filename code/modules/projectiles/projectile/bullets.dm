@@ -4,8 +4,6 @@
 	damage = 60
 	damage_type = BRUTE
 	flag = "bullet"
-	embed = 1
-	sharp = 1
 	hitsound_wall = "ricochet"
 
 /obj/item/projectile/bullet/weakbullet //beanbag, heavy stamina damage
@@ -13,12 +11,7 @@
 	damage = 5
 	stamina = 80
 
-/obj/item/projectile/bullet/weakbullet/rubber //beanbag that shells that don't embed
-	embed = 0
-	sharp = 0
-
 /obj/item/projectile/bullet/weakbullet/booze
-	embed = 0
 
 /obj/item/projectile/bullet/weakbullet/booze/on_hit(atom/target, blocked = 0)
 	if(..(target, blocked))
@@ -44,9 +37,17 @@
 	stamina = 60
 	icon_state = "bullet-r"
 
-/obj/item/projectile/bullet/weakbullet2/rubber //detective's bullets that don't embed
-	embed = 0
-	sharp = 0
+/obj/item/projectile/bullet/weakbullet2/invisible //finger gun bullets
+	name = "invisible bullet"
+	damage = 0
+	icon_state = null
+	hitsound_wall = null
+
+/obj/item/projectile/bullet/weakbullet2/invisible/fake
+	weaken = 0
+	stamina = 0
+	nodamage = 1
+	log_override = TRUE
 
 /obj/item/projectile/bullet/weakbullet3
 	damage = 20
@@ -56,8 +57,6 @@
 	damage = 5
 	stamina = 30
 	icon_state = "bullet-r"
-	embed = 0
-	sharp = 0
 
 /obj/item/projectile/bullet/toxinbullet
 	damage = 15
@@ -82,8 +81,17 @@
 /obj/item/projectile/bullet/pellet
 	name = "pellet"
 	damage = 12.5
+	tile_dropoff = 0.75
+	tile_dropoff_s = 1.25
+
+/obj/item/projectile/bullet/pellet/rubber
+	name = "rubber pellet"
+	damage = 3
+	stamina = 25
+	icon_state = "bullet-r"
 
 /obj/item/projectile/bullet/pellet/weak
+	tile_dropoff = 0.55		//Come on it does 6 damage don't be like that.
 	damage = 6
 
 /obj/item/projectile/bullet/pellet/weak/New()
@@ -91,9 +99,7 @@
 	..()
 
 /obj/item/projectile/bullet/pellet/weak/on_range()
- 	var/datum/effect/system/spark_spread/sparks = new /datum/effect/system/spark_spread
- 	sparks.set_up(1, 1, src)
- 	sparks.start()
+ 	do_sparks(1, 1, src)
  	..()
 
 /obj/item/projectile/bullet/pellet/overload
@@ -103,20 +109,31 @@
 	range = rand(1, 10)
 	..()
 
+/obj/item/projectile/bullet/pellet/assassination
+	damage = 12
+	tile_dropoff = 1	// slightly less damage and greater damage falloff compared to normal buckshot
+
+/obj/item/projectile/bullet/pellet/assassination/on_hit(atom/target, blocked = 0)
+	if(..(target, blocked))
+		var/mob/living/M = target
+		M.AdjustSilence(2)	// HELP MIME KILLING ME IN MAINT
+
 /obj/item/projectile/bullet/pellet/overload/on_hit(atom/target, blocked = 0)
  	..()
  	explosion(target, 0, 0, 2)
 
 /obj/item/projectile/bullet/pellet/overload/on_range()
  	explosion(src, 0, 0, 2)
- 	var/datum/effect/system/spark_spread/sparks = new /datum/effect/system/spark_spread
- 	sparks.set_up(3, 3, src)
- 	sparks.start()
+ 	do_sparks(3, 3, src)
  	..()
 
 /obj/item/projectile/bullet/midbullet
 	damage = 20
 	stamina = 65 //two rounds from the c20r knocks people down
+
+/obj/item/projectile/bullet/midbullet_r
+	damage = 5
+	stamina = 75 //Still two rounds to knock people down
 
 /obj/item/projectile/bullet/midbullet2
 	damage = 25
@@ -141,14 +158,6 @@
 /obj/item/projectile/bullet/heavybullet
 	damage = 35
 
-/obj/item/projectile/bullet/rpellet
-	name = "rubber pellet"
-	damage = 3
-	stamina = 25
-	embed = 0
-	sharp = 0
-	icon_state = "bullet-r"
-
 /obj/item/projectile/bullet/stunshot//taser slugs for shotguns, nothing special
 	name = "stunshot"
 	damage = 5
@@ -157,8 +166,6 @@
 	stutter = 5
 	jitter = 20
 	range = 7
-	embed = 0
-	sharp = 0
 	icon_state = "spark"
 	color = "#FFFF00"
 
@@ -202,25 +209,6 @@
 	weaken = 4
 	stun = 4
 
-/obj/item/projectile/bullet/honker
-	name = "banana"
-	damage = 0
-	weaken = 5
-	stun = 5
-	forcedodge = 1
-	nodamage = 1
-	embed = 0
-	sharp = 0
-	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
-	hitsound = 'sound/items/bikehorn.ogg'
-	icon = 'icons/obj/hydroponics/harvest.dmi'
-	icon_state = "banana"
-	range = 200
-
-/obj/item/projectile/bullet/honker/New()
-	..()
-	SpinAnimation()
-
 /obj/item/projectile/bullet/mime
 	damage = 0
 	stun = 5
@@ -244,8 +232,6 @@
 	name = "dart"
 	icon_state = "cbbolt"
 	damage = 6
-	embed = 0
-	sharp = 0
 	var/piercing = 0
 
 /obj/item/projectile/bullet/dart/New()
@@ -259,7 +245,6 @@
 		if(blocked != 100)
 			if(M.can_inject(null,0,hit_zone)) // Pass the hit zone to see if it can inject by whether it hit the head or the body.
 				..()
-				reagents.reaction(M, INGEST)
 				reagents.trans_to(M, reagents.total_volume)
 				return 1
 			else
@@ -286,6 +271,7 @@
 	icon_state = "syringeproj"
 
 /obj/item/projectile/bullet/dart/syringe/tranquilizer
+
 /obj/item/projectile/bullet/dart/syringe/tranquilizer/New()
 	..()
 	reagents.add_reagent("haloperidol", 15)
@@ -307,8 +293,6 @@
 	name = "cap"
 	damage = 0
 	nodamage = 1
-	embed = 0
-	sharp = 0
 
 /obj/item/projectile/bullet/cap/fire()
 	loc = null

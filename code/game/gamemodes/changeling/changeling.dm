@@ -1,3 +1,7 @@
+#define LING_FAKEDEATH_TIME					400 //40 seconds
+#define LING_DEAD_GENETICDAMAGE_HEAL_CAP	50	//The lowest value of geneticdamage handle_changeling() can take it to while dead.
+#define LING_ABSORB_RECENT_SPEECH			8	//The amount of recent spoken lines to gain on absorbing a mob
+
 var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon","Zeta","Eta","Theta","Iota","Kappa","Lambda","Mu","Nu","Xi","Omicron","Pi","Rho","Sigma","Tau","Upsilon","Phi","Chi","Psi","Omega")
 
 /datum/game_mode
@@ -7,7 +11,7 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 	name = "changeling"
 	config_tag = "changeling"
 	restricted_jobs = list("AI", "Cyborg")
-	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Blueshield", "Nanotrasen Representative", "Security Pod Pilot", "Magistrate", "Brig Physician", "Internal Affairs Agent", "Nanotrasen Navy Officer", "Special Operations Officer")
+	protected_jobs = list("Security Officer", "Warden", "Detective", "Head of Security", "Captain", "Blueshield", "Nanotrasen Representative", "Security Pod Pilot", "Magistrate", "Brig Physician", "Internal Affairs Agent", "Nanotrasen Navy Officer", "Special Operations Officer", "Syndicate Officer")
 	protected_species = list("Machine")
 	required_players = 15
 	required_enemies = 1
@@ -108,8 +112,8 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 			if(identity_theft.target && identity_theft.target.current)
 				identity_theft.target_real_name = kill_objective.target.current.real_name //Whoops, forgot this.
 				var/mob/living/carbon/human/H = identity_theft.target.current
-				if(can_absorb_species(H.species)) // For species that can't be absorbed - should default to an escape objective
-					identity_theft.explanation_text = "Escape on the shuttle or an escape pod with the identity of [identity_theft.target_real_name], the [identity_theft.target.assigned_role] while wearing their identification card."
+				if(can_absorb_species(H.dna.species)) // For species that can't be absorbed - should default to an escape objective
+					identity_theft.explanation_text = "Escape on the shuttle or an escape pod with the identity of [identity_theft.target_real_name], the [identity_theft.target.assigned_role] while wearing [identity_theft.target.p_their()] identification card."
 					changeling.objectives += identity_theft
 				else
 					qdel(identity_theft)
@@ -127,6 +131,7 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 	return
 
 /datum/game_mode/proc/greet_changeling(datum/mind/changeling, you_are=1)
+	SEND_SOUND(changeling.current, 'sound/ambience/antag/ling_aler.ogg')
 	if(you_are)
 		to_chat(changeling.current, "<span class='danger'>You are a changeling!</span>")
 	to_chat(changeling.current, "<span class='danger'>Use say \":g message\" to communicate with your fellow changelings. Remember: you get all of their absorbed DNA if you absorb them.</span>")
@@ -238,6 +243,7 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 	var/changeling_speak = 0
 	var/datum/dna/chosen_dna
 	var/obj/effect/proc_holder/changeling/sting/chosen_sting
+	var/regenerating = FALSE
 
 /datum/changeling/New(gender=FEMALE)
 	..()
@@ -253,9 +259,14 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 	else
 		changelingID = "[honorific] [rand(1,999)]"
 
-/datum/changeling/proc/regenerate()
-	chem_charges = min(max(0, chem_charges + chem_recharge_rate - chem_recharge_slowdown), chem_storage)
-	geneticdamage = max(0, geneticdamage-1)
+/datum/changeling/proc/regenerate(mob/living/carbon/the_ling)
+	if(istype(the_ling))
+		if(the_ling.stat == DEAD)
+			chem_charges = min(max(0, chem_charges + chem_recharge_rate - chem_recharge_slowdown), (chem_storage*0.5))
+			geneticdamage = max(LING_DEAD_GENETICDAMAGE_HEAL_CAP,geneticdamage-1)
+		else //not dead? no chem/geneticdamage caps.
+			chem_charges = min(max(0, chem_charges + chem_recharge_rate - chem_recharge_slowdown), chem_storage)
+			geneticdamage = max(0, geneticdamage-1)
 
 /datum/changeling/proc/GetDNA(dna_owner)
 	for(var/datum/dna/DNA in (absorbed_dna + protected_dna))
@@ -264,7 +275,7 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 
 /datum/changeling/proc/find_dna(datum/dna/tDNA)
 	for(var/datum/dna/D in (absorbed_dna + protected_dna))
-		if(tDNA.unique_enzymes == D.unique_enzymes && tDNA.uni_identity == D.uni_identity && tDNA.species == D.species)
+		if(tDNA.unique_enzymes == D.unique_enzymes && tDNA.uni_identity == D.uni_identity && tDNA.species.type == D.species.type)
 			return D
 	return null
 
@@ -307,7 +318,7 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 		to_chat(user, "<span class='warning'>DNA of [target] is ruined beyond usability!</span>")
 		return
 
-	if(T.species.flags & NO_DNA)
+	if(NO_DNA in T.dna.species.species_traits)
 		to_chat(user, "<span class='warning'>This creature does not have DNA!</span>")
 		return
 
@@ -317,4 +328,4 @@ var/list/possible_changeling_IDs = list("Alpha","Beta","Gamma","Delta","Epsilon"
 	return 1
 
 /proc/can_absorb_species(datum/species/S)
-  return !(S.flags & NO_DNA)
+	return !(NO_DNA in S.species_traits)

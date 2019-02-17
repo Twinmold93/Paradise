@@ -70,13 +70,23 @@
 	item_color = "clown"
 	flags_size = ONESIZEFITSALL
 
+/obj/item/clothing/under/rank/clown/Initialize()
+	. = ..()
+	AddComponent(/datum/component/squeak, list('sound/items/bikehorn.ogg' = 1), 50)
+
 /obj/item/clothing/under/rank/clown/hit_reaction()
-	playsound(loc, 'sound/items/bikehorn.ogg', 50, 1, -1)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
 		if(H.mind && H.mind.assigned_role == "Clown")
 			score_clownabuse++
-	return 0
+	return ..()
+
+/obj/item/clothing/under/rank/clown/sexy
+	name = "sexy-clown suit"
+	desc = "It makes you look HONKable!"
+	icon_state = "sexyclown"
+	item_state = "sexyclown"
+	item_color = "sexyclown"
 
 /obj/item/clothing/under/rank/head_of_personnel
 	desc = "It's a jumpsuit worn by someone who works in the position of \"Head of Personnel\"."

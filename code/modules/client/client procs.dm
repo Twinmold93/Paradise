@@ -65,7 +65,7 @@
 
 	//search the href for script injection
 	if( findtext(href,"<script",1,0) )
-		log_to_dd("Attempted use of scripts within a topic call, by [src]")
+		log_world("Attempted use of scripts within a topic call, by [src]")
 		log_runtime(EXCEPTION("Attempted use of scripts within a topic call, by [src]"), src)
 		message_admins("Attempted use of scripts within a topic call, by [src]")
 		return
@@ -94,8 +94,8 @@
 
 
 	//Logs all hrefs
-	if(config && config.log_hrefs && href_logfile)
-		to_chat(href_logfile, "<small>[time2text(world.timeofday,"hh:mm")] [src] (usr:[usr])</small> || [hsrc ? "[hsrc] " : ""][href]<br>")
+	if(config && config.log_hrefs)
+		log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
 
 	if(href_list["karmashop"])
 		if(config.disable_karma)
@@ -109,136 +109,42 @@
 			if("shop")
 				if(href_list["KarmaBuy"])
 					var/karma=verify_karma()
+					if(isnull(karma)) //Doesn't display anything if karma database is down.
+						return
 					switch(href_list["KarmaBuy"])
 						if("1")
-							if(karma <5)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Barber?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_job_unlock("Barber",5)
-								return
+							karma_purchase(karma,5,"job","Barber")
 						if("2")
-							if(karma <5)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Brig Physician?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_job_unlock("Brig Physician",5)
-								return
+							karma_purchase(karma,5,"job","Brig Physician")
 						if("3")
-							if(karma <30)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Nanotrasen Representative?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_job_unlock("Nanotrasen Representative",30)
-								return
+							karma_purchase(karma,30,"job","Nanotrasen Representative")
 						if("5")
-							if(karma <30)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Blueshield?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_job_unlock("Blueshield",30)
-								return
+							karma_purchase(karma,30,"job","Blueshield")
 						if("6")
-							if(karma <30)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Mechanic?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_job_unlock("Mechanic",30)
-								return
+							karma_purchase(karma,30,"job","Mechanic")
 						if("7")
-							if(karma <45)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Magistrate?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_job_unlock("Magistrate",45)
-								return
+							karma_purchase(karma,45,"job","Magistrate")
 						if("9")
-							if(karma <30)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Security Pod Pilot?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_job_unlock("Security Pod Pilot",30)
-								return
+							karma_purchase(karma,30,"job","Security Pod Pilot")
 				if(href_list["KarmaBuy2"])
 					var/karma=verify_karma()
+					if(isnull(karma)) //Doesn't display anything if karma database is down.
+						return
 					switch(href_list["KarmaBuy2"])
 						if("1")
-							if(karma <15)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Machine People?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_species_unlock("Machine",15)
-								return
+							karma_purchase(karma,15,"species","Machine People","Machine")
 						if("2")
-							if(karma <30)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Kidan?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_species_unlock("Kidan",30)
-								return
+							karma_purchase(karma,30,"species","Kidan")
 						if("3")
-							if(karma <30)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Grey?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_species_unlock("Grey",30)
-								return
+							karma_purchase(karma,30,"species","Grey")
 						if("4")
-							if(karma <45)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Vox?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_species_unlock("Vox",45)
-								return
+							karma_purchase(karma,45,"species","Vox")
 						if("5")
-							if(karma <45)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Slime People?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_species_unlock("Slime People",45)
-								return
+							karma_purchase(karma,45,"species","Slime People")
 						if("6")
-							if(karma <100)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Plasmaman?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_species_unlock("Plasmaman",100)
-								return
+							karma_purchase(karma,100,"species","Plasmaman")
 						if("7")
-							if(karma <30)
-								to_chat(usr, "You do not have enough karma!")
-								return
-							else
-								if(alert("Are you sure you want to unlock Drask?", "Confirmation", "No", "Yes") != "Yes")
-									return
-								DB_species_unlock("Drask",30)
-								return
+							karma_purchase(karma,30,"species","Drask")
 				if(href_list["KarmaRefund"])
 					var/type = href_list["KarmaRefundType"]
 					var/job = href_list["KarmaRefund"]
@@ -400,13 +306,13 @@
 	to_chat(src, "<span class='warning'>If the title screen is black, resources are still downloading. Please be patient until the title screen appears.</span>")
 
 
-	clients += src
-	directory[ckey] = src
+	GLOB.clients += src
+	GLOB.directory[ckey] = src
 
 	//Admin Authorisation
 	holder = admin_datums[ckey]
 	if(holder)
-		admins += src
+		GLOB.admins += src
 		holder.owner = src
 
 	donator_check()
@@ -418,6 +324,8 @@
 		preferences_datums[ckey] = prefs
 	prefs.last_ip = address				//these are gonna be used for banning
 	prefs.last_id = computer_id			//these are gonna be used for banning
+	if(world.byond_version >= 511 && byond_version >= 511 && prefs.clientfps)
+		fps = prefs.clientfps
 
 	spawn() // Goonchat does some non-instant checks in start()
 		chatOutput.start()
@@ -436,6 +344,8 @@
 		on_holder_add()
 		add_admin_verbs()
 		admin_memo_output("Show", 0, 1)
+		if(custom_event_admin_msg && custom_event_admin_msg != "" && check_rights(R_EVENT))
+			cmd_view_custom_event_info()
 
 	// Forcibly enable hardware-accelerated graphics, as we need them for the lighting overlays.
 	// (but turn them off first, since sometimes BYOND doesn't turn them on properly otherwise)
@@ -456,10 +366,15 @@
 
 	send_resources()
 
+	if(prefs.toggles & UI_DARKMODE) // activates dark mode if its flagged. -AA07
+		if(establish_db_connection())
+			activate_darkmode()
+
 	if(prefs.lastchangelog != changelog_hash) //bolds the changelog button on the interface so we know there are updates. -CP
 		if(establish_db_connection())
-			winset(src, "rpane.changelog", "background-color=#f4aa94;font-style=bold")
 			to_chat(src, "<span class='info'>Changelog has changed since your last visit.</span>")
+			update_changelog_button()
+			
 
 	if(!void)
 		void = new()
@@ -474,15 +389,18 @@
 	if(!tooltips)
 		tooltips = new /datum/tooltip(src)
 
+	Master.UpdateTickRate()
+
 //////////////
 //DISCONNECT//
 //////////////
 /client/Del()
 	if(holder)
 		holder.owner = null
-		admins -= src
-	directory -= ckey
-	clients -= src
+		GLOB.admins -= src
+	GLOB.directory -= ckey
+	GLOB.clients -= src
+	Master.UpdateTickRate()
 	return ..()
 
 
@@ -552,7 +470,7 @@
 
 	//Log all the alts
 	if(related_accounts_cid.len)
-		log_access("Alts: [key_name(src)]:[jointext(related_accounts_cid, " - ")]")
+		log_admin("[key_name(src)] alts:[jointext(related_accounts_cid, " - ")]")
 
 
 	var/watchreason = check_watchlist(ckey)
@@ -661,7 +579,7 @@
 				cidcheck_failedckeys[ckey] = TRUE
 				note_randomizer_user()
 
-			log_access("Failed Login: [key] [computer_id] [address] - CID randomizer confirmed (oldcid: [oldcid])")
+			log_adminwarn("Failed Login: [key] [computer_id] [address] - CID randomizer confirmed (oldcid: [oldcid])")
 
 			del(src)
 			return TRUE
@@ -703,7 +621,7 @@
 /client/proc/cid_check_reconnect()
 	var/token = md5("[rand(0,9999)][world.time][rand(0,9999)][ckey][rand(0,9999)][address][rand(0,9999)][computer_id][rand(0,9999)]")
 	. = token
-	log_access("Failed Login: [key] [computer_id] [address] - CID randomizer check")
+	log_adminwarn("Failed Login: [key] [computer_id] [address] - CID randomizer check")
 	var/url = winget(src, null, "url")
 	//special javascript to make them reconnect under a new window.
 	src << browse("<a id='link' href='byond://[url]?token=[token]'>\
@@ -729,14 +647,14 @@
 		'html/search.js', // Used in various non-NanoUI HTML windows for search functionality
 		'html/panels.css' // Used for styling certain panels, such as in the new player panel
 	)
-	spawn (10)
+	spawn (10) //removing this spawn causes all clients to not get verbs.
 		//Precache the client with all other assets slowly, so as to not block other browse() calls
-		getFilesSlow(src, asset_cache, register_asset = FALSE)
+		getFilesSlow(src, SSassets.preload, register_asset = FALSE)
 
 //For debugging purposes
 /client/proc/list_all_languages()
-	for(var/L in all_languages)
-		var/datum/language/lang = all_languages[L]
+	for(var/L in GLOB.all_languages)
+		var/datum/language/lang = GLOB.all_languages[L]
 		var/message = "[lang.name] : [lang.type]"
 		if(lang.flags & RESTRICTED)
 			message += " (RESTRICTED)"
@@ -747,3 +665,93 @@
 
 /client/proc/on_varedit()
 	var_edited = TRUE
+  
+/////////////////
+// DARKMODE UI //
+/////////////////
+// IF YOU CHANGE ANYTHING IN ACTIVATE, MAKE SURE IT HAS A DEACTIVATE METHOD, -AA07
+/client/proc/activate_darkmode()
+	///// BUTTONS /////
+	update_changelog_button()
+	/* Rpane */
+	winset(src, "rpane.textb", "background-color=#40628a;text-color=#FFFFFF")
+	winset(src, "rpane.infob", "background-color=#40628a;text-color=#FFFFFF")
+	winset(src, "rpane.wikib", "background-color=#40628a;text-color=#FFFFFF")
+	winset(src, "rpane.forumb", "background-color=#40628a;text-color=#FFFFFF")
+	winset(src, "rpane.rulesb", "background-color=#40628a;text-color=#FFFFFF")
+	winset(src, "rpane.githubb", "background-color=#40628a;text-color=#FFFFFF")
+	/* Mainwindow */
+	winset(src, "mainwindow.saybutton", "background-color=#40628a;text-color=#FFFFFF")
+	winset(src, "mainwindow.mebutton", "background-color=#40628a;text-color=#FFFFFF")
+	winset(src, "mainwindow.hotkey_toggle", "background-color=#40628a;text-color=#FFFFFF")
+	///// UI ELEMENTS /////
+	/* Mainwindow */
+	winset(src, "mainwindow", "background-color=#272727")
+	winset(src, "mainwindow.mainvsplit", "background-color=#272727")
+	winset(src, "mainwindow.tooltip", "background-color=#272727")
+	/* Outputwindow */
+	winset(src, "outputwindow.outputwindow", "background-color=#272727")
+	winset(src, "outputwindow.browseroutput", "background-color=#272727")
+	/* Rpane */
+	winset(src, "rpane", "background-color=#272727")
+	winset(src, "rpane.rpane", "background-color=#272727")
+	winset(src, "rpane.rpanewindow", "background-color=#272727")
+	/* Browserwindow */
+	winset(src, "browserwindow", "background-color=#272727")
+	winset(src, "browserwindow.browser", "background-color=#272727")
+	/* Infowindow */
+	winset(src, "infowindow", "background-color=#272727;text-color=#FFFFFF")
+	winset(src, "infowindow.info", "background-color=#272727;text-color=#FFFFFF;highlight-color=#009900;tab-text-color=#FFFFFF;tab-background-color=#272727")
+	// NOTIFY USER 
+	to_chat(src, "<span class='notice'>Darkmode Enabled</span>")
+
+/client/proc/deactivate_darkmode()
+	///// BUTTONS /////
+	update_changelog_button()
+	/* Rpane */
+	winset(src, "rpane.textb", "background-color=none;text-color=#000000")
+	winset(src, "rpane.infob", "background-color=none;text-color=#000000")
+	winset(src, "rpane.wikib", "background-color=none;text-color=#000000")
+	winset(src, "rpane.forumb", "background-color=none;text-color=#000000")
+	winset(src, "rpane.rulesb", "background-color=none;text-color=#000000")
+	winset(src, "rpane.githubb", "background-color=none;text-color=#000000")
+	/* Mainwindow */
+	winset(src, "mainwindow.saybutton", "background-color=none;text-color=#000000")
+	winset(src, "mainwindow.mebutton", "background-color=none;text-color=#000000")
+	winset(src, "mainwindow.hotkey_toggle", "background-color=none;text-color=#000000")
+	///// UI ELEMENTS /////
+	/* Mainwindow */
+	winset(src, "mainwindow", "background-color=none")
+	winset(src, "mainwindow.mainvsplit", "background-color=none")
+	winset(src, "mainwindow.tooltip", "background-color=none")
+	/* Outputwindow */
+	winset(src, "outputwindow.outputwindow", "background-color=none")
+	winset(src, "outputwindow.browseroutput", "background-color=none")
+	/* Rpane */
+	winset(src, "rpane", "background-color=none")
+	winset(src, "rpane.rpane", "background-color=none")
+	winset(src, "rpane.rpanewindow", "background-color=none")
+	/* Browserwindow */
+	winset(src, "browserwindow", "background-color=none")
+	winset(src, "browserwindow.browser", "background-color=none")
+	/* Infowindow */
+	winset(src, "infowindow", "background-color=none;text-color=#000000")
+	winset(src, "infowindow.info", "background-color=none;text-color=#000000;highlight-color=#007700;tab-text-color=#000000;tab-background-color=none")
+	///// NOTIFY USER /////
+	to_chat(src, "<span class='notice'>Darkmode Disabled</span>") // what a sick fuck
+
+// Better changelog button handling
+/client/proc/update_changelog_button()
+	if(establish_db_connection())
+		if(prefs.lastchangelog != changelog_hash) 
+			winset(src, "rpane.changelog", "background-color=#bb7700;text-color=#FFFFFF;font-style=bold")
+		else
+			if(prefs.toggles & UI_DARKMODE) 
+				winset(src, "rpane.changelog", "background-color=#40628a;text-color=#FFFFFF")
+			else
+				winset(src, "rpane.changelog", "background-color=none;text-color=#000000")
+	else
+		if(prefs.toggles & UI_DARKMODE) 
+			winset(src, "rpane.changelog", "background-color=#40628a;text-color=#FFFFFF")
+		else
+			winset(src, "rpane.changelog", "background-color=none;text-color=#000000")

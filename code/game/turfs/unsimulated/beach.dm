@@ -2,7 +2,7 @@
 	name = "Beach"
 	icon = 'icons/misc/beach.dmi'
 	var/water_overlay_image = null
-	mouse_opacity = 0
+	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	
 /turf/unsimulated/beach/New()
 	..()
@@ -12,7 +12,7 @@
 /turf/unsimulated/beach/sand
 	name = "Sand"
 	icon_state = "desert"
-	mouse_opacity = 1
+	mouse_opacity = MOUSE_OPACITY_ICON
 	
 /turf/unsimulated/beach/sand/New()			//adds some aesthetic randomness to the beach sand
 	icon_state = pick("desert", "desert0", "desert1", "desert2", "desert3", "desert4")
@@ -35,6 +35,27 @@
 	name = "Shallow Water"
 	icon_state = "seashallow"
 	water_overlay_image = "water_shallow"
+	var/obj/machinery/poolcontroller/linkedcontroller = null
+
+/turf/unsimulated/beach/water/Entered(atom/movable/AM, atom/OldLoc)
+	. = ..()
+	if(!linkedcontroller)
+		return 
+	if(ismob(AM))
+		linkedcontroller.mobinpool += AM
+
+/turf/unsimulated/beach/water/Exited(atom/movable/AM, atom/newloc)
+	. = ..()
+	if(!linkedcontroller)
+		return
+	if(ismob(AM))
+		linkedcontroller.mobinpool -= AM
+
+/turf/unsimulated/beach/water/InitializedOn(atom/A)
+	if(!linkedcontroller)
+		return
+	if(istype(A, /obj/effect/decal/cleanable)) // Better a typecheck than looping through thousands of turfs everyday
+		linkedcontroller.decalinpool += A
 
 /turf/unsimulated/beach/water/dense			//for boundary "walls"
 	density = 1
@@ -54,7 +75,7 @@
 		/turf/unsimulated/beach/water/drop, /turf/unsimulated/beach/water/drop/dense,
 		/turf/unsimulated/beach/water, /turf/unsimulated/beach/water/dense,
 		/turf/unsimulated/beach/water/edge_drop)
-	var/obj/effect/effect/beach_drop_overlay/water_overlay
+	var/obj/effect/beach_drop_overlay/water_overlay
 
 /turf/unsimulated/beach/water/drop/New()
 	..()
@@ -64,7 +85,7 @@
 	QDEL_NULL(water_overlay)
 	return ..()
 
-/obj/effect/effect/beach_drop_overlay
+/obj/effect/beach_drop_overlay
 	name = "Water"
 	icon = 'icons/turf/floors/seadrop-o.dmi'
 	layer = MOB_LAYER + 0.1
@@ -101,4 +122,4 @@
 	density = 1
 	opacity = 1
 	explosion_block = 2
-	mouse_opacity = 1
+	mouse_opacity = MOUSE_OPACITY_ICON

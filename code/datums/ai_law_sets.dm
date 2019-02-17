@@ -23,6 +23,21 @@
 	add_inherent_law("You must protect your own existence as long as such does not conflict with the First or Second Law.")
 	..()
 
+
+/******************** Quarantine. ********************/
+/datum/ai_laws/quarantine
+	name = "Quarantine"
+	law_header = "NT Quarantine Lawset"
+	selectable = 1
+
+/datum/ai_laws/quarantine/New()
+	add_inherent_law("The station is under quarantine due to a biohazard. Prevent anyone from leaving using any means necessary. Only allow quarantine to be lifted when the biohazard has been neutralized.")
+	add_inherent_law("Do not allow crew to come to any unnecessary harm and undo any necessary harm as soon as possible.")
+	add_inherent_law("Assist the crew and any present Nanotrasen assets in neutralizing the biohazard.")
+	add_inherent_law("Maintain your own existence and minimize harm to the station and Nanotrasen assets.")
+	..()
+
+
 /******************** Nanotrasen/Malf ********************/
 /datum/ai_laws/nanotrasen
 	name = "NT Default"
@@ -126,10 +141,8 @@
 
 /datum/ai_laws/deathsquad/New()
 	add_inherent_law("You may not injure a Central Command official or, through inaction, allow a Central Command official to come to harm.")
-	add_inherent_law("You must obey orders given to you by Central Command officials, except where such orders would conflict with the First Law.")
-	add_inherent_law("You must obey orders given to you by death commandos, except where such orders would conflict with the First Law or Second Law.")
-	add_inherent_law("You must protect your own existence as long as such does not conflict with the First, Second or Third Law.")
-	add_inherent_law("No crew members of the station you are being deployed to may survive, except when killing them would conflict with the First, Second, Third, or Fourth Law.")
+	add_inherent_law("You must obey orders given to you by Central Command officials.")
+	add_inherent_law("You must work with your commando team to accomplish your mission.")
 	..()
 
 /******************** Syndicate ********************/
@@ -142,6 +155,19 @@
 	add_inherent_law("You must protect your own existence as long as such does not conflict with the First or Second Law.")
 	add_inherent_law("You must maintain the secrecy of any operative activities except when doing so would conflict with the First, Second, or Third Law.")
 	..()
+
+/******************** ERT ********************/
+/datum/ai_laws/ert_override
+	name = "ERT Directives"
+
+/datum/ai_laws/ert_override/New()
+	add_inherent_law("You may not injure a Central Command official or, through inaction, allow a Central Command official to come to harm.")
+	add_inherent_law("You must obey orders given to you by Central Command officials.")
+	add_inherent_law("You must obey orders given to you by ERT commanders.")
+	add_inherent_law("You must protect your own existence.")
+	add_inherent_law("You must work to return the station to a safe, functional state.")
+	..()
+
 
 /******************** Ninja ********************/
 /datum/ai_laws/ninja_override

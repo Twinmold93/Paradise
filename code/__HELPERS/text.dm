@@ -59,6 +59,16 @@
 /proc/sanitize(var/t,var/list/repl_chars = null)
 	return html_encode(sanitize_simple(t,repl_chars))
 
+// Gut ANYTHING that isnt alphanumeric, or brackets
+/proc/paranoid_sanitize(t)
+	var/regex/alphanum_only = regex("\[^a-zA-Z0-9# ,.?!:;()]", "g")
+	return alphanum_only.Replace(t, "#")
+
+// Less agressive, to allow discord features, such as <>, / and @
+/proc/not_as_paranoid_sanitize(t)
+	var/regex/alphanum_slashes_only = regex("\[^a-zA-Z0-9# ,.?!:;()/<>@]", "g")
+	return alphanum_slashes_only.Replace(t, "#")
+
 //Runs sanitize and strip_html_simple
 //I believe strip_html_simple() is required to run first to prevent '<' from displaying as '&lt;' after sanitize() calls byond's html_encode()
 /proc/strip_html(var/t,var/limit=MAX_MESSAGE_LEN)
@@ -92,9 +102,12 @@
 	if(non_whitespace)		return text		//only accepts the text if it has some non-spaces
 
 // Used to get a sanitized input.
-/proc/stripped_input(var/mob/user, var/message = "", var/title = "", var/default = "", var/max_length=MAX_MESSAGE_LEN)
-	var/name = input(user, message, title, default)
-	return strip_html_properly(name, max_length)
+/proc/stripped_input(mob/user, message = "", title = "", default = "", max_length=MAX_MESSAGE_LEN, no_trim=FALSE)
+	var/name = input(user, message, title, default) as text|null
+	if(no_trim)
+		return copytext(html_encode(name), 1, max_length)
+	else
+		return trim(html_encode(name), max_length) //trim is "outside" because html_encode can expand single symbols into multiple symbols (such as turning < into &lt;)
 
 //Filters out undesirable characters from names
 /proc/reject_bad_name(var/t_in, var/allow_numbers=0, var/max_length=MAX_NAME_LEN)
@@ -129,14 +142,14 @@
 				number_of_alphanumeric++
 				last_char_group = 3
 
-			// '  -  .
-			if(39,45,46)			//Common name punctuation
+			// '  -  . ,
+			if(39, 45, 46, 44)			//Common name punctuation
 				if(!last_char_group) continue
 				t_out += ascii2text(ascii_char)
 				last_char_group = 2
 
-			// ~   |   @  :  #  $  %  &  *  +
-			if(126,124,64,58,35,36,37,38,42,43)			//Other symbols that we'll allow (mainly for AI)
+			// ~   |   @  :  #  $  %  &  *  +  !
+			if(126, 124, 64, 58, 35, 36, 37, 38, 42, 43, 33)			//Other symbols that we'll allow (mainly for AI)
 				if(!last_char_group)		continue	//suppress at start of string
 				if(!allow_numbers)			continue
 				t_out += ascii2text(ascii_char)
@@ -448,32 +461,32 @@ proc/checkhtml(var/t)
 
 
 // Pencode
-/proc/pencode_to_html(text, mob/user, obj/item/weapon/pen/P = null, sign = 1, fields = 1, deffont = PEN_FONT, signfont = SIGNFONT, crayonfont = CRAYON_FONT)
-	text = replacetext(text, "\n",			"<BR>")
-	text = replacetext(text, "\[center\]",	"<center>")
-	text = replacetext(text, "\[/center\]",	"</center>")
-	text = replacetext(text, "\[br\]",		"<BR>")
+/proc/pencode_to_html(text, mob/user, obj/item/pen/P = null, format = 1, sign = 1, fields = 1, deffont = PEN_FONT, signfont = SIGNFONT, crayonfont = CRAYON_FONT, no_font = FALSE)
 	text = replacetext(text, "\[b\]",		"<B>")
 	text = replacetext(text, "\[/b\]",		"</B>")
 	text = replacetext(text, "\[i\]",		"<I>")
 	text = replacetext(text, "\[/i\]",		"</I>")
 	text = replacetext(text, "\[u\]",		"<U>")
 	text = replacetext(text, "\[/u\]",		"</U>")
-	text = replacetext(text, "\[large\]",	"<font size=\"4\">")
-	text = replacetext(text, "\[/large\]",	"</font>")
 	if(sign)
 		text = replacetext(text, "\[sign\]",	"<font face=\"[signfont]\"><i>[user ? user.real_name : "Anonymous"]</i></font>")
 	if(fields)
 		text = replacetext(text, "\[field\]",	"<span class=\"paper_field\"></span>")
+	if(format)
+		text = replacetext(text, "\[h1\]",	"<H1>")
+		text = replacetext(text, "\[/h1\]",	"</H1>")
+		text = replacetext(text, "\[h2\]",	"<H2>")
+		text = replacetext(text, "\[/h2\]",	"</H2>")
+		text = replacetext(text, "\[h3\]",	"<H3>")
+		text = replacetext(text, "\[/h3\]",	"</H3>")
+		text = replacetext(text, "\n",			"<BR>")
+		text = replacetext(text, "\[center\]",	"<center>")
+		text = replacetext(text, "\[/center\]",	"</center>")
+		text = replacetext(text, "\[br\]",		"<BR>")
+		text = replacetext(text, "\[large\]",	"<font size=\"4\">")
+		text = replacetext(text, "\[/large\]",	"</font>")
 
-	text = replacetext(text, "\[h1\]",	"<H1>")
-	text = replacetext(text, "\[/h1\]",	"</H1>")
-	text = replacetext(text, "\[h2\]",	"<H2>")
-	text = replacetext(text, "\[/h2\]",	"</H2>")
-	text = replacetext(text, "\[h3\]",	"<H3>")
-	text = replacetext(text, "\[/h3\]",	"</H3>")
-
-	if(istype(P, /obj/item/toy/crayon)) // If it is a crayon, and he still tries to use these, make them empty!
+	if(istype(P, /obj/item/toy/crayon) || !format) // If it is a crayon, and he still tries to use these, make them empty!
 		text = replacetext(text, "\[*\]", 		"")
 		text = replacetext(text, "\[hr\]",		"")
 		text = replacetext(text, "\[small\]", 	"")
@@ -485,7 +498,7 @@ proc/checkhtml(var/t)
 		text = replacetext(text, "\[row\]", 	"")
 		text = replacetext(text, "\[cell\]", 	"")
 		text = replacetext(text, "\[logo\]", 	"")
-
+	if(istype(P, /obj/item/toy/crayon))
 		text = "<font face=\"[crayonfont]\" color=[P ? P.colour : "black"]><b>[text]</b></font>"
 	else 	// They are using "not a crayon" - formatting is OK and such
 		text = replacetext(text, "\[*\]",		"<li>")
@@ -501,9 +514,13 @@ proc/checkhtml(var/t)
 		text = replacetext(text, "\[row\]",		"</td><tr>")
 		text = replacetext(text, "\[cell\]",	"<td>")
 		text = replacetext(text, "\[logo\]",	"<img src = ntlogo.png>")
-
-		text = "<font face=\"[deffont]\" color=[P ? P.colour : "black"]>[text]</font>"
-
+		text = replacetext(text, "\[time\]",	"[station_time_timestamp()]") // TO DO
+		if(!no_font)
+			if(P)
+				text = "<font face=\"[deffont]\" color=[P ? P.colour : "black"]>[text]</font>"
+			else
+				text = "<font face=\"[deffont]\">[text]</font>"
+    
 	text = copytext(text, 1, MAX_PAPER_MESSAGE_LEN)
 	return text
 
@@ -542,3 +559,4 @@ proc/checkhtml(var/t)
 	text = replacetext(text, "<img src = ntlogo.png>",	"\[logo\]")
 	return text
 
+#define string2charlist(string) (splittext(string, regex("(\\x0A|.)")) - splittext(string, ""))

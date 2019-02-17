@@ -7,7 +7,7 @@
 	icon_dead = "null"
 	melee_damage_lower = 5
 	melee_damage_upper = 5
-	a_intent = "harm"
+	a_intent = INTENT_HARM
 	attacktext = "gores"
 	maxHealth = 100
 	health = 100
@@ -65,6 +65,7 @@
 	melee_damage_lower = 0
 	melee_damage_upper = 0
 	speed = -1
+	obj_damage = 0
 	environment_smash = 0
 
 

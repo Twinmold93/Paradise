@@ -13,6 +13,10 @@
 	alien_organs += new /obj/item/organ/internal/xenos/plasmavessel/hunter
 	..()
 
+/mob/living/carbon/alien/humanoid/hunter/movement_delay()
+	. = -1		//hunters are sanic
+	. += ..()	//but they still need to slow down on stun
+
 /mob/living/carbon/alien/humanoid/hunter/handle_regular_hud_updates()
 	..() //-Yvarov
 
@@ -36,7 +40,7 @@
 
 
 /mob/living/carbon/alien/humanoid/hunter/handle_environment()
-	if(m_intent == "run" || resting)
+	if(m_intent == MOVE_INTENT_RUN || resting)
 		..()
 	else
 		adjustPlasma(-heal_rate)
@@ -62,7 +66,7 @@
 #define MAX_ALIEN_LEAP_DIST 7
 
 /mob/living/carbon/alien/humanoid/hunter/proc/leap_at(var/atom/A)
-	if(pounce_cooldown)
+	if(pounce_cooldown > world.time)
 		to_chat(src, "<span class='alertalien'>You are too fatigued to pounce right now!</span>")
 		return
 
@@ -110,9 +114,7 @@
 				Weaken(2, 1, 1)
 
 			toggle_leap(0)
-			pounce_cooldown = !pounce_cooldown
-			spawn(pounce_cooldown_time) //3s by default
-				pounce_cooldown = !pounce_cooldown
+			pounce_cooldown = world.time + pounce_cooldown_time
 		else if(A.density && !A.CanPass(src))
 			visible_message("<span class ='danger'>[src] smashes into [A]!</span>", "<span class ='alertalien'>[src] smashes into [A]!</span>")
 			Weaken(2, 1, 1)

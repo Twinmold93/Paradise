@@ -7,7 +7,7 @@
 	-- Will change all the tube lights to green
 	UPDATE /obj/machinery/light IN world SET color = "#0F0" WHERE icon_state == "tube1"
 	-- Will delete all pickaxes. "IN world" is not required.
-	DELETE /obj/item/weapon/pickaxe
+	DELETE /obj/item/pickaxe
 	-- Will flicker the lights once, then turn all mobs green. The semicolon is important to separate the consecutive querys, but is not required for standard one-query use
 	CALL flicker(1) ON /obj/machinery/light; UPDATE /mob SET color = "#00cc00"
 
@@ -89,6 +89,11 @@
 
 				if("delete")
 					for(var/d in objs)
+						if(istype(d, /datum))
+							var/datum/D = d
+							if(!D.can_vv_delete())
+								to_chat(usr, "[D] rejected your deletion")
+								continue
 						qdel(d)
 
 				if("select")
@@ -124,11 +129,10 @@
 									if(++i == sets.len)
 										if(istype(temp, /turf) && (v == "x" || v == "y" || v == "z"))
 											continue
-										if(istype(temp.vars[v], /datum/admins))
-											continue
-										temp.vars[v] = SDQL_expression(d, set_list[sets])
+										if(!temp.vv_edit_var(v, SDQL_expression(d, set_list[sets])))
+											to_chat(usr, "[temp] rejected your varedit.")
 										break
-									if(temp.vars.Find(v) && (istype(temp.vars[v], /datum) || istype(temp.vars[v], /client)) && !istype(temp.vars[v], /datum/admins))
+									if(temp.vars.Find(v) && (istype(temp.vars[v], /datum) || istype(temp.vars[v], /client)))
 										temp = temp.vars[v]
 									else
 										break

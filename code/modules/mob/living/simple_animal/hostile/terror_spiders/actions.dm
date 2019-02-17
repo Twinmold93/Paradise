@@ -7,7 +7,7 @@
 
 /datum/action/innate/terrorspider/web/Activate()
 	var/mob/living/simple_animal/hostile/poison/terror_spider/user = owner
-	user.Web(0)
+	user.Web()
 
 /datum/action/innate/terrorspider/wrap
 	name = "Wrap"
@@ -30,16 +30,6 @@
 	var/mob/living/simple_animal/hostile/poison/terror_spider/green/user = owner
 	user.DoLayGreenEggs()
 
-// ---------- PRINCE ACTIONS
-
-/datum/action/innate/terrorspider/thickweb
-	name = "Thick Web"
-	icon_icon = 'icons/effects/effects.dmi'
-	button_icon_state = "stickyweb2"
-
-/datum/action/innate/terrorspider/thickweb/Activate()
-	var/mob/living/simple_animal/hostile/poison/terror_spider/user = owner
-	user.Web(1)
 
 // ---------- BOSS ACTIONS
 
@@ -51,6 +41,28 @@
 /datum/action/innate/terrorspider/ventsmash/Activate()
 	var/mob/living/simple_animal/hostile/poison/terror_spider/user = owner
 	user.DoVentSmash()
+
+// ---------- PRINCESS ACTIONS
+
+/datum/action/innate/terrorspider/evolvequeen
+	name = "Evolve Queen"
+	icon_icon = 'icons/mob/terrorspider.dmi'
+	button_icon_state = "terror_queen"
+
+/datum/action/innate/terrorspider/evolvequeen/Activate()
+	var/mob/living/simple_animal/hostile/poison/terror_spider/princess/user = owner
+	if(!istype(user))
+		to_chat(user, "<span class='warning'>ERROR: attempt to use evolve queen ability on a non-princess</span>")
+		return
+	var/feedings_left = user.feedings_to_evolve - user.fed
+	if(feedings_left > 0)
+		to_chat(user, "<span class='warning'>You must wrap [feedings_left] more humanoid prey before you can do this!</span>")
+		return
+	for(var/mob/living/simple_animal/hostile/poison/terror_spider/queen/Q in ts_spiderlist)
+		if(Q.spider_awaymission == user.spider_awaymission)
+			to_chat(user, "<span class='warning'>The presence of another Queen in the area is preventing you from maturing.")
+			return
+	user.evolve_to_queen()
 
 // ---------- QUEEN ACTIONS
 
@@ -65,7 +77,7 @@
 
 /datum/action/innate/terrorspider/queen/queensense
 	name = "Hive Sense"
-	icon_icon = 'icons/mob/actions.dmi'
+	icon_icon = 'icons/mob/actions/actions.dmi'
 	button_icon_state = "mindswap"
 
 /datum/action/innate/terrorspider/queen/queensense/Activate()
@@ -103,7 +115,9 @@
 
 // ---------- WEB
 
-/mob/living/simple_animal/hostile/poison/terror_spider/proc/Web(var/thick = 0)
+/mob/living/simple_animal/hostile/poison/terror_spider/proc/Web()
+	if(!web_type)
+		return
 	var/turf/mylocation = loc
 	visible_message("<span class='notice'>[src] begins to secrete a sticky substance.</span>")
 	if(do_after(src, delay_web, target = loc))
@@ -116,14 +130,8 @@
 			if(T)
 				to_chat(src, "<span class='danger'>There is already a web here.</span>")
 			else
-				var/obj/structure/spider/terrorweb/W = new /obj/structure/spider/terrorweb(loc)
+				var/obj/structure/spider/terrorweb/W = new web_type(loc)
 				W.creator_ckey = ckey
-				if(thick)
-					W.opacity = 1
-					W.name = "thick terror web"
-				if(web_infects)
-					W.infectious = 1
-					W.name = "sharp terror web"
 
 /obj/structure/spider/terrorweb
 	name = "terror web"
@@ -134,7 +142,6 @@
 	health = 20 // two welders, or one laser shot (15 for the normal spider webs)
 	icon_state = "stickyweb1"
 	var/creator_ckey = null
-	var/infectious = 0
 
 /obj/structure/spider/terrorweb/New()
 	..()
@@ -163,11 +170,7 @@
 			DeCloakNearby()
 			if(iscarbon(mover))
 				var/mob/living/carbon/C = mover
-				if(!IsTSInfected(C) && infectious)
-					var/inject_target = pick("chest","head")
-					if(C.can_inject(null, 0, inject_target, 0))
-						to_chat(C, "<span class='danger'>[src] slices into you!</span>")
-						new /obj/item/organ/internal/body_egg/terror_eggs(C)
+				web_special_ability(C)
 				spawn(70)
 					if(C.loc == loc)
 						qdel(src)
@@ -184,6 +187,9 @@
 		// Webs don't care about disablers, tasers, etc. Or toxin damage. They're organic, but not alive.
 		return
 	..()
+
+/obj/structure/spider/terrorweb/proc/web_special_ability(mob/living/carbon/C)
+	return
 
 // ---------- WRAP
 
@@ -251,17 +257,32 @@
 		stop_automated_movement = 0
 
 /mob/living/simple_animal/hostile/poison/terror_spider/proc/DoVentSmash()
+	var/valid_target = FALSE
+	for(var/obj/machinery/atmospherics/unary/vent_pump/P in range(1, get_turf(src)))
+		if(P.welded)
+			valid_target = TRUE
+	for(var/obj/machinery/atmospherics/unary/vent_scrubber/C in range(1, get_turf(src)))
+		if(C.welded)
+			valid_target = TRUE
+	if(!valid_target)
+		to_chat(src, "<span class='warning'>No welded vent or scrubber nearby!</span>")
+		return
+	playsound(get_turf(src), 'sound/machines/airlock_alien_prying.ogg', 50, 0)
 	if(do_after(src, 40, target = loc))
-		for(var/obj/machinery/atmospherics/unary/vent_pump/P in view(1, src))
+		for(var/obj/machinery/atmospherics/unary/vent_pump/P in range(1, get_turf(src)))
 			if(P.welded)
 				P.welded = 0
 				P.update_icon()
+				P.update_pipe_image()
+				forceMove(P.loc)
 				P.visible_message("<span class='danger'>[src] smashes the welded cover off [P]!</span>")
 				return
-		for(var/obj/machinery/atmospherics/unary/vent_scrubber/C in view(1, src))
+		for(var/obj/machinery/atmospherics/unary/vent_scrubber/C in range(1, get_turf(src)))
 			if(C.welded)
 				C.welded = 0
 				C.update_icon()
+				C.update_pipe_image()
+				forceMove(C.loc)
 				C.visible_message("<span class='danger'>[src] smashes the welded cover off [C]!</span>")
 				return
 		to_chat(src, "<span class='danger'>There is no welded vent or scrubber close enough to do this.</span>")

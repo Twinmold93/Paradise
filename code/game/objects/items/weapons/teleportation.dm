@@ -7,7 +7,7 @@
 /*
  * Locator
  */
-/obj/item/weapon/locator
+/obj/item/locator
 	name = "locator"
 	desc = "Used to track those with locater implants."
 	icon = 'icons/obj/device.dmi'
@@ -17,14 +17,14 @@
 	var/broadcasting = null
 	var/listening = 1.0
 	flags = CONDUCT
-	w_class = 2
+	w_class = WEIGHT_CLASS_SMALL
 	item_state = "electronic"
 	throw_speed = 4
 	throw_range = 20
 	materials = list(MAT_METAL=400)
-	origin_tech = "magnets=1"
+	origin_tech = "magnets=3;bluespace=2"
 
-/obj/item/weapon/locator/attack_self(mob/user as mob)
+/obj/item/locator/attack_self(mob/user as mob)
 	add_fingerprint(usr)
 	var/dat
 	if(temp)
@@ -43,7 +43,7 @@ Frequency:
 	onclose(user, "radio")
 	return
 
-/obj/item/weapon/locator/Topic(href, href_list)
+/obj/item/locator/Topic(href, href_list)
 	if(..())
 		return 1
 
@@ -59,14 +59,14 @@ Frequency:
 		if(sr)
 			temp += "<B>Located Beacons:</B><BR>"
 
-			for(var/obj/item/device/radio/beacon/W in beacons)
+			for(var/obj/item/radio/beacon/W in GLOB.beacons)
 				if(W.frequency == frequency && !W.syndicate)
 					if(W && W.z == z)
 						var/turf/TB = get_turf(W)
 						temp += "[W.code]: [TB.x], [TB.y], [TB.z]<BR>"
 
 			temp += "<B>Located Implants:</B><BR>"
-			for(var/obj/item/weapon/implant/tracking/T in tracked_implants)
+			for(var/obj/item/implant/tracking/T in GLOB.tracked_implants)
 				if(!T.implanted || !T.imp_in)
 					continue
 
@@ -91,21 +91,22 @@ Frequency:
 /*
  * Hand-tele
  */
-/obj/item/weapon/hand_tele
+/obj/item/hand_tele
 	name = "hand tele"
 	desc = "A portable item using blue-space technology."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "hand_tele"
 	item_state = "electronic"
 	throwforce = 0
-	w_class = 2
+	w_class = WEIGHT_CLASS_SMALL
 	throw_speed = 3
 	throw_range = 5
 	materials = list(MAT_METAL=10000)
-	origin_tech = "magnets=1;bluespace=3"
+	origin_tech = "magnets=3;bluespace=4"
+	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 30, bio = 0, rad = 0)
 	var/active_portals = 0
 
-/obj/item/weapon/hand_tele/attack_self(mob/user as mob)
+/obj/item/hand_tele/attack_self(mob/user as mob)
 	var/turf/current_location = get_turf(user)//What turf is the user on?
 	if(!current_location||!is_teleport_allowed(current_location.z))//If turf was not found or they're somewhere teleproof
 		to_chat(user, "<span class='notice'>\The [src] is malfunctioning.</span>")
@@ -128,7 +129,7 @@ Frequency:
 	if(turfs.len)
 		L["None (Dangerous)"] = pick(turfs)
 	var/t1 = input(user, "Please select a teleporter to lock in on.", "Hand Teleporter") as null|anything in L
-	if(!t1 || (user.get_active_hand() != src || user.stat || user.restrained()))
+	if(!t1 || (!user.is_in_active_hand(src) || user.stat || user.restrained()))
 		return
 	if(active_portals >= 3)
 		user.show_message("<span class='notice'>\The [src] is recharging!</span>")
@@ -140,3 +141,6 @@ Frequency:
 	active_portals++
 	add_fingerprint(user)
 	return
+
+/obj/item/hand_tele/portal_destroyed(obj/effect/portal/P)
+    active_portals--

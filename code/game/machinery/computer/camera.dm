@@ -5,7 +5,7 @@
 	icon_keyboard = "security_key"
 	icon_screen = "cameras"
 	light_color = LIGHT_COLOR_RED
-	circuit = /obj/item/weapon/circuitboard/camera
+	circuit = /obj/item/circuitboard/camera
 
 	var/mapping = 0 // For the overview file (overview.dm), not used on this page
 
@@ -46,6 +46,12 @@
 			M.unset_machine() //to properly reset the view of the users if the console is deleted.
 	return ..()
 
+/obj/machinery/computer/security/proc/isCameraFarAway(obj/machinery/camera/C)
+	var/turf/consoleturf = get_turf(src)
+	var/turf/cameraturf = get_turf(C)
+	if((is_away_level(cameraturf.z) || is_away_level(consoleturf.z)) && !atoms_share_level(cameraturf, consoleturf)) //can only recieve away mission cameras on away missions
+		return TRUE
+
 /obj/machinery/computer/security/check_eye(mob/user)
 	if(!(user in watchers))
 		user.unset_machine()
@@ -54,6 +60,9 @@
 		user.unset_machine()
 		return
 	var/obj/machinery/camera/C = watchers[user]
+	if(isCameraFarAway(C))
+		user.unset_machine()
+		return
 	if(!can_access_camera(C, user))
 		user.unset_machine()
 		return
@@ -71,8 +80,29 @@
 	ui_interact(user)
 
 /obj/machinery/computer/security/attackby(obj/item/I, user as mob, params)
-	if(I.GetAccess()) // If hit by something with access.
+	if(isscrewdriver(I))
+		..()
+	else if(I.GetAccess()) // If hit by something with access.
 		attack_hand(user)
+	else
+		..()
+
+/obj/machinery/computer/security/telescreen/attackby(obj/item/I, mob/user, params)
+	if(ismultitool(I))
+		var/direction = input(user, "Which direction?", "Select direction!") as null|anything in list("North", "East", "South", "West", "Centre")
+		if(!direction || !Adjacent(user))
+			return
+		pixel_x = 0
+		pixel_y = 0
+		switch(direction)
+			if("North")
+				pixel_y = 32
+			if("East")
+				pixel_x = 32
+			if("South")
+				pixel_y = -32
+			if("West")
+				pixel_x = -32
 	else
 		..()
 
@@ -84,9 +114,12 @@
 	else
 		attack_hand(user)
 
-/obj/machinery.computer/security/proc/get_user_access(mob/user)
+/obj/machinery/computer/security/proc/get_user_access(mob/user)
 	var/list/access = list()
-	if(ishuman(user))
+	
+	if(emagged)
+		access = get_all_accesses() // Assume captain level access when emagged
+	else if(ishuman(user))
 		access = user.get_access()
 	else if((isAI(user) || isrobot(user)) && CanUseTopic(user, default_state) == STATUS_INTERACTIVE)
 		access = get_all_accesses() // Assume captain level access when AI
@@ -95,7 +128,7 @@
 	return access
 
 /obj/machinery/computer/security/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, force_open)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "sec_camera.tmpl", "Camera Console", 900, 800)
 
@@ -111,7 +144,7 @@
 
 	var/list/cameras = list()
 	for(var/obj/machinery/camera/C in cameranet.cameras)
-		if((is_away_level(z) || is_away_level(C.z)) && !atoms_share_level(C, src)) //can only recieve away mission cameras on away missions
+		if(isCameraFarAway(C))
 			continue
 		if(!can_access_camera(C, user))
 			continue
@@ -129,7 +162,6 @@
 
 	var/list/access = get_user_access(user)
 	if(emagged)
-		access = get_all_accesses() // Assume captain level access when emagged
 		data["emagged"] = 1
 
 	var/list/networks_list = list()
@@ -181,11 +213,11 @@
 					network += net
 					break
 
-	nanomanager.update_uis(src)
+	SSnanoui.update_uis(src)
 
 // Check if camera is accessible when jumping
 /obj/machinery/computer/security/proc/can_access_camera(var/obj/machinery/camera/C, var/mob/M)
-	if(CanUseTopic(M, default_state) != STATUS_INTERACTIVE || M.incapacitated() || M.blinded)
+	if(CanUseTopic(M, default_state) != STATUS_INTERACTIVE || M.incapacitated() || !M.has_vision())
 		return 0
 
 	if(isrobot(M))
@@ -282,39 +314,36 @@
 
 // Other computer monitors.
 /obj/machinery/computer/security/telescreen
-	name = "\improper Telescreen"
+	name = "telescreen"
 	desc = "Used for watching camera networks."
-	icon = 'icons/obj/stationobjs.dmi'
-	icon_state = "telescreen"
+	icon_state = "telescreen_console"
+	icon_screen = "telescreen"
+	icon_keyboard = null
 	light_range_on = 0
-	network = list("SS13")
 	density = 0
-
-/obj/machinery/computer/security/telescreen/update_icon()
-	icon_state = initial(icon_state)
-	if(stat & BROKEN)
-		icon_state += "b"
-	return
+	circuit = /obj/item/circuitboard/camera/telescreen
 
 /obj/machinery/computer/security/telescreen/entertainment
 	name = "entertainment monitor"
 	desc = "Damn, they better have Paradise TV on these things."
-	icon = 'icons/obj/status_display.dmi'
-	icon_state = "entertainment"
+	icon_state = "entertainment_console"
+	icon_screen = "entertainment"
 	light_color = "#FFEEDB"
 	light_range_on = 0
 	network = list("news")
 	luminosity = 0
+	circuit = /obj/item/circuitboard/camera/telescreen/entertainment
 
 /obj/machinery/computer/security/wooden_tv
 	name = "security camera monitor"
-	desc = "An old TV hooked into the stations camera network."
+	desc = "An old TV hooked into the station's camera network."
 	icon_state = "television"
 	icon_keyboard = null
 	icon_screen = "detective_tv"
 	light_color = "#3848B3"
 	light_power_on = 0.5
 	network = list("SS13")
+	circuit = /obj/item/circuitboard/camera/wooden_tv
 
 /obj/machinery/computer/security/mining
 	name = "outpost camera monitor"
@@ -323,6 +352,7 @@
 	icon_screen = "mining"
 	light_color = "#F9BBFC"
 	network = list("Mining Outpost")
+	circuit = /obj/item/circuitboard/camera/mining
 
 /obj/machinery/computer/security/engineering
 	name = "engineering camera monitor"
@@ -331,3 +361,4 @@
 	icon_screen = "engie_cams"
 	light_color = "#FAC54B"
 	network = list("Power Alarms","Atmosphere Alarms","Fire Alarms")
+	circuit = /obj/item/circuitboard/camera/engineering

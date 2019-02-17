@@ -31,6 +31,11 @@
 	if(..())
 		return 1
 
+	if(usr != owner && !check_rights(R_ADMIN))
+		message_admins("Warning: possible href exploit by [key_name(usr)] - failed permissions check in nano_module/law_manager/Topic")
+		log_debug("Warning: possible href exploit by [key_name(usr)] - failed permissions check in nano_module/law_manager/Topic")
+		return 1
+
 	if(href_list["set_view"])
 		current_view = text2num(href_list["set_view"])
 		return 1
@@ -148,7 +153,7 @@
 	return 0
 
 /datum/nano_module/law_manager/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1, var/datum/topic_state/state = default_state)
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, force_open)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "law_manager.tmpl", sanitize("[src] - [owner.name]"), 800, is_malf(user) ? 600 : 400, state = state)
 		ui.open()

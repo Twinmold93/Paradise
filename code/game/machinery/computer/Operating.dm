@@ -1,4 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 #define OP_COMPUTER_COOLDOWN 60
 
 /obj/machinery/computer/operating
@@ -7,7 +6,7 @@
 	anchored = 1.0
 	icon_keyboard = "med_key"
 	icon_screen = "crew"
-	circuit = /obj/item/weapon/circuitboard/operating
+	circuit = /obj/item/circuitboard/operating
 	var/obj/machinery/optable/table = null
 	var/mob/living/carbon/human/victim = null
 	light_color = LIGHT_COLOR_PURE_BLUE
@@ -94,7 +93,7 @@
 //	onclose(user, "op")
 
 /obj/machinery/computer/operating/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)//ui is mostly copy pasta from the sleeper ui
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, force_open)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "op_computer.tmpl", "Patient Monitor", 650, 455)
 		ui.open()
@@ -124,8 +123,8 @@
 		occupantData["maxTemp"] = 1000 // If you get a burning vox armalis into the sleeper, congratulations
 		// Because we can put simple_animals in here, we need to do something tricky to get things working nice
 		occupantData["temperatureSuitability"] = 0 // 0 is the baseline
-		if(ishuman(occupant) && occupant.species)
-			var/datum/species/sp = occupant.species
+		if(ishuman(occupant) && occupant.dna.species)
+			var/datum/species/sp = occupant.dna.species
 			if(occupant.bodytemperature < sp.cold_level_3)
 				occupantData["temperatureSuitability"] = -3
 			else if(occupant.bodytemperature < sp.cold_level_2)
@@ -148,13 +147,12 @@
 		occupantData["btCelsius"] = occupant.bodytemperature - T0C
 		occupantData["btFaren"] = ((occupant.bodytemperature - T0C) * (9.0/5.0))+ 32
 
-		if(ishuman(occupant) && occupant.vessel && !(occupant.species && occupant.species.flags & NO_BLOOD))
-			var/blood_type = occupant.get_blood_name()
+		if(ishuman(occupant) && !(NO_BLOOD in occupant.dna.species.species_traits))
 			occupantData["pulse"] = occupant.get_pulse(GETPULSE_TOOL)
 			occupantData["hasBlood"] = 1
-			occupantData["bloodLevel"] = round(occupant.vessel.get_reagent_amount(blood_type))
+			occupantData["bloodLevel"] = round(occupant.blood_volume)
 			occupantData["bloodMax"] = occupant.max_blood
-			occupantData["bloodPercent"] = round(100*(occupant.vessel.get_reagent_amount(blood_type)/occupant.max_blood), 0.01) //copy pasta ends here
+			occupantData["bloodPercent"] = round(100*(occupant.blood_volume/occupant.max_blood), 0.01) //copy pasta ends here
 
 			occupantData["bloodType"]=occupant.b_type
 		if(occupant.surgeries.len)
@@ -223,6 +221,6 @@
 				if(crit && victim.health <= -50 )
 					playsound(src.loc, 'sound/machines/defib_success.ogg', 50, 0)
 				if(oxy && victim.getOxyLoss()>oxyAlarm)
-					playsound(src.loc, 'sound/machines/defib_saftyOff.ogg', 50, 0)
+					playsound(src.loc, 'sound/machines/defib_saftyoff.ogg', 50, 0)
 				if(healthAnnounce && victim.health <= healthAlarm)
 					atom_say("[round(victim.health)]")

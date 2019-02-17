@@ -2,10 +2,5 @@
 	set name = "Chase your tail"
 	set desc = "d'awwww."
 	set category = "Corgi"
-	to_chat(src, text("[pick("You dance around","You chase your tail")]."))
-	for(var/mob/O in oviewers(src, null))
-		if((O.client && !( O.blinded )))
-			to_chat(O, text("[] [pick("dances around","chases its tail")].", src))
-	for(var/i in list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
-		dir = i
-		sleep(1)
+	visible_message("[src] [pick("dances around","chases [p_their()] tail")].","[pick("You dance around","You chase your tail")].")
+	spin(20, 1)

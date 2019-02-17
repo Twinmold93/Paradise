@@ -17,7 +17,7 @@
 
 	using = new /obj/screen/mov_intent()
 	using.icon = ui_style
-	using.icon_state = (mymob.m_intent == "run" ? "running" : "walking")
+	using.icon_state = (mymob.m_intent == MOVE_INTENT_RUN ? "running" : "walking")
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -101,9 +101,6 @@
 	mymob.throw_icon.color = ui_color
 	mymob.throw_icon.alpha = ui_alpha
 	hotkeybuttons += mymob.throw_icon
-
-	internals = new /obj/screen/internals()
-	infodisplay += internals
 
 	mymob.healths = new /obj/screen/healths()
 	infodisplay += mymob.healths

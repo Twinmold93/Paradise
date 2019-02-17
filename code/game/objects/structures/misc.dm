@@ -11,7 +11,7 @@
 	anchored = 1
 	density = 1
 
-	attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+	attackby(obj/item/W as obj, mob/user as mob, params)
 		return attack_hand(user)
 
 	attack_hand(mob/user as mob)
@@ -26,7 +26,7 @@
 	anchored = 1
 	density = 0
 
-	attackby(obj/item/weapon/W as obj, mob/user as mob, params)
+	attackby(obj/item/W as obj, mob/user as mob, params)
 
 		return attack_hand(user)
 
@@ -46,8 +46,7 @@
 
 					playsound(user.loc, 'sound/effects/phasein.ogg', 25, 1)
 					playsound(user.loc, 'sound/effects/sparks2.ogg', 50, 1)
-					anim(user.loc,user,'icons/mob/mob.dmi',,"phasein",,user.dir)
-
+					new /obj/effect/temp_visual/dir_setting/ninja/phase(get_turf(user), user.dir)
 					to_chat(user, "<span class='boldnotice'>VOID-Shift</span> translocation successful")
 
 				if("No")
@@ -61,7 +60,7 @@
 /obj/structure/respawner
 	name = "\improper Long-Distance Cloning Machine"
 	desc = "Top-of-the-line Nanotrasen technology allows for cloning of crew members from off-station upon bluespace request."
-	icon = 'icons/obj/xenoarchaeology.dmi'
+	icon = 'icons/obj/objects.dmi'
 	icon_state = "borgcharger1(old)"
 	anchored = 1
 	density = 1
@@ -88,7 +87,7 @@
 	var/atom/attack_atom
 
 
-/obj/structure/ghost_beacon/initialize()
+/obj/structure/ghost_beacon/Initialize()
 	. = ..()
 	last_ghost_alert = world.time
 	attack_atom = src
@@ -121,3 +120,12 @@
 	if(last_ghost_alert + ghost_alert_delay < world.time)
 		notify_ghosts("[src] active in [get_area(src)].", 'sound/effects/ghost2.ogg', title = alert_title, source = attack_atom, action = (attack_atom == src ? NOTIFY_JUMP : NOTIFY_ATTACK))
 		last_ghost_alert = world.time
+
+/obj/structure/boulder
+	name = "boulder"
+	desc = "A large rock."
+	icon = 'icons/obj/mining.dmi'
+	icon_state = "boulder1"
+	density = TRUE
+	opacity = TRUE
+	anchored = TRUE

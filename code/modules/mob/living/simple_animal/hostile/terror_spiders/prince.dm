@@ -21,30 +21,23 @@
 	regen_points_per_hp = 6 // double the normal - IE halved regen speed
 	melee_damage_lower = 30
 	melee_damage_upper = 40
-	move_to_delay = 4 // faster than normal
 	ventcrawler = 0
 	ai_ventcrawls = 0
-	environment_smash = 3
-	loot = list(/obj/item/clothing/accessory/medal)
+	environment_smash = ENVIRONMENT_SMASH_RWALLS
 	idle_ventcrawl_chance = 0
 	spider_tier = TS_TIER_3
 	spider_opens_doors = 2
-	var/datum/action/innate/terrorspider/thickweb/thickweb_action
-
-/mob/living/simple_animal/hostile/poison/terror_spider/prince/New()
-	..()
-	thickweb_action = new()
-	thickweb_action.Grant(src)
+	web_type = /obj/structure/spider/terrorweb/purple
+	ai_spins_webs = FALSE
 
 /mob/living/simple_animal/hostile/poison/terror_spider/prince/death(gibbed)
-	if(!hasdied)
-		if(spider_uo71)
-			UnlockBlastDoors("UO71_SciStorage")
-	..()
+	if(can_die() && !hasdied && spider_uo71)
+		UnlockBlastDoors("UO71_SciStorage")
+	return ..()
 
 /mob/living/simple_animal/hostile/poison/terror_spider/prince/spider_specialattack(mob/living/carbon/human/L)
 	if(prob(15))
-		visible_message("<span class='danger'>[src] rams into [L], knocking them to the floor!</span>")
+		visible_message("<span class='danger'>[src] rams into [L], knocking [L.p_them()] to the floor!</span>")
 		L.Weaken(5)
 		L.Stun(5)
 	else

@@ -1,6 +1,7 @@
 /datum/reagent/consumable/drink/cold
 	name = "Cold drink"
 	adj_temp_cool = 5
+	taste_message = null
 
 /datum/reagent/consumable/drink/cold/tonic
 	name = "Tonic Water"
@@ -50,6 +51,7 @@
 	drink_icon = "glass_brown"
 	drink_name = "Glass of Space Cola"
 	drink_desc = "A glass of refreshing Space Cola"
+	taste_message = "cola"
 
 /datum/reagent/consumable/drink/cold/nuka_cola
 	name = "Nuka Cola"
@@ -60,14 +62,16 @@
 	drink_icon = "nuka_colaglass"
 	drink_name = "Nuka Cola"
 	drink_desc = "Don't cry, Don't raise your eye, It's only nuclear wasteland"
+	taste_message = "cola"
 
 /datum/reagent/consumable/drink/cold/nuka_cola/on_mob_life(mob/living/M)
+	var/update_flags = STATUS_UPDATE_NONE
 	M.Jitter(20)
-	M.Druggy(30)
+	update_flags |= M.Druggy(30, FALSE)
 	M.AdjustDizzy(5)
 	M.SetDrowsy(0)
 	M.status_flags |= GOTTAGOFAST
-	..()
+	return ..() | update_flags
 
 /datum/reagent/consumable/drink/cold/nuka_cola/on_mob_delete(mob/living/M)
 	M.status_flags &= ~GOTTAGOFAST
@@ -83,6 +87,7 @@
 	drink_icon = "Space_mountain_wind_glass"
 	drink_name = "Glass of Space Mountain Wind"
 	drink_desc = "Space Mountain Wind. As you know, there are no mountains in space, only wind."
+	taste_message = "lime soda"
 
 /datum/reagent/consumable/drink/cold/dr_gibb
 	name = "Dr. Gibb"
@@ -93,6 +98,7 @@
 	drink_icon = "dr_gibb_glass"
 	drink_name = "Glass of Dr. Gibb"
 	drink_desc = "Dr. Gibb. Not as dangerous as the name might imply."
+	taste_message = "cherry soda"
 
 /datum/reagent/consumable/drink/cold/space_up
 	name = "Space-Up"
@@ -103,6 +109,7 @@
 	drink_icon = "space-up_glass"
 	drink_name = "Glass of Space-up"
 	drink_desc = "Space-up. It helps keep your cool."
+	taste_message = "lemon soda"
 
 /datum/reagent/consumable/drink/cold/lemon_lime
 	name = "Lemon Lime"
@@ -110,6 +117,7 @@
 	id = "lemon_lime"
 	color = "#878F00" // rgb: 135, 40, 0
 	adj_temp_cool = 8
+	taste_message = "citrus soda"
 
 /datum/reagent/consumable/drink/cold/lemonade
 	name = "Lemonade"
@@ -119,6 +127,7 @@
 	drink_icon = "lemonade"
 	drink_name = "Lemonade"
 	drink_desc = "Oh the nostalgia..."
+	taste_message = "lemonade"
 
 /datum/reagent/consumable/drink/cold/kiraspecial
 	name = "Kira Special"
@@ -128,6 +137,7 @@
 	drink_icon = "kiraspecial"
 	drink_name = "Kira Special"
 	drink_desc = "Long live the guy who everyone had mistaken for a girl. Baka!"
+	taste_message = "citrus soda"
 
 /datum/reagent/consumable/drink/cold/brownstar
 	name = "Brown Star"
@@ -138,6 +148,7 @@
 	drink_icon = "brownstar"
 	drink_name = "Brown Star"
 	drink_desc = "Its not what it sounds like..."
+	taste_message = "orange soda"
 
 /datum/reagent/consumable/drink/cold/milkshake
 	name = "Milkshake"
@@ -148,16 +159,18 @@
 	drink_icon = "milkshake"
 	drink_name = "Milkshake"
 	drink_desc = "Glorious brainfreezing mixture."
+	taste_message = "milkshake"
 
 /datum/reagent/consumable/drink/cold/rewriter
 	name = "Rewriter"
-	description = "The secert of the sanctuary of the Libarian..."
+	description = "The secret of the sanctuary of the Librarian..."
 	id = "rewriter"
 	color = "#485000" // rgb:72, 080, 0
 	drink_icon = "rewriter"
 	drink_name = "Rewriter"
-	drink_desc = "The secert of the sanctuary of the Libarian..."
+	drink_desc = "The secret of the sanctuary of the Librarian..."
+	taste_message = "coffee...soda?"
 
 /datum/reagent/consumable/drink/cold/rewriter/on_mob_life(mob/living/M)
 	M.Jitter(5)
-	..()
+	return ..()

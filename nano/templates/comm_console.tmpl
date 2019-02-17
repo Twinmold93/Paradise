@@ -1,4 +1,4 @@
-<!-- 
+<!--
 Title: Communications
 Used In File(s): /code/game/machinery/computers/communications.dm
 -->
@@ -57,7 +57,7 @@ Used In File(s): /code/game/machinery/computers/communications.dm
 				</div>
 				<div class="line">
 					{{:helper.link('Request Nuclear Authentication Codes','exclamation-triangle',{'operation':'nukerequest'})}}
-				</div>		
+				</div>
 			{{/if}}
 			<div class="line">
 				{{:helper.link('Change Alert Level','signal',{'operation':'changeseclevel'})}}
@@ -71,11 +71,13 @@ Used In File(s): /code/game/machinery/computers/communications.dm
 			<div class="line">
 				{{:helper.link('Restart Nano-Mob Hunter GO! Server','power-off',{'operation':'RestartNanoMob'})}}
 			</div>
-			{{if data.dock_request}}
 			<div class="line">
-				{{:helper.link('Accept Docking Request','signal',{'operation':'AcceptDocking'})}}
-				{{:helper.link('Deny Docking Request','signal',{'operation':'DenyDocking'})}}
-			{{/if}}
+				{{if data.atcSquelched}}
+					{{:helper.link('Enable ATC Relay', 'signal', {'operation': 'ToggleATC'})}}
+				{{else}}
+					{{:helper.link('Disable ATC Relay', 'signal', {'operation': 'ToggleATC'})}}
+				{{/if}}
+			</div>
 		</div>
 	{{else data.screen==2}}
 		<!-- STATUS DISPLAYS -->

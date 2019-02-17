@@ -35,16 +35,16 @@
 // Procs that give information about the status of the mob
 
 /mob/proc/can_hear()
-	return 1
+	. = 1
 
-/mob/proc/has_vision()
+/mob/proc/has_vision(information_only = FALSE)
 	return 1
 
 /mob/proc/can_speak()
 	return 1
 
-/mob/proc/incapacitated(ignore_restraints, ignore_grab)
-	return 0
+/mob/proc/incapacitated(ignore_restraints = FALSE, ignore_grab = FALSE, ignore_lying = FALSE)
+	return FALSE
 
 /mob/proc/restrained(ignore_grab)
 	// All are created free

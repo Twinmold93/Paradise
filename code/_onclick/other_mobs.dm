@@ -12,6 +12,11 @@
 	if(proximity && istype(G) && G.Touch(A, 1))
 		return
 
+	if(HULK in mutations)
+		if(proximity) //no telekinetic hulk attack
+			if(A.attack_hulk(src))
+				return
+
 	A.attack_hand(src)
 
 /atom/proc/attack_hand(mob/user as mob)
@@ -30,7 +35,7 @@
 /mob/living/carbon/human/RangedAttack(var/atom/A)
 	if(!gloves && !mutations.len) return
 	var/obj/item/clothing/gloves/G = gloves
-	if((LASER in mutations) && a_intent == I_HARM)
+	if((LASER in mutations) && a_intent == INTENT_HARM)
 		LaserEyes(A) // moved into a proc below
 
 	else if(istype(G) && G.Touch(A,0)) // for magic gloves

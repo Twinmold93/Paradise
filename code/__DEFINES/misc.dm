@@ -1,6 +1,16 @@
 //Object specific defines
 #define CANDLE_LUM 3 //For how bright candles are
 
+//Directions (already defined on BYOND natively, purely here for reference)
+//#define NORTH		1
+//#define SOUTH		2
+//#define EAST		4
+//#define WEST		8
+//#define NORTHEAST	5
+//#define SOUTHEAST 6
+//#define NORTHWEST 9
+//#define SOUTHWEST 10
+
 //Security levels
 #define SEC_LEVEL_GREEN	0
 #define SEC_LEVEL_BLUE	1
@@ -118,6 +128,7 @@
 #define LIGHT_COLOR_DARKGREEN	"#50AB00"
 #define LIGHT_COLOR_PURE_GREEN	"#00FF00"
 
+#define LIGHT_COLOR_BLUE       "#6496FA" //Cold, diluted blue. rgb(100, 150, 250)
 #define LIGHT_COLOR_LIGHTBLUE	"#0099FF"
 #define LIGHT_COLOR_DARKBLUE	"#315AB4"
 #define LIGHT_COLOR_PURE_BLUE	"#0000FF"
@@ -125,6 +136,8 @@
 #define LIGHT_COLOR_FADEDPURPLE	"#A97FAA"
 #define LIGHT_COLOR_PURPLE		"#CD00CD"
 #define LIGHT_COLOR_PINK		"#FF33CC"
+
+#define LIGHT_COLOR_YELLOW     "#E1E17D" //Dimmed yellow, leaning kaki. rgb(225, 225, 125)
 
 #define LIGHT_COLOR_WHITE		"#FFFFFF"
 
@@ -162,20 +175,6 @@
 #define MIN_SUPPLIED_LAW_NUMBER 15
 #define MAX_SUPPLIED_LAW_NUMBER 50
 
-//Material defines
-#define MAT_METAL			"$metal"
-#define MAT_GLASS			"$glass"
-#define MAT_SILVER			"$silver"
-#define MAT_GOLD			"$gold"
-#define MAT_DIAMOND			"$diamond"
-#define MAT_URANIUM			"$uranium"
-#define MAT_PLASMA			"$plasma"
-#define MAT_BANANIUM		"$bananium"
-#define MAT_TRANQUILLITE	"$tranquillite"
-#define MAT_BIOMASS			"$biomass"
-
-#define MAX_STACK_SIZE 50
-
 //check_target_facings() return defines
 #define FACING_FAILED											0
 #define FACING_SAME_DIR											1
@@ -199,6 +198,7 @@
 #define TURF_WET_WATER	1
 #define TURF_WET_LUBE	2
 #define TURF_WET_ICE	3
+#define TURF_WET_PERMAFROST 4
 
 #define APPEARANCE_UI_IGNORE_ALPHA			RESET_COLOR|RESET_TRANSFORM|NO_CLIENT_COLOR|RESET_ALPHA
 
@@ -208,40 +208,44 @@
 #define MFOAM_IRON 		2
 
 //Human Overlays Indexes/////////
-#define MUTANTRACE_LAYER		1
-#define TAIL_UNDERLIMBS_LAYER	2	//Tail split-rendering.
-#define LIMBS_LAYER				3
-#define MARKINGS_LAYER			4
-#define UNDERWEAR_LAYER			5
-#define MUTATIONS_LAYER			6
-#define DAMAGE_LAYER			7
-#define UNIFORM_LAYER			8
-#define ID_LAYER				9
-#define SHOES_LAYER				10
-#define GLOVES_LAYER			11
-#define EARS_LAYER				12
-#define SUIT_LAYER				13
-#define BELT_LAYER				14	//Possible make this an overlay of somethign required to wear a belt?
-#define SUIT_STORE_LAYER		15
-#define BACK_LAYER				16
-#define HEAD_ACCESSORY_LAYER	17
+#define BODY_LAYER				37
+#define MUTANTRACE_LAYER		36
+#define TAIL_UNDERLIMBS_LAYER	35	//Tail split-rendering.
+#define LIMBS_LAYER				34
+#define INTORGAN_LAYER			33
+#define MARKINGS_LAYER			32
+#define UNDERWEAR_LAYER			31
+#define MUTATIONS_LAYER			30
+#define H_DAMAGE_LAYER			29
+#define UNIFORM_LAYER			28
+#define ID_LAYER				27
+#define SHOES_LAYER				26
+#define GLOVES_LAYER			25
+#define EARS_LAYER				24
+#define SUIT_LAYER				23
+#define BELT_LAYER				22	//Possible make this an overlay of somethign required to wear a belt?
+#define SUIT_STORE_LAYER		21
+#define BACK_LAYER				20
+#define HEAD_ACCESSORY_LAYER	19
 #define FHAIR_LAYER				18
-#define GLASSES_LAYER			19
-#define HAIR_LAYER				20	//TODO: make part of head layer?
-#define HEAD_ACC_OVER_LAYER		21	//Select-layer rendering.
-#define FHAIR_OVER_LAYER		22	//Select-layer rendering.
-#define GLASSES_OVER_LAYER		23	//Select-layer rendering.
-#define TAIL_LAYER				24	//bs12 specific. this hack is probably gonna come back to haunt me
-#define FACEMASK_LAYER			25
-#define HEAD_LAYER				26
-#define COLLAR_LAYER			27
-#define HANDCUFF_LAYER			28
-#define LEGCUFF_LAYER			29
-#define L_HAND_LAYER			30
-#define R_HAND_LAYER			31
-#define TARGETED_LAYER			32	//BS12: Layer for the target overlay from weapon targeting system
-#define FIRE_LAYER				33	//If you're on fire
-#define TOTAL_LAYERS			33
+#define GLASSES_LAYER			17
+#define HAIR_LAYER				16	//TODO: make part of head layer?
+#define HEAD_ACC_OVER_LAYER		15	//Select-layer rendering.
+#define FHAIR_OVER_LAYER		14	//Select-layer rendering.
+#define GLASSES_OVER_LAYER		13	//Select-layer rendering.
+#define TAIL_LAYER				12	//bs12 specific. this hack is probably gonna come back to haunt me
+#define FACEMASK_LAYER			11
+#define HEAD_LAYER				10
+#define COLLAR_LAYER			9
+#define HANDCUFF_LAYER			8
+#define LEGCUFF_LAYER			7
+#define L_HAND_LAYER			6
+#define R_HAND_LAYER			5
+#define TARGETED_LAYER			4	//BS12: Layer for the target overlay from weapon targeting system
+#define FIRE_LAYER				3	//If you're on fire
+#define MISC_LAYER				2
+#define FROZEN_LAYER			1
+#define TOTAL_LAYERS			37
 
 ///Access Region Codes///
 #define REGION_ALL			0
@@ -253,6 +257,9 @@
 #define REGION_SUPPLY		6
 #define REGION_COMMAND		7
 #define REGION_CENTCOMM		8
+
+//Just space
+#define SPACE_ICON_STATE	"[((x + y) ^ ~(x * y) + z) % 25]"
 
 //used for maploader
 #define MAP_MINX 1
@@ -275,6 +282,20 @@
                                0.4,0.6,0.0,\
                                0.2,0.2,0.6)
 
+#define LIST_REPLACE_RENAME list("rebeccapurple" = "dark purple", "darkslategrey" = "dark grey", "darkolivegreen" = "dark green", "darkslateblue" = "dark blue",\
+								 "darkkhaki" = "khaki", "darkseagreen" = "light green", "midnightblue" = "blue", "lightgrey" = "light grey", "darkgrey" = "dark grey",\
+								 "steelblue" = "blue", "goldenrod" = "gold")
+
+#define LIST_GREYSCALE_REPLACE list("red" = "lightgrey", "blue" = "grey", "green" = "grey", "orange" = "lightgrey", "brown" = "grey",\
+									"gold" = "lightgrey", "cyan" = "lightgrey", "navy" = "grey", "purple" = "grey", "pink"= "lightgrey")
+
+#define LIST_VULP_REPLACE list("pink" = "beige", "orange" = "goldenrod", "gold" = "goldenrod", "red" = "darkolivegreen", "brown" = "darkolivegreen",\
+									 "green" = "darkslategrey", "cyan" = "steelblue", "purple" = "darkslategrey", "navy" = "midnightblue")
+
+#define LIST_TAJ_REPLACE list("red" = "rebeccapurple", "brown" = "rebeccapurple", "purple" = "darkslateblue", "blue" = "darkslateblue",\
+									 "green" = "darkolivegreen", "orange" = "darkkhaki", "gold" = "darkkhaki", "cyan" = "darkseagreen", \
+									 "navy" = "midnightblue", "pink" = "lightgrey")
+
 
 //Gun trigger guards
 #define TRIGGER_GUARD_ALLOW_ALL -1
@@ -290,16 +311,6 @@
 // Used by radios to indicate that they have sent a message via something other than subspace
 #define RADIO_CONNECTION_FAIL 0
 #define RADIO_CONNECTION_NON_SUBSPACE 1
-
-//Fire stuff, for burn_state
-#define LAVA_PROOF -2
-#define FIRE_PROOF -1
-#define FLAMMABLE 0
-#define ON_FIRE 1
-
-// Sound
-#define SOUND_MINIMUM_PRESSURE 10
-#define FALLOFF_SOUNDS 0.5
 
 // Bluespace shelter deploy checks
 #define SHELTER_DEPLOY_ALLOWED "allowed"
@@ -333,3 +344,54 @@
 
 #define FIRST_DIAG_STEP 1
 #define SECOND_DIAG_STEP 2
+
+#define ARBITRARY_VIEWRANGE_NOHUD 2
+
+//Bloody shoes/footprints
+#define MAX_SHOE_BLOODINESS			100
+#define BLOODY_FOOTPRINT_BASE_ALPHA	150
+#define BLOOD_GAIN_PER_STEP			100
+#define BLOOD_LOSS_PER_STEP			5
+
+//Bloody shoe blood states
+#define BLOOD_STATE_HUMAN			"blood"
+#define BLOOD_STATE_XENO			"xeno"
+#define BLOOD_STATE_NOT_BLOODY		"no blood whatsoever"
+
+//for obj explosion block calculation
+#define EXPLOSION_BLOCK_PROC -1
+
+// Defines for investigate to prevent typos and for styling
+#define INVESTIGATE_LABEL "labels"
+
+#define INVESTIGATE_BOMB "bombs"
+
+// The SQL version required by this version of the code
+#define SQL_VERSION 5
+
+// Vending machine stuff
+#define CAT_NORMAL 1
+#define CAT_HIDDEN 2
+#define CAT_COIN   4
+
+// Jobs
+// used for alternate_option
+#define GET_RANDOM_JOB 0
+#define BE_ASSISTANT 1
+#define RETURN_TO_LOBBY 2
+
+//Melting Temperatures for various specific objects
+#define GIRDER_MELTING_TEMP 5000
+
+// Area selection defines
+#define AREASELECT_CORNERA "corner A"
+#define AREASELECT_CORNERB "corner B"
+
+//https://secure.byond.com/docs/ref/info.html#/atom/var/mouse_opacity
+#define MOUSE_OPACITY_TRANSPARENT 0
+#define MOUSE_OPACITY_ICON 1
+#define MOUSE_OPACITY_OPAQUE 2
+
+// Defib stats
+#define DEFIB_TIME_LIMIT 120
+#define DEFIB_TIME_LOSS 60

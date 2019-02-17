@@ -1,6 +1,6 @@
 //TODO: Flash range does nothing currently
 
-/proc/explosion(turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range, adminlog = 1, ignorecap = 0, flame_range = 0 ,silent = 0, smoke = 1)
+/proc/explosion(turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range, adminlog = 1, ignorecap = 0, flame_range = 0 ,silent = 0, smoke = 1, cause = null, breach = TRUE)
 	src = null	//so we don't abort once src is deleted
 	epicenter = get_turf(epicenter)
 
@@ -25,8 +25,8 @@
 		var/list/cached_exp_block = list()
 
 		if(adminlog)
-			message_admins("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range], [flame_range]) in area [epicenter.loc.name] ([epicenter.x],[epicenter.y],[epicenter.z]) (<A HREF='?_src_=holder;adminplayerobservecoodjump=1;X=[epicenter.x];Y=[epicenter.y];Z=[epicenter.z]'>JMP</a>)")
-			log_game("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range], [flame_range]) in area [epicenter.loc.name] ([epicenter.x],[epicenter.y],[epicenter.z])")
+			message_admins("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range], [flame_range]) in area [epicenter.loc.name] [cause ? "(Cause: [cause])" : ] [ADMIN_COORDJMP(epicenter)] ")
+			log_game("Explosion with size ([devastation_range], [heavy_impact_range], [light_impact_range], [flame_range]) in area [epicenter.loc.name] [cause ? "(Cause: [cause])" : ] [COORD(epicenter)] ")
 
 		// Play sounds; we want sounds to be different depending on distance so we will manually do it ourselves.
 		// Stereo users will also hear the direction of the explosion!
@@ -40,7 +40,11 @@
 
 		if(!silent)
 			var/frequency = get_rand_frequency()
-			for(var/mob/M in player_list)
+			var/sound/explosion_sound = sound(get_sfx("explosion"))
+			var/sound/global_boom = sound('sound/effects/explosionfar.ogg')
+
+			for(var/P in GLOB.player_list)
+				var/mob/M = P
 				// Double check for client
 				if(M && M.client)
 					var/turf/M_turf = get_turf(M)
@@ -48,28 +52,18 @@
 						var/dist = get_dist(M_turf, epicenter)
 						// If inside the blast radius + world.view - 2
 						if(dist <= round(max_range + world.view - 2, 1))
-							M.playsound_local(epicenter, get_sfx("explosion"), 100, 1, frequency, falloff = 5) // get_sfx() is so that everyone gets the same sound
+							M.playsound_local(epicenter, null, 100, 1, frequency, falloff = 5, S = explosion_sound)
 						// You hear a far explosion if you're outside the blast radius. Small bombs shouldn't be heard all over the station.
-						else if(dist <= far_dist)
-							var/far_volume = Clamp(far_dist, 30, 50) // Volume is based on explosion size and dist
-							far_volume += (dist <= far_dist * 0.5 ? 50 : 0) // add 50 volume if the mob is pretty close to the explosion
-							M.playsound_local(epicenter, 'sound/effects/explosionfar.ogg', far_volume, 1, frequency, falloff = 5)
-
-			var/close = range(world.view+round(devastation_range,1), epicenter)
-			// to all distanced mobs play a different sound
-			for(var/mob/M in world)
-				if(M.z == epicenter.z && !(M in close))
-					// check if the mob can hear
-					if(M.can_hear() && !istype(M.loc,/turf/space))
-						M << 'sound/effects/explosionfar.ogg'
+						else if(M.can_hear() && !isspaceturf(M.loc))
+							M << global_boom
 
 		if(heavy_impact_range > 1)
 			if(smoke)
-				var/datum/effect/system/explosion/smoke/E = new/datum/effect/system/explosion/smoke()
+				var/datum/effect_system/explosion/smoke/E = new/datum/effect_system/explosion/smoke()
 				E.set_up(epicenter)
 				E.start()
 			else
-				var/datum/effect/system/explosion/E = new/datum/effect/system/explosion()
+				var/datum/effect_system/explosion/E = new/datum/effect_system/explosion()
 				E.set_up(epicenter)
 				E.start()
 
@@ -86,9 +80,9 @@
 				if(T.density && T.explosion_block)
 					cached_exp_block[T] += T.explosion_block
 
-				for(var/obj/machinery/door/D in T)
-					if(D.density && D.explosion_block)
-						cached_exp_block[T] += D.explosion_block
+				for(var/obj/O in T)
+					var/the_block = O.explosion_block
+					cached_exp_block[T] += the_block == EXPLOSION_BLOCK_PROC ? O.GetExplosionBlock() : the_block
 				CHECK_TICK
 
 		for(var/A in affected_turfs)
@@ -138,7 +132,10 @@
 							if(AM && AM.simulated)
 								AM.ex_act(dist)
 							CHECK_TICK
-					T.ex_act(dist)
+					if(breach)
+						T.ex_act(dist)
+					else
+						T.ex_act(3)
 
 			CHECK_TICK
 			//--- THROW ITEMS AROUND ---
@@ -156,7 +153,8 @@
 */
 		var/took = stop_watch(watch)
 		//You need to press the DebugGame verb to see these now....they were getting annoying and we've collected a fair bit of data. Just -test- changes  to explosion code using this please so we can compare
-		if(Debug2)	log_to_dd("## DEBUG: Explosion([x0],[y0],[z0])(d[devastation_range],h[heavy_impact_range],l[light_impact_range]): Took [took] seconds.")
+		if(Debug2)
+			log_world("## DEBUG: Explosion([x0],[y0],[z0])(d[devastation_range],h[heavy_impact_range],l[light_impact_range]): Took [took] seconds.")
 
 		//Machines which report explosions.
 		for(var/i,i<=doppler_arrays.len,i++)
@@ -218,12 +216,12 @@
 			var/turf/TT = T
 			while(TT != epicenter)
 				TT = get_step_towards(TT,epicenter)
-				if(TT.density && TT.explosion_block)
+				if(TT.density)
 					dist += TT.explosion_block
 
-				for(var/obj/machinery/door/D in TT)
-					if(D.density && D.explosion_block)
-						dist += D.explosion_block
+				for(var/obj/O in T)
+					var/the_block = O.explosion_block
+					dist += the_block == EXPLOSION_BLOCK_PROC ? O.GetExplosionBlock() : the_block
 
 		if(dist < dev)
 			T.color = "red"

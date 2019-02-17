@@ -128,10 +128,12 @@
 /datum/dna/gene/disability/colourblindness/activate(var/mob/M, var/connected, var/flags)
 	..()
 	M.update_client_colour() //Handle the activation of the colourblindness on the mob.
+	M.update_icons() //Apply eyeshine as needed.
 
 /datum/dna/gene/disability/colourblindness/deactivate(var/mob/M, var/connected, var/flags)
 	..()
 	M.update_client_colour() //Handle the deactivation of the colourblindness on the mob.
+	M.update_icons() //Remove eyeshine as needed.
 
 /datum/dna/gene/disability/deaf
 	name="Deafness"
@@ -145,7 +147,7 @@
 
 /datum/dna/gene/disability/deaf/activate(var/mob/M, var/connected, var/flags)
 	..()
-	M.EarDeaf(1)
+	M.MinimumDeafTicks(1)
 
 /datum/dna/gene/disability/nearsighted
 	name="Nearsightedness"
@@ -156,6 +158,14 @@
 
 /datum/dna/gene/disability/nearsighted/New()
 	block=GLASSESBLOCK
+
+/datum/dna/gene/disability/nearsighted/activate(mob/living/M, connected, flags)
+	. = ..()
+	M.update_nearsighted_effects()
+
+/datum/dna/gene/disability/nearsighted/deactivate(mob/living/M, connected, flags)
+	. = ..()
+	M.update_nearsighted_effects()
 
 /datum/dna/gene/disability/lisp
 	name = "Lisp"
@@ -180,3 +190,27 @@
 
 /datum/dna/gene/disability/comic/New()
 	block = COMICBLOCK
+
+/datum/dna/gene/disability/wingdings
+	name = "Alien Voice"
+	desc = "Garbles the subject's voice into an incomprehensible speech."
+	activation_message = "<span class='wingdings'>Your vocal cords feel alien.</span>"
+	deactivation_message = "Your vocal cords no longer feel alien."
+	instability = -GENE_INSTABILITY_MINOR
+	mutation = WINGDINGS
+
+/datum/dna/gene/disability/wingdings/New()
+	block = WINGDINGSBLOCK
+
+/datum/dna/gene/disability/wingdings/OnSay(var/mob/M, var/message)
+	var/list/chars = string2charlist(message)
+	var/garbled_message = ""
+	for(var/C in chars)
+		if(C in GLOB.alphabet_uppercase)
+			garbled_message += pick(GLOB.alphabet_uppercase)
+		else if(C in GLOB.alphabet)
+			garbled_message += pick(GLOB.alphabet)
+		else
+			garbled_message += C
+	message = garbled_message
+	return message

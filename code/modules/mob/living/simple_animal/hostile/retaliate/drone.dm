@@ -15,14 +15,14 @@
 	response_harm = "hits the"
 	speak = list("ALERT.","Hostile-ile-ile entities dee-twhoooo-wected.","Threat parameterszzzz- szzet.","Bring sub-sub-sub-systems uuuup to combat alert alpha-a-a.")
 	emote_see = list("beeps menacingly","whirrs threateningly","scans its immediate vicinity")
-	a_intent = I_HARM
+	a_intent = INTENT_HARM
 	stop_automated_movement_when_pulled = 0
 	health = 300
 	maxHealth = 300
 	speed = 8
 	projectiletype = /obj/item/projectile/beam/drone
 	projectilesound = 'sound/weapons/laser3.ogg'
-	var/datum/effect/system/ion_trail_follow/ion_trail
+	var/datum/effect_system/trail_follow/ion/ion_trail
 
 	//the drone randomly switches between these states because it's malfunctioning
 	var/hostile_drone = 0
@@ -62,7 +62,7 @@
 		return ..()
 
 //self repair systems have a chance to bring the drone back to life
-/mob/living/simple_animal/hostile/retaliate/malf_drone/Life()
+/mob/living/simple_animal/hostile/retaliate/malf_drone/Life(seconds, times_fired)
 
 	//emps and lots of damage can temporarily shut us down
 	if(disabled > 0)
@@ -80,16 +80,12 @@
 	//repair a bit of damage
 	if(prob(1))
 		src.visible_message("<span class='warning'>[bicon(src)] [src] shudders and shakes as some of it's damaged systems come back online.</span>")
-		var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-		s.set_up(3, 1, src)
-		s.start()
+		do_sparks(3, 1, src)
 		health += rand(25,100)
 
 	//spark for no reason
 	if(prob(5))
-		var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-		s.set_up(3, 1, src)
-		s.start()
+		do_sparks(3, 1, src)
 
 	//sometimes our targetting sensors malfunction, and we attack anyone nearby
 	if(prob(disabled ? 0 : 1))
@@ -129,9 +125,7 @@
 			src.visible_message("<span class='warning'>[bicon(src)] [src] begins to spark and shake violenty!</span>")
 		else
 			src.visible_message("<span class='warning'>[bicon(src)] [src] sparks and shakes like it's about to explode!</span>")
-		var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-		s.set_up(3, 1, src)
-		s.start()
+		do_sparks(3, 1, src)
 
 	if(!exploding && !disabled && prob(explode_chance))
 		exploding = 1
@@ -154,22 +148,20 @@
 /mob/living/simple_animal/hostile/retaliate/malf_drone/Destroy() //Seriously, what the actual hell.
 	//some random debris left behind
 	if(has_loot)
-		var/datum/effect/system/spark_spread/s = new /datum/effect/system/spark_spread
-		s.set_up(3, 1, src)
-		s.start()
+		do_sparks(3, 1, src)
 		var/obj/O
 
 		//shards
-		O = new /obj/item/weapon/shard(loc)
+		O = new /obj/item/shard(loc)
 		step_to(O, get_turf(pick(view(7, src))))
 		if(prob(75))
-			O = new /obj/item/weapon/shard(loc)
+			O = new /obj/item/shard(loc)
 			step_to(O, get_turf(pick(view(7, src))))
 		if(prob(50))
-			O = new /obj/item/weapon/shard(loc)
+			O = new /obj/item/shard(loc)
 			step_to(O, get_turf(pick(view(7, src))))
 		if(prob(25))
-			O = new /obj/item/weapon/shard(loc)
+			O = new /obj/item/shard(loc)
 			step_to(O, get_turf(pick(view(7, src))))
 
 		//rods
@@ -199,7 +191,7 @@
 			step_to(O, get_turf(pick(view(7, src))))
 
 		//also drop dummy circuit boards deconstructable for research (loot)
-		var/obj/item/weapon/circuitboard/C
+		var/obj/item/circuitboard/C
 
 		//spawn 1-4 boards of a random type
 		var/spawnees = 0
@@ -258,7 +250,7 @@
 		if(spawnees & 512)
 			C = new(src.loc)
 			C.name = "Corrupted drone morality core"
-			C.origin_tech = "illegal=[rand(3,6)]"
+			C.origin_tech = "syndicate=[rand(3,6)]"
 
 	return ..()
 

@@ -22,6 +22,13 @@ Filter types:
 	var/frequency = 0
 	var/datum/radio_frequency/radio_connection
 
+
+/obj/machinery/atmospherics/trinary/filter/Destroy()
+	if(radio_controller)
+		radio_controller.remove_object(src, frequency)
+	radio_connection = null
+	return ..()
+
 /obj/machinery/atmospherics/trinary/filter/flipped
 	icon_state = "mmap"
 	flipped = 1
@@ -68,8 +75,9 @@ Filter types:
 	if(old_stat != stat)
 		update_icon()
 
-/obj/machinery/atmospherics/trinary/filter/process()
-	if(!..() || !on)
+/obj/machinery/atmospherics/trinary/filter/process_atmos()
+	..()
+	if(!on)
 		return 0
 
 	var/output_starting_pressure = air3.return_pressure()
@@ -141,7 +149,7 @@ Filter types:
 
 	return 1
 
-/obj/machinery/atmospherics/trinary/filter/initialize()
+/obj/machinery/atmospherics/trinary/filter/atmos_init()
 	set_frequency(frequency)
 	..()
 
@@ -161,7 +169,7 @@ Filter types:
 
 /obj/machinery/atmospherics/trinary/filter/ui_interact(mob/user, ui_key = "main", datum/nanoui/ui = null, force_open = 1, var/master_ui = null, var/datum/topic_state/state = default_state)
 	user.set_machine(src)
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, force_open)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "atmos_filter.tmpl", name, 475, 155, state = state)
 		ui.open()
@@ -203,4 +211,4 @@ Filter types:
 		. = TRUE
 
 	update_icon()
-	nanomanager.update_uis(src)
+	SSnanoui.update_uis(src)

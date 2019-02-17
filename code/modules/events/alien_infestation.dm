@@ -1,12 +1,10 @@
 /datum/event/alien_infestation
 	announceWhen	= 400
-	var/spawncount = 1
+	var/spawncount = 2
 	var/successSpawn = 0	//So we don't make a command report if nothing gets spawned.
 
 /datum/event/alien_infestation/setup()
 	announceWhen = rand(announceWhen, announceWhen + 50)
-	if(prob(50))
-		spawncount++
 
 /datum/event/alien_infestation/announce()
 	if(successSpawn)
@@ -26,7 +24,7 @@
 			var/obj/vent = pick_n_take(vents)
 			var/mob/C = pick_n_take(candidates)
 			if(C)
-				respawnable_list -= C.client
+				GLOB.respawnable_list -= C.client
 				var/mob/living/carbon/alien/larva/new_xeno = new(vent.loc)
 				new_xeno.key = C.key
 				if(ticker && ticker.mode)

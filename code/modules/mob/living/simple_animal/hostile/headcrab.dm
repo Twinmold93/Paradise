@@ -16,11 +16,17 @@
 	faction = list("creature")
 	robust_searching = 1
 	stat_attack = 2
+	obj_damage = 0
 	environment_smash = 0
 	speak_emote = list("squeaks")
 	ventcrawler = 2
 	var/datum/mind/origin
 	var/egg_lain = 0
+
+/mob/living/simple_animal/hostile/headcrab/examine(mob/user)
+	..()
+	if(stat == DEAD)
+		to_chat(desc = "It appears to be dead.")
 
 /mob/living/simple_animal/hostile/headcrab/proc/Infect(mob/living/carbon/victim)
 	var/obj/item/organ/internal/body_egg/changeling_egg/egg = new(victim)

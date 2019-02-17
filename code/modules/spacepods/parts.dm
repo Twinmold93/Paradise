@@ -6,7 +6,7 @@
 	name="Space Pod Core"
 	icon_state = "core"
 	flags = CONDUCT
-	origin_tech = "programming=2;materials=3;bluespace=2;engineering=3"
+	origin_tech = "programming=2;materials=2;biotech=2;engineering=2"
 
 /obj/item/pod_parts/pod_frame
 	name = "Space Pod Frame"
@@ -72,7 +72,7 @@
 				pod.loc = F.loc
 			qdel(F)
 		playsound(get_turf(src), O.usesound, 50, 1)
-	if(istype(O, /obj/item/weapon/wrench))
+	if(istype(O, /obj/item/wrench))
 		to_chat(user, "<span class='notice'>You [!anchored ? "secure \the [src] in place."  : "remove the securing bolts."]</span>")
 		anchored = !anchored
 		density = anchored

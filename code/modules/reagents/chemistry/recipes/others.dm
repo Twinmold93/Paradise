@@ -19,7 +19,7 @@
 	var/location = get_turf(holder.my_atom)
 	holder.my_atom.visible_message("<span class='warning'>The solution spews out foam!</span>")
 
-	var/datum/effect/system/foam_spread/s = new()
+	var/datum/effect_system/foam_spread/s = new()
 	s.set_up(created_volume, location, holder, 0)
 	s.start()
 	holder.clear_reagents()
@@ -37,7 +37,7 @@
 
 	holder.my_atom.visible_message("<span class='warning'>The solution spews out a metalic foam!</span>")
 
-	var/datum/effect/system/foam_spread/s = new()
+	var/datum/effect_system/foam_spread/s = new()
 	s.set_up(created_volume, location, holder, MFOAM_ALUMINUM)
 	s.start()
 
@@ -52,9 +52,9 @@
 /datum/chemical_reaction/ironfoam/on_reaction(datum/reagents/holder, created_volume)
 	var/location = get_turf(holder.my_atom)
 
-	holder.my_atom.visible_message("<span class='warning>The solution spews out a metalic foam!</span>")
+	holder.my_atom.visible_message("<span class='warning'>The solution spews out a metalic foam!</span>")
 
-	var/datum/effect/system/foam_spread/s = new()
+	var/datum/effect_system/foam_spread/s = new()
 	s.set_up(created_volume, location, holder, MFOAM_IRON)
 	s.start()
 
@@ -93,17 +93,18 @@
 	result_amount = 2
 	mix_message = "The mixture gives off a sharp acidic tang."
 
-/datum/chemical_reaction/plastication
-	name = "Plastic"
-	id = "solidplastic"
+/datum/chemical_reaction/plastic_polymers
+	name = "plastic polymers"
+	id = "plastic_polymers"
 	result = null
-	required_reagents = list("facid" = 10, "plasticide" = 20)
+	required_reagents = list("oil" = 5, "sacid" = 2, "ash" = 3)
+	min_temp = 374
 	result_amount = 1
 
-/datum/chemical_reaction/plastication/on_reaction(datum/reagents/holder)
-	var/obj/item/stack/sheet/metal/M = new /obj/item/stack/sheet/plastic
-	M.amount = 10
-	M.forceMove(get_turf(holder.my_atom))
+/datum/chemical_reaction/plastic_polymers/on_reaction(datum/reagents/holder, created_volume)
+	var/obj/item/stack/sheet/plastic/P = new /obj/item/stack/sheet/plastic
+	P.amount = 10
+	P.forceMove(get_turf(holder.my_atom))
 
 /datum/chemical_reaction/lube
 	name = "Space Lube"
@@ -238,14 +239,6 @@
 	result_amount = 3
 	mix_message = "The liquid becomes amazingly furry and smells peculiar."
 
-/datum/chemical_reaction/fartonium
-	name = "Fartonium"
-	id = "fartonium"
-	result = "fartonium"
-	required_reagents = list("fake_cheese" = 1, "beans" = 1, "????" = 1, "egg" = 1)
-	result_amount = 2
-	mix_message = "The substance makes a little 'toot' noise and starts to smell pretty bad."
-
 /datum/chemical_reaction/soapification
 	name = "Soapification"
 	id = "soapification"
@@ -257,7 +250,7 @@
 
 /datum/chemical_reaction/soapification/on_reaction(datum/reagents/holder, created_volume)
 	var/location = get_turf(holder.my_atom)
-	new /obj/item/weapon/soap/homemade(location)
+	new /obj/item/soap/homemade(location)
 
 /datum/chemical_reaction/candlefication
 	name = "Candlefication"
@@ -280,7 +273,7 @@
 
 /datum/chemical_reaction/meatification/on_reaction(datum/reagents/holder, created_volume)
 	var/location = get_turf(holder.my_atom)
-	new /obj/item/weapon/reagent_containers/food/snacks/meat/slab/meatproduct(location)
+	new /obj/item/reagent_containers/food/snacks/meat/slab/meatproduct(location)
 
 /datum/chemical_reaction/lye
 	name = "lye"
@@ -296,6 +289,18 @@
 	required_reagents = list("hugs" = 1, "chocolate" = 1)
 	result_amount = 2
 	mix_message = "The substance gives off a lovely scent!"
+
+/datum/chemical_reaction/jestosterone
+	name = "Jestosterone"
+	id = "jestosterone"
+	result = "jestosterone"
+	required_reagents = list("blood" = 1, "sodiumchloride" = 1, "banana" = 1, "lube" = 1, "space_drugs" = 1) //Or one freshly-squeezed clown
+	min_temp = 374
+	result_amount = 5
+	mix_message = "The substance quickly shifts colour, cycling from red, to yellow, to green, to blue, and finally settles at a vibrant fuchsia."
+
+/datum/chemical_reaction/jestosterone/on_reaction(datum/reagents/holder, created_volume)
+	playsound(get_turf(holder.my_atom), 'sound/items/bikehorn.ogg', 50, 1)
 
 /datum/chemical_reaction/royal_bee_jelly
 	name = "royal bee jelly"

@@ -19,11 +19,11 @@
 			return kill()
 		var/mob/living/simple_animal/hostile/morph/S = new /mob/living/simple_animal/hostile/morph(pick(xeno_spawn))
 		player_mind.transfer_to(S)
-		player_mind.assigned_role = "Morph"
+		player_mind.assigned_role = SPECIAL_ROLE_MORPH
 		player_mind.special_role = SPECIAL_ROLE_MORPH
 		ticker.mode.traitors |= player_mind
 		to_chat(S, S.playstyle_string)
-		S << 'sound/magic/Mutate.ogg'
+		S << 'sound/magic/mutate.ogg'
 		message_admins("[key_of_morph] has been made into morph by an event.")
 		log_game("[key_of_morph] was spawned as a morph by an event.")
 		return 1

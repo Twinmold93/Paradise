@@ -8,12 +8,14 @@
 	deflect_chance = 60
 	internal_damage_threshold = 60
 	damage_absorption = list("brute"=1.2,"fire"=1.5,"bullet"=1,"laser"=1,"energy"=1,"bomb"=1)
+	armor = list(melee = -20, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
 	max_temperature = 25000
 	infra_luminosity = 5
 	operation_req_access = list(access_clown)
 	wreckage = /obj/effect/decal/mecha_wreckage/honker
 	add_req_access = 0
 	max_equip = 3
+	starting_voice = /obj/item/mecha_modkit/voice/honk
 	var/squeak = 0
 
 /obj/mecha/combat/honker/loaded/New()
@@ -143,12 +145,3 @@ obj/mecha/combat/honker/Topic(href, href_list)
 			if("sadtrombone")
 				playsound(src, 'sound/misc/sadtrombone.ogg', 50)
 	return
-
-proc/rand_hex_color()
-	var/list/colors = list("0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f")
-	var/color=""
-	for(var/i=0;i<6;i++)
-		color = color+pick(colors)
-	return color
-
-

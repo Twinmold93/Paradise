@@ -3,7 +3,7 @@
  */
 
 
-/mob/living/silicon/ai/handle_track(var/message, var/verb = "says", var/datum/language/language, var/mob/speaker = null, var/speaker_name, var/atom/follow_target, var/hard_to_hear)
+/mob/living/silicon/ai/handle_track(var/message, var/verb = "says", var/mob/speaker = null, var/speaker_name, var/atom/follow_target, var/hard_to_hear)
 	if(hard_to_hear)
 		return
 
@@ -14,7 +14,7 @@
 	if(ishuman(speaker))
 		var/mob/living/carbon/human/H = speaker
 
-		var/obj/item/weapon/card/id/id = H.wear_id
+		var/obj/item/card/id/id = H.wear_id
 		if((istype(id) && id.is_untrackable()) && H.HasVoiceChanger())
 			changed_voice = 1
 			var/mob/living/carbon/human/I = locate(speaker_name)
@@ -55,7 +55,7 @@
 
 	if(mob_to_track)
 		track = "<a href='byond://?src=[UID()];track=\ref[mob_to_track]'>[speaker_name] ([jobname])</a>"
-		track += "<a href='byond://?src=[UID()];open=\ref[mob_to_track]'>\[OPEN\]</a>"
+		track += "<a href='byond://?src=[UID()];open=\ref[mob_to_track]'>\[O\]</a>"
 
 	return track
 
@@ -66,7 +66,6 @@
  */
 
 var/announcing_vox = 0 // Stores the time of the last announcement
-var/const/VOX_CHANNEL = 200
 var/const/VOX_DELAY = 100
 var/const/VOX_PATH = "sound/vox_fem/"
 
@@ -136,17 +135,20 @@ var/const/VOX_PATH = "sound/vox_fem/"
 		play_vox_word(word, src.z, null)
 
 
-/proc/play_vox_word(var/word, var/z_level, var/mob/only_listener)
+/proc/play_vox_word(word, z_level, mob/only_listener)
+
 	word = lowertext(word)
+
 	if(vox_sounds[word])
+
 		var/sound_file = vox_sounds[word]
-		var/sound/voice = sound(sound_file, wait = 1, channel = VOX_CHANNEL)
+		var/sound/voice = sound(sound_file, wait = 1, channel = CHANNEL_VOX)
 		voice.status = SOUND_STREAM
 
 		// If there is no single listener, broadcast to everyone in the same z level
 		if(!only_listener)
 			// Play voice for all mobs in the z level
-			for(var/mob/M in player_list)
+			for(var/mob/M in GLOB.player_list)
 				if(M.client)
 					var/turf/T = get_turf(M)
 					if(T && T.z == z_level && M.can_hear())

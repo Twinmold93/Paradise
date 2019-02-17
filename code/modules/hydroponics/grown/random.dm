@@ -6,7 +6,7 @@
 	icon_state = "seed-x"
 	species = "?????"
 	plantname = "strange plant"
-	product = /obj/item/weapon/reagent_containers/food/snacks/grown/random
+	product = /obj/item/reagent_containers/food/snacks/grown/random
 	icon_grow = "xpod-grow"
 	icon_dead = "xpod-dead"
 	icon_harvest = "xpod-harvest"
@@ -21,9 +21,25 @@
 		add_random_traits()
 	add_random_plant_type(35)
 
-/obj/item/weapon/reagent_containers/food/snacks/grown/random
+/obj/item/seeds/random/labelled
+	name = "pack of exotic strange seeds"
+
+/obj/item/seeds/random/labelled/New()
+	. = ..()
+	add_random_traits(1, 2)
+	add_random_plant_type(100)
+	desc = "Label: \n" + get_analyzer_text()
+
+/obj/item/reagent_containers/food/snacks/grown/random
 	seed = /obj/item/seeds/random
 	name = "strange plant"
 	desc = "What could this even be?"
 	icon_state = "crunchy"
 	bitesize_mod = 2
+
+/obj/item/reagent_containers/food/snacks/grown/random/Initialize()
+	. = ..()
+	wine_power = rand(0.1,1.5)
+	if(prob(1))
+		wine_power = 2.0
+

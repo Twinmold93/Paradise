@@ -9,7 +9,7 @@
 	density = 0
 	anchored = 1
 	luminosity = 3
-	var/obj/item/device/assembly/signaler/anomaly/aSignal = null
+	var/obj/item/assembly/signaler/anomaly/aSignal = null
 
 /obj/effect/anomaly/New()
 	set_light(initial(luminosity))
@@ -18,11 +18,11 @@
 
 	var/new_frequency = sanitize_frequency(rand(PUBLIC_LOW_FREQ, PUBLIC_HIGH_FREQ))
 	aSignal.set_frequency(new_frequency)
-	poi_list |= src
+	GLOB.poi_list |= src
 
 /obj/effect/anomaly/Destroy()
 	QDEL_NULL(aSignal)
-	poi_list.Remove(src)
+	GLOB.poi_list.Remove(src)
 	return ..()
 
 /obj/effect/anomaly/proc/anomalyEffect()
@@ -31,16 +31,19 @@
 
 
 /obj/effect/anomaly/proc/anomalyNeutralize()
-	new /obj/effect/effect/bad_smoke(loc)
+	var/turf/T = get_turf(src)
 
-	for(var/atom/movable/O in src)
-		O.loc = src.loc
+	new /obj/effect/particle_effect/smoke/bad(T)
+
+	if(aSignal)
+		aSignal.forceMove(T)
+		aSignal = null
 
 	qdel(src)
 
 
 /obj/effect/anomaly/attackby(obj/item/I, mob/user, params)
-	if(istype(I, /obj/item/device/analyzer))
+	if(istype(I, /obj/item/analyzer))
 		to_chat(user, "<span class='notice'>Analyzing... [src]'s unstable field is fluctuating along frequency [aSignal.code]:[format_frequency(aSignal.frequency)].</span>")
 
 ///////////////////////
@@ -53,7 +56,7 @@
 
 /obj/effect/anomaly/grav/New()
 	..()
-	aSignal.origin_tech = "magnets=5;powerstorage=4"
+	aSignal.origin_tech = "magnets=7"
 
 /obj/effect/anomaly/grav/anomalyEffect()
 	..()
@@ -89,7 +92,7 @@
 
 /obj/effect/anomaly/flux/New()
 	..()
-	aSignal.origin_tech = "powerstorage=6;programming=4;plasmatech=4"
+	aSignal.origin_tech = "powerstorage=7"
 
 /////////////////////
 
@@ -101,7 +104,7 @@
 
 /obj/effect/anomaly/bluespace/New()
 	..()
-	aSignal.origin_tech = "bluespace=5;magnets=5;powerstorage=3"
+	aSignal.origin_tech = "bluespace=7"
 
 /obj/effect/anomaly/bluespace/Bumped(atom/A)
 	if(isliving(A))
@@ -116,7 +119,7 @@
 
 /obj/effect/anomaly/pyro/New()
 	..()
-	aSignal.origin_tech = "plasmatech=5;powerstorage=4;biotech=6"
+	aSignal.origin_tech = "plasmatech=7"
 
 /obj/effect/anomaly/pyro/anomalyEffect()
 	..()
@@ -133,7 +136,7 @@
 
 /obj/effect/anomaly/bhole/New()
 	..()
-	aSignal.origin_tech = "materials=5;combat=4;engineering=4"
+	aSignal.origin_tech = "engineering=7"
 
 /obj/effect/anomaly/bhole/anomalyEffect()
 	..()

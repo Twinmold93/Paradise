@@ -7,11 +7,11 @@
 	activation_messages=list("You feel no need to breathe.")
 	deactivation_messages=list("You feel the need to breathe, once more.")
 	instability = GENE_INSTABILITY_MODERATE
-	mutation=NO_BREATH
+	mutation = BREATHLESS
 	activation_prob=25
 
 /datum/dna/gene/basic/nobreath/New()
-	block=NOBREATHBLOCK
+	block = BREATHLESSBLOCK
 
 
 /datum/dna/gene/basic/regenerate
@@ -39,7 +39,7 @@
 		return 0
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(H.species && H.species.slowdown && !(flags & MUTCHK_FORCED))
+		if(H.dna.species && H.dna.species.slowdown && !(flags & MUTCHK_FORCED))
 			return 0
 	return 1
 
@@ -48,7 +48,7 @@
 	activation_messages=list("Your skin is icy to the touch.")
 	deactivation_messages=list("Your skin no longer feels icy to the touch.")
 	instability = GENE_INSTABILITY_MODERATE
-	mutation=RESIST_HEAT
+	mutation = HEATRES
 
 /datum/dna/gene/basic/heat_resist/New()
 	block=COLDBLOCK
@@ -61,7 +61,7 @@
 	activation_messages=list("Your body is filled with warmth.")
 	deactivation_messages=list("Your body is no longer filled with warmth.")
 	instability = GENE_INSTABILITY_MODERATE
-	mutation=RESIST_COLD
+	mutation = COLDRES
 
 /datum/dna/gene/basic/cold_resist/New()
 	block=FIREBLOCK
@@ -103,11 +103,13 @@
 	..(M,connected,flags)
 	M.pass_flags |= PASSTABLE
 	M.resize = 0.8
+	M.update_transform()
 
 /datum/dna/gene/basic/midget/deactivate(var/mob/M, var/connected, var/flags)
 	..()
 	M.pass_flags &= ~PASSTABLE
 	M.resize = 1.25
+	M.update_transform()
 
 // OLD HULK BEHAVIOR
 /datum/dna/gene/basic/hulk
@@ -164,10 +166,12 @@
 /datum/dna/gene/basic/xray/activate(mob/living/M, connected, flags)
 	..()
 	M.update_sight()
+	M.update_icons() //Apply eyeshine as needed.
 
 /datum/dna/gene/basic/xray/deactivate(mob/living/M, connected, flags)
 	..()
 	M.update_sight()
+	M.update_icons() //Remove eyeshine as needed.
 
 /datum/dna/gene/basic/tk
 	name="Telekenesis"

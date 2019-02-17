@@ -42,7 +42,7 @@
 	feedback_add_details("admin_verb","JT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	return
 
-/client/proc/jumptomob(var/mob/M in mob_list)
+/client/proc/jumptomob(var/mob/M in GLOB.mob_list)
 	set category = "Admin"
 	set name = "Jump to Mob"
 
@@ -71,6 +71,9 @@
 	var/turf/T = locate(tx, ty, tz)
 	if(T)
 		admin_forcemove(usr, T)
+		if(isobserver(usr))
+			var/mob/dead/observer/O = usr
+			O.ManualFollow(T)
 		feedback_add_details("admin_verb","JC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	if(!isobserver(usr))
 		message_admins("[key_name_admin(usr)] jumped to coordinates [tx], [ty], [tz]")
@@ -83,7 +86,7 @@
 		return
 
 	var/list/keys = list()
-	for(var/mob/M in player_list)
+	for(var/mob/M in GLOB.player_list)
 		keys += M.client
 	var/selection = input("Please, select a player!", "Admin Jumping", null, null) as null|anything in sortKey(keys)
 	if(!selection)
@@ -98,7 +101,7 @@
 
 	feedback_add_details("admin_verb","JK") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/client/proc/Getmob(var/mob/M in mob_list)
+/client/proc/Getmob(var/mob/M in GLOB.mob_list)
 	set category = "Admin"
 	set name = "Get Mob"
 	set desc = "Mob to teleport"
@@ -120,7 +123,7 @@
 		return
 
 	var/list/keys = list()
-	for(var/mob/M in player_list)
+	for(var/mob/M in GLOB.player_list)
 		keys += M.client
 	var/selection = input("Please, select a player!", "Admin Jumping", null, null) as null|anything in sortKey(keys)
 	if(!selection)
@@ -136,7 +139,7 @@
 		admin_forcemove(usr, M.loc)
 		feedback_add_details("admin_verb","GK") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/client/proc/sendmob(var/mob/M in mob_list)
+/client/proc/sendmob(var/mob/M in GLOB.mob_list)
 	set category = "Admin"
 	set name = "Send Mob"
 

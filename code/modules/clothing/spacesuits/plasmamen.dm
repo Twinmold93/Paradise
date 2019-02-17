@@ -3,7 +3,7 @@
 /obj/item/clothing/suit/space/eva/plasmaman
 	name = "plasmaman suit"
 	desc = "A special containment suit designed to protect a plasmaman's volatile body from outside exposure and quickly extinguish it in emergencies."
-	allowed = list(/obj/item/weapon/gun,/obj/item/ammo_casing,/obj/item/ammo_casing,/obj/item/weapon/melee/baton,/obj/item/weapon/melee/energy/sword/saber,/obj/item/weapon/restraints/handcuffs,/obj/item/weapon/tank)
+	allowed = list(/obj/item/gun,/obj/item/ammo_casing,/obj/item/ammo_casing,/obj/item/melee/baton,/obj/item/melee/energy/sword/saber,/obj/item/restraints/handcuffs,/obj/item/tank)
 	slowdown = 0
 	armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 100, rad = 20)
 	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS
@@ -40,7 +40,7 @@
 
 /obj/item/clothing/suit/space/eva/plasmaman/attackby(var/obj/item/A as obj, mob/user as mob, params)
 	..()
-	if(istype(A, /obj/item/weapon/plasmensuit_cartridge)) //This suit can only be reloaded by the appropriate cartridges, and only if it's got no more extinguishes left.
+	if(istype(A, /obj/item/plasmensuit_cartridge)) //This suit can only be reloaded by the appropriate cartridges, and only if it's got no more extinguishes left.
 		if(!extinguishes_left)
 			extinguishes_left = max_extinguishes //Full replenishment from the cartridge.
 			to_chat(user, "<span class='notice'>You replenish \the [src] with the cartridge.</span>")
@@ -52,7 +52,7 @@
 	..(user)
 	to_chat(user, "<span class='info'>There are [extinguishes_left] extinguisher canisters left in this suit.</span>")
 
-/obj/item/weapon/plasmensuit_cartridge //Can be used to refill Plasmaman suits when they run out of autoextinguishes.
+/obj/item/plasmensuit_cartridge //Can be used to refill Plasmaman suits when they run out of autoextinguishes.
 	name = "auto-extinguisher cartridge"
 	desc = "A tiny and light fibreglass-framed auto-extinguisher cartridge."
 	icon = 'icons/obj/items.dmi'
@@ -62,7 +62,7 @@
 	flags = null //non-conductive
 	force = 0
 	throwforce = 0
-	w_class = 2 //Fits in boxes.
+	w_class = WEIGHT_CLASS_SMALL //Fits in boxes.
 	materials = list()
 	attack_verb = list("tapped")
 
@@ -102,6 +102,11 @@
 		var/datum/action/A = X
 		A.UpdateButtonIcon()
 
+/obj/item/clothing/head/helmet/space/eva/plasmaman/extinguish_light()
+	if(on)
+		toggle_light()
+		visible_message("<span class='danger'>[src]'s light fades and turns off.</span>")
+
 // ENGINEERING
 /obj/item/clothing/suit/space/eva/plasmaman/atmostech
 	name = "plasmaman atmospheric suit"
@@ -115,6 +120,7 @@
 	base_state = "plasmamanAtmos_helmet"
 	armor = list(melee = 10, bullet = 5, laser = 10, energy = 5, bomb = 10, bio = 100, rad = 0)
 	max_heat_protection_temperature = FIRE_IMMUNITY_HELM_MAX_TEMP_PROTECT
+	flash_protect = 2
 
 /obj/item/clothing/suit/space/eva/plasmaman/engineer
 	name = "plasmaman engineer suit"
@@ -126,6 +132,7 @@
 	icon_state = "plasmamanEngineer_helmet0"
 	base_state = "plasmamanEngineer_helmet"
 	armor = list(melee = 10, bullet = 5, laser = 10, energy = 5, bomb = 10, bio = 100, rad = 75)
+	flash_protect = 2
 
 /obj/item/clothing/suit/space/eva/plasmaman/engineer/ce
 	name = "plasmaman chief engineer suit"
@@ -138,7 +145,7 @@
 	icon_state = "plasmaman_CE_helmet0"
 	base_state = "plasmaman_CE_helmet"
 	max_heat_protection_temperature = FIRE_IMMUNITY_HELM_MAX_TEMP_PROTECT
-
+	flash_protect = 2
 
 //SERVICE
 /obj/item/clothing/suit/space/eva/plasmaman/assistant
@@ -267,6 +274,24 @@
 	icon_state = "plasmaman_CMO_helmet0"
 	base_state = "plasmaman_CMO_helmet"
 
+/obj/item/clothing/suit/space/eva/plasmaman/medical/coroner
+	name = "plasmaman coroner suit"
+	icon_state = "plasmaman_Coroner"
+
+/obj/item/clothing/head/helmet/space/eva/plasmaman/medical/coroner
+	name = "plasmaman coroner helmet"
+	icon_state = "plasmaman_Coroner_helmet0"
+	base_state = "plasmaman_Coroner_helmet"
+
+/obj/item/clothing/suit/space/eva/plasmaman/medical/virologist
+	name = "plasmaman virologist suit"
+	icon_state = "plasmaman_Virologist"
+
+/obj/item/clothing/head/helmet/space/eva/plasmaman/medical/virologist
+	name = "plasmaman virologist helmet"
+	icon_state = "plasmaman_Virologist_helmet0"
+	base_state = "plasmaman_Virologist_helmet"
+
 /obj/item/clothing/suit/space/eva/plasmaman/science
 	name = "plasmaman scientist suit"
 	icon_state = "plasmamanScience_suit"
@@ -275,6 +300,15 @@
 	name = "plasmaman scientist helmet"
 	icon_state = "plasmamanScience_helmet0"
 	base_state = "plasmamanScience_helmet"
+
+/obj/item/clothing/suit/space/eva/plasmaman/science/geneticist
+	name = "plasmaman geneticist suit"
+	icon_state = "plasmaman_Geneticist"
+
+/obj/item/clothing/head/helmet/space/eva/plasmaman/science/geneticist
+	name = "plasmaman geneticist helmet"
+	icon_state = "plasmaman_Geneticist_helmet0"
+	base_state = "plasmaman_Geneticist_helmet"
 
 /obj/item/clothing/suit/space/eva/plasmaman/science/rd
 	name = "plasmaman research director suit"
@@ -362,10 +396,22 @@
 	name = "blood red plasmaman suit"
 	icon_state = "plasmaman_Nukeops"
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 35, bio = 100, rad = 50)
-	allowed = list(/obj/item/device/flashlight,/obj/item/weapon/tank,/obj/item/weapon/gun,/obj/item/ammo_casing,/obj/item/ammo_casing,/obj/item/weapon/melee/baton,/obj/item/weapon/melee/energy/sword/saber,/obj/item/weapon/restraints/handcuffs)
+	allowed = list(/obj/item/flashlight,/obj/item/tank,/obj/item/gun,/obj/item/ammo_casing,/obj/item/ammo_casing,/obj/item/melee/baton,/obj/item/melee/energy/sword/saber,/obj/item/restraints/handcuffs)
 
 /obj/item/clothing/head/helmet/space/eva/plasmaman/nuclear
 	name = "blood red plasmaman helmet"
 	icon_state = "plasmaman_Nukeops_helmet0"
 	base_state = "plasmaman_Nukeops_helmet"
 	armor = list(melee = 60, bullet = 50, laser = 30, energy = 15, bomb = 35, bio = 100, rad = 50)
+
+//WIZARD
+/obj/item/clothing/suit/space/eva/plasmaman/wizard
+	name = "robed plasmaman suit"
+	icon_state = "plasmamanWizardBlue_suit"
+	magical = TRUE
+
+/obj/item/clothing/head/helmet/space/eva/plasmaman/wizard
+	name = "wizard hat"
+	icon_state = "plasmamanWizardBlue_helmet0"
+	base_state = "plasmamanWizardBlue_helmet"
+	magical = TRUE

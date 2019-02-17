@@ -44,7 +44,7 @@
 		return 0
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(H.species && H.species.flags & RADIMMUNE && !(flags & MUTCHK_FORCED))
+		if((RADIMMUNE in H.dna.species.species_traits) && !(flags & MUTCHK_FORCED))
 			return 0
 	return 1
 
@@ -142,7 +142,7 @@
 	message = replacetextEx(message,"bo","bjo")
 	message = replacetextEx(message,"O",pick("Ö","Ø","O"))
 	message = replacetextEx(message,"o",pick("ö","ø","o"))
-	if(prob(30))
+	if(prob(30) && !M.is_muzzled())
 		message += " Bork[pick("",", bork",", bork, bork")]!"
 	return message
 
@@ -181,18 +181,6 @@
 		if(length(cword))
 			rearranged += cword
 	return "[prefix][uppertext(jointext(rearranged," "))]!!"
-
-// WAS: /datum/bioEffect/toxic_farts
-/datum/dna/gene/disability/toxic_farts
-	name = "Toxic Farts"
-	desc = "Causes the subject's digestion to create a significant amount of noxious gas."
-	activation_message = "Your stomach grumbles unpleasantly."
-	deactivation_message = "Your stomach stops acting up. Phew!"
-	mutation = TOXIC_FARTS
-
-/datum/dna/gene/disability/toxic_farts/New()
-	..()
-	block=TOXICFARTBLOCK
 
 //////////////////
 // USELESS SHIT //

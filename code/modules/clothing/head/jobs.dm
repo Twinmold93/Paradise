@@ -54,11 +54,26 @@
 	flags = BLOCKHAIR
 	flags_cover = HEADCOVERSEYES
 
+//Chaplain
+/obj/item/clothing/head/monk_hood
+	name = "monk hood"
+	desc = "Wooden board not included."
+	icon_state = "monk_hood"
+	flags = BLOCKHAIR
+	flags_cover = HEADCOVERSEYES
+
+/obj/item/clothing/head/witchhunter_hat
+	name = "witchhunter hat"
+	desc = "This hat saw much use back in the day."
+	icon_state = "witchhunterhat"
+	item_state = "witchhunterhat"
+	flags_cover = HEADCOVERSEYES
+
 /obj/item/clothing/head/det_hat
 	name = "hat"
 	desc = "Someone who wears this will look very smart."
 	icon_state = "detective"
-	allowed = list(/obj/item/weapon/reagent_containers/food/snacks/candy/candy_corn, /obj/item/weapon/pen)
+	allowed = list(/obj/item/reagent_containers/food/snacks/candy/candy_corn, /obj/item/pen)
 	armor = list(melee = 25, bullet = 5, laser = 25, energy = 10, bomb = 0, bio = 0, rad = 0)
 
 //Mime

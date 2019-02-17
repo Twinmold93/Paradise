@@ -5,18 +5,19 @@
 	item_state = "bl_suit"
 	item_color = "black"
 	desc = "It's a plain jumpsuit. It seems to have a small dial on the wrist."
-	origin_tech = "syndicate=3"
+	origin_tech = "syndicate=2"
 	var/list/clothing_choices = list()
 	burn_state = FIRE_PROOF
 	armor = list(melee = 10, bullet = 10, laser = 10, energy = 0, bomb = 0, bio = 0, rad = 0)
 
 	New()
 		..()
-		for(var/U in subtypesof(/obj/item/clothing/under/color))
+		var/blocked = list(/obj/item/clothing/under/color/random, /obj/item/clothing/under/rank/centcom) // Stops random coloured jumpsuit and undefined centcomm suit appearing in the list.
+		for(var/U in subtypesof(/obj/item/clothing/under/color) - blocked)
 			var/obj/item/clothing/under/V = new U
 			src.clothing_choices += V
 
-		for(var/U in subtypesof(/obj/item/clothing/under/rank))
+		for(var/U in subtypesof(/obj/item/clothing/under/rank) - blocked)
 			var/obj/item/clothing/under/V = new U
 			src.clothing_choices += V
 		return

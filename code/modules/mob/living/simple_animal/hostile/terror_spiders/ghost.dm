@@ -16,6 +16,8 @@
 	humanize_prompt += " Role: [spider_role_summary]"
 	if(user.ckey in ts_ckey_blacklist)
 		error_on_humanize = "You are not able to control any terror spider this round."
+	else if(cannotPossess(user))
+		error_on_humanize = "You have enabled antag HUD and are unable to re-enter the round."
 	else if(spider_awaymission)
 		error_on_humanize = "Terror spiders that are part of an away mission cannot be controlled by ghosts."
 	else if(!ai_playercontrol_allowtype)
@@ -29,7 +31,7 @@
 		return
 	if(error_on_humanize == "")
 		var/spider_ask = alert(humanize_prompt, "Join as Terror Spider?", "Yes", "No")
-		if(spider_ask == "No" || !src || qdeleted(src))
+		if(spider_ask == "No" || !src || QDELETED(src))
 			return
 	else
 		to_chat(user, "Cannot inhabit spider: [error_on_humanize]")
@@ -38,5 +40,5 @@
 		to_chat(user, "<span class='notice'>Someone else already took this spider.</span>")
 		return
 	key = user.key
-	for(var/mob/dead/observer/G in player_list)
+	for(var/mob/dead/observer/G in GLOB.player_list)
 		G.show_message("<i>A ghost has taken control of <b>[src]</b>. ([ghost_follow_link(src, ghost=G)]).</i>")

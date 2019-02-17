@@ -32,6 +32,9 @@ var opts = {
 	'chatMode': 'default', //The mode the chat is in
 	'priorChatHeight': 0, //Thing for height-resizing detection
 	'restarting': false, //Is the round restarting?
+	'previousMessage': '',
+	'previousMessageCount': 1,
+	'hideSpam': true,
 
 	//Options menu
 	'subOptionsLoop': null, //Contains the interval loop for closing the options menu
@@ -100,6 +103,27 @@ function linkify(text) {
 	});
 }
 
+function byondDecode(message) {
+	// Basically we url_encode twice server side so we can manually read the encoded version and actually do UTF-8.
+	// The replace for + is because FOR SOME REASON, BYOND replaces spaces with a + instead of %20, and a plus with %2b.
+	// Marvelous.
+	message = message.replace(/\+/g, "%20");
+	try { 
+		// This is a workaround for the above not always working when BYOND's shitty url encoding breaks.
+		// Basically, sometimes BYOND's double encoding trick just arbitrarily produces something that makes decodeURIComponent
+		// throw an "Invalid Encoding URI" URIError... the simplest way to work around this is to just ignore it and use unescape instead
+		// which just fails to decode shit instead of throwing errors
+		if (decodeURIComponent) {
+			message = decodeURIComponent(message);
+		} else {
+			throw new Error("Easiest way to trigger the fallback")
+		}
+	} catch (err) {
+		message = unescape(message);
+	}
+	return message;
+}
+
 function emojiparse(el) {
 
 	if ((typeof UNICODE_9_EMOJI === 'undefined') || (typeof twemoji === 'undefined')) {
@@ -156,11 +180,7 @@ function output(message, flag) {
 	if (flag !== 'internal')
 		opts.lastPang = Date.now();
 
-	// Basically we url_encode twice server side so we can manually read the encoded version and actually do UTF-8.
-	// The replace for + is because FOR SOME REASON, BYOND replaces spaces with a + instead of %20, and a plus with %2b.
-	// Marvelous.
-	message = message.replace(/\+/g, "%20");
-	message = decoder(message);
+	message = byondDecode(message).trim();
 
 	//The behemoth of filter-code (for Admin message filters)
 	//Note: This is proooobably hella inefficient
@@ -268,8 +288,27 @@ function output(message, flag) {
 		emojiparse(entry);
 	}
 
-
-	$messages[0].appendChild(entry);
+	if (opts.hideSpam && entry.innerHTML === opts.previousMessage) {
+		opts.previousMessageCount++;
+		var lastIndex = $messages[0].children.length - 1;
+		var countBadge = '<span class="repeatBadge">x' + opts.previousMessageCount + '</span>';
+		var lastEntry = $messages[0].children[lastIndex];
+		lastEntry.innerHTML = opts.previousMessage + countBadge;
+		var insertedBadge = $(lastEntry).find('.repeatBadge');
+		insertedBadge.animate({
+			"font-size": "0.9em"
+		}, 100, function() {
+			insertedBadge.animate({
+				"font-size": "0.7em"
+			}, 100);
+		});
+		entry = lastEntry;
+	}
+	else {
+		opts.previousMessage = entry.innerHTML;
+		opts.previousMessageCount = 1;
+		$messages[0].appendChild(entry);
+	}
 
 	//Actually do the snap
 	if (!filteredOut && atBottom) {
@@ -297,7 +336,7 @@ function setCookie(cname, cvalue, exdays) {
 	var d = new Date();
 	d.setTime(d.getTime() + (exdays*24*60*60*1000));
 	var expires = 'expires='+d.toUTCString();
-	document.cookie = "paradise-" + cname + '=' + cvalue + '; ' + expires;
+	document.cookie = "paradise-" + cname + '=' + cvalue + '; ' + expires + '; path=/';
 }
 
 function getCookie(cname) {
@@ -533,8 +572,10 @@ $(function() {
 		'spingDisabled': getCookie('pingdisabled'),
 		'shighlightTerms': getCookie('highlightterms'),
 		'shighlightColor': getCookie('highlightcolor'),
+		'shideSpam': getCookie('hidespam'),
+		'darkChat': getCookie('darkChat'),
 	};
-
+	
 	if (savedConfig.sfontSize) {
 		$messages.css('font-size', savedConfig.sfontSize);
 		internalOutput('<span class="internal boldnshit">Loaded font size setting of: '+savedConfig.sfontSize+'</span>', 'internal');
@@ -568,7 +609,32 @@ $(function() {
 		opts.highlightColor = savedConfig.shighlightColor;
 		internalOutput('<span class="internal boldnshit">Loaded highlight color of: '+savedConfig.shighlightColor+'</span>', 'internal');
 	}
-
+	if (savedConfig.shideSpam) {
+		opts.hideSpam = $.parseJSON(savedConfig.shideSpam);
+		internalOutput('<span class="internal boldnshit">Loaded hide spam preference of: ' + savedConfig.shideSpam + '</span>', 'internal');
+	}
+	if (savedConfig.darkChat == "on") {
+		   $("head").append("<link>");
+		   var css = $("head").children(":last");
+		   css.attr({
+		     rel:  "stylesheet",
+		     type: "text/css",
+		     href: "./browserOutput-dark.css"
+		  });
+	} else {
+		   $("head").append("<link>");
+		   var css = $("head").children(":last");
+		   css.attr({
+		     rel:  "stylesheet",
+		     type: "text/css",
+		     href: "./browserOutput.css"
+		  });
+	}
+	if(localStorage){
+		var backlog = localStorage.getItem('backlog')
+		$messages.html(backlog)
+		localStorage.setItem('backlog', '')
+	}
 	(function() {
 		var dataCookie = getCookie('connData');
 		if (dataCookie) {
@@ -827,6 +893,12 @@ $(function() {
 		setCookie('fonttype', font, 365);
 	});
 
+	$('#toggleHideSpam').click(function(e) {
+		opts.hideSpam = !opts.hideSpam;
+		setCookie('hidespam', opts.hideSpam, 365);
+		internalOutput('<span class="internal boldnshit">Duplicate chat line condensing set to ' + opts.hideSpam + '</span>', 'internal');
+	});
+
 	$('#togglePing').click(function(e) {
 		if (opts.pingDisabled) {
 			$('#ping').slideDown('fast');
@@ -839,31 +911,57 @@ $(function() {
 	});
 
 	$('#saveLog').click(function(e) {
-		var saved = '';
+		var openWindow = function (content) { //opens a window
+			var win;
+			try {
+				win = window.open('', 'RAW Chat Log', 'toolbar=no, location=no, directories=no, status=no, menubar=yes, scrollbars=yes, resizable=yes, width=1200, height=800, top='+(screen.height-400)+', left='+(screen.width-840));
+			} catch (e) {
+				return;
+			}
+			if (win && win.document && window.document.body) {
+				win.document.body.innerHTML = content;
+				return win;
+			}
+		};
 
-		if (window.XMLHtpRequest) {
+		if (window.XMLHttpRequest) {
 			xmlHttp = new XMLHttpRequest();
 		} else {
 			xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
 		}
-		xmlHttp.open('GET', 'browserOutput.css', false);
+		
+		// synchronous requests are depricated in modern browsers
+		xmlHttp.open('GET', 'browserOutput.css', true);			
+		xmlHttp.onload = function (e) {
+			if (xmlHttp.status === 200) {	// request successful
+				
+				// Generate Log
+				var saved = '<style>'+xmlHttp.responseText+'</style>';
+				saved += $messages.html();
+				saved = saved.replace(/&/g, '&amp;');
+				saved = saved.replace(/</g, '&lt;');
+				
+				// Generate final output and open the window
+				var finalText = '<head><title>Chat Log</title></head> \
+					<iframe src="saveInstructions.html" id="instructions" style="border:none;" height="220" width="100%"></iframe>'+
+					saved
+				openWindow(finalText);
+			} else {						// request returned http error
+				openWindow('Style Doc Retrieve Error: '+xmlHttp.statusText);
+			}
+		}
+		
+		// timeout and request errors
+		xmlHttp.timeout = 300;
+		xmlHttp.ontimeout = function (e) {
+			openWindow('XMLHttpRequest Timeout');
+		}
+		xmlHttp.onerror = function (e) {
+			openWindow('XMLHttpRequest Error: '+xmlHttp.statusText);
+		}
+		// css needs special headers
 		xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-		xmlHttp.send();
-		saved += '<style>'+xmlHttp.responseText+'</style>';
-
-		saved += $messages.html();
-		saved = saved.replace(/&/g, '&amp;');
-		saved = saved.replace(/</g, '&lt;');
-
-		var win;
-		try {
-			win = window.open('', 'Chat Log', 'toolbar=no, location=no, directories=no, status=no, menubar=yes, scrollbars=yes, resizable=yes, width=780, height=200, top='+(screen.height-400)+', left='+(screen.width-840));
-		} catch (e) {
-			return;
-		}
-		if (win && win.document && window.document.body) {
-			win.document.body.innerHTML = saved;
-		}
+		xmlHttp.send(null);
 	});
 
 	$('#highlightTerm').click(function(e) {
@@ -932,6 +1030,20 @@ $(function() {
 	$('#clearMessages').click(function() {
 		$messages.empty();
 		opts.messageCount = 0;
+		opts.previousMessage = '';
+		opts.previousMessageCount = 1;
+	});
+
+	$('#toggleDarkChat').click(function(e) {
+		internalOutput('<span class="internal boldnshit">Dark Chat toggled. Reconnecting to chat.</span>', 'internal');
+		var backlog = $messages.html()
+		if(getCookie('darkChat') == "on"){
+			setCookie('darkChat', "off", 365)
+		} else {
+			setCookie('darkChat', "on", 365)
+		}
+		localStorage.setItem('backlog', backlog)
+		location.reload();
 	});
 
 	// Tell BYOND to give us a macro list.

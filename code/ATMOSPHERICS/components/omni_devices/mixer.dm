@@ -83,8 +83,9 @@
 
 	return 0
 
-/obj/machinery/atmospherics/omni/mixer/process()
-	if(!..() || !on)
+/obj/machinery/atmospherics/omni/mixer/process_atmos()
+	..()
+	if(!on)
 		return 0
 
 	var/datum/gas_mixture/output_air = output.air
@@ -135,7 +136,7 @@
 /obj/machinery/atmospherics/omni/mixer/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, force_open = 0)
 	usr.set_machine(src)
 
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, force_open)
+	ui = SSnanoui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)
 		ui = new(user, src, ui_key, "omni_mixer.tmpl", "Omni Mixer Control", 360, 330)
 		ui.open()
@@ -201,7 +202,7 @@
 				con_lock(dir_flag(href_list["dir"]))
 
 	update_icon()
-	nanomanager.update_uis(src)
+	SSnanoui.update_uis(src)
 	return
 
 /obj/machinery/atmospherics/omni/mixer/proc/switch_mode(var/port = NORTH, var/mode = ATM_NONE)
